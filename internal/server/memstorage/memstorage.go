@@ -27,7 +27,7 @@ func (m *MemStorage) SubmitMetric(metricType MetricType, metric metrics.BaseMetr
 func (m *MemStorage) searchMetric(metricType MetricType, metricName string) (*metrics.BaseMetric, error) {
 	metricsIn, ok := m.storage[metricType]
 	if !ok {
-		return nil, fmt.Errorf("Нет типа %q", metricType)
+		return nil, fmt.Errorf("нет типа %q", metricType)
 	}
 
 	for _, metric := range metricsIn {
@@ -35,7 +35,7 @@ func (m *MemStorage) searchMetric(metricType MetricType, metricName string) (*me
 			return &metric, nil
 		}
 	}
-	return nil, fmt.Errorf("Нет метрики %q", metricName)
+	return nil, fmt.Errorf("нет метрики %q", metricName)
 }
 
 func (m *MemStorage) CreateMetric(metricType MetricType, metric metrics.BaseMetric) {
