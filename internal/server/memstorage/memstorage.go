@@ -25,12 +25,12 @@ func (m *MemStorage) SubmitMetric(metricType MetricType, metric metrics.BaseMetr
 }
 
 func (m *MemStorage) searchMetric(metricType MetricType, metricName string) (*metrics.BaseMetric, error) {
-	metrics, ok := m.storage[metricType]
+	metricsIn, ok := m.storage[metricType]
 	if !ok {
 		return nil, fmt.Errorf("Нет типа %q", metricType)
 	}
 
-	for _, metric := range metrics {
+	for _, metric := range metricsIn {
 		if metric.MetricName() == metricName {
 			return &metric, nil
 		}
