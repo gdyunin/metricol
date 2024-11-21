@@ -11,11 +11,7 @@ func main() {
 	mux := http.NewServeMux()
 	memStorage := memstorage.NewBaseMemStorage()
 
-	mux.Handle("/update/gauge/", http.StripPrefix("/update/gauge/", handlers.GaugeHandler(&memStorage)))
-	mux.Handle("/update/counter/", http.StripPrefix("/update/counter/", handlers.CounterHandler(&memStorage)))
-	mux.HandleFunc("/update/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusBadRequest)
-	}))
+	mux.Handle("/update/", http.StripPrefix("/update/", handlers.MetricPostHandler(&memStorage)))
 
 	err := http.ListenAndServe(":8080", mux)
 	if err != nil {
