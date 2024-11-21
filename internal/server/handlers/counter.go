@@ -37,7 +37,8 @@ func CounterHandler(memStorage memstorage.MemStorage) http.HandlerFunc {
 			}
 		}
 
-		memStorage.PushMetric(counter)
+		_ = memStorage.PushMetric(counter)
+
 		w.WriteHeader(http.StatusOK)
 	}
 }

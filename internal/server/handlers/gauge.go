@@ -37,7 +37,8 @@ func GaugeHandler(memStorage memstorage.MemStorage) http.HandlerFunc {
 			}
 		}
 
-		memStorage.PushMetric(gauge)
+		_ = memStorage.PushMetric(gauge)
+
 		w.WriteHeader(http.StatusOK)
 	}
 }

@@ -30,7 +30,7 @@ func (s *BaseMemStorage) PushMetric(metric metrics.Metric) error {
 		s.pushCounter(metric)
 		return nil
 	default:
-		return fmt.Errorf(ErrorUnknownMetricType)
+		return fmt.Errorf(ErrorUnknownMetricType, metric.Type())
 	}
 }
 

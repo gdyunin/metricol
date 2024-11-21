@@ -1,5 +1,5 @@
 package memstorage
 
 const (
-	ErrorUnknownMetricType = "error unknown metric type"
+	ErrorUnknownMetricType = "error unknown metric type %q"
 )
