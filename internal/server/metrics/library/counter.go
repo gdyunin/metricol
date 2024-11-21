@@ -14,7 +14,9 @@ type Counter struct {
 }
 
 func NewCounter() *Counter {
-	return &Counter{}
+	return &Counter{
+		metricType: metrics.MetricTypeCounter,
+	}
 }
 
 func (c *Counter) ParseFromURLString(u string) error {
@@ -38,8 +40,8 @@ func (c Counter) Name() string {
 	return c.name
 }
 
-func (c Counter) Value() int64 {
-	return c.value
+func (c Counter) Value() string {
+	return strconv.FormatInt(c.value, 10)
 }
 
 func (c Counter) Type() metrics.MetricType {

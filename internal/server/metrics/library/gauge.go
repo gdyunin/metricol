@@ -14,7 +14,9 @@ type Gauge struct {
 }
 
 func NewGauge() *Gauge {
-	return &Gauge{}
+	return &Gauge{
+		metricType: metrics.MetricTypeGauge,
+	}
 }
 
 func (g *Gauge) ParseFromURLString(u string) error {
@@ -38,8 +40,8 @@ func (g Gauge) Name() string {
 	return g.name
 }
 
-func (g Gauge) Value() float64 {
-	return g.value
+func (g Gauge) Value() string {
+	return strconv.FormatFloat(g.value, 'f', 12, 64)
 }
 
 func (g Gauge) Type() metrics.MetricType {
