@@ -5,4 +5,6 @@ type Metric interface {
 	Value() string
 	Type() MetricType
 	ParseFromURLString(string) error
+	SetName(string)
+	SetValue(string) error
 }

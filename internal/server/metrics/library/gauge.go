@@ -1,6 +1,7 @@
 package library
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gdyunin/metricol.git/internal/server/metrics"
 	"strconv"
@@ -17,6 +18,20 @@ func NewGauge() *Gauge {
 	return &Gauge{
 		metricType: metrics.MetricTypeGauge,
 	}
+}
+
+func (g *Gauge) SetName(name string) {
+	g.name = name
+}
+
+func (g *Gauge) SetValue(val string) error {
+	v, err := strconv.ParseFloat(val, 64)
+	if err != nil {
+		return errors.New(metrics.ErrorParseMetricValue)
+	}
+
+	g.value = v
+	return nil
 }
 
 func (g *Gauge) ParseFromURLString(u string) error {

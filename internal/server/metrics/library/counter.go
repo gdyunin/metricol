@@ -1,6 +1,7 @@
 package library
 
 import (
+	"errors"
 	"fmt"
 	"github.com/gdyunin/metricol.git/internal/server/metrics"
 	"strconv"
@@ -38,6 +39,20 @@ func (c *Counter) ParseFromURLString(u string) error {
 
 func (c Counter) Name() string {
 	return c.name
+}
+
+func (c *Counter) SetName(name string) {
+	c.name = name
+}
+
+func (c *Counter) SetValue(val string) error {
+	v, err := strconv.ParseInt(val, 10, 64)
+	if err != nil {
+		return errors.New(metrics.ErrorParseMetricValue)
+	}
+
+	c.value = v
+	return nil
 }
 
 func (c Counter) Value() string {
