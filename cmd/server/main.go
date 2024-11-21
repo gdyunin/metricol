@@ -9,9 +9,10 @@ import (
 
 func main() {
 	mux := http.NewServeMux()
-	memStorage := memstorage.NewMemStorage()
+	memStorage := memstorage.NewBaseMemStorage()
 
-	mux.Handle("/update/gauge/", http.StripPrefix("/update/gauge/", handlers.GaugeHandler(memStorage)))
+	mux.Handle("/update/gauge/", http.StripPrefix("/update/gauge/", handlers.GaugeHandler(&memStorage)))
+	mux.Handle("/update/counter/", http.StripPrefix("/update/counter/", handlers.CounterHandler(&memStorage)))
 
 	err := http.ListenAndServe(":8080", mux)
 	if err != nil {

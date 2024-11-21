@@ -1,43 +1,25 @@
 package memstorage
 
-import (
-	"fmt"
-	"github.com/gdyunin/metricol.git/internal/server/metrics"
-)
+import "github.com/gdyunin/metricol.git/internal/server/metrics"
 
-type MetricType string
-
-type MemStorage struct {
-	storage map[MetricType][]metrics.BaseMetric
+type MemStorage interface {
+	PushMetric(metric metrics.Metric)
+	PullMetric()
 }
 
-func NewMemStorage() *MemStorage {
-	return &MemStorage{
-		make(map[MetricType][]metrics.BaseMetric),
-	}
+type BaseMemStorage struct {
 }
 
-func (m *MemStorage) SubmitMetric(metricType MetricType, metric metrics.BaseMetric) {
-	_, err := m.searchMetric(metricType, metric.MetricName())
-	if err != nil {
-		m.CreateMetric(metricType, metric)
-	}
+func NewBaseMemStorage() BaseMemStorage {
+	return BaseMemStorage{}
 }
 
-func (m *MemStorage) searchMetric(metricType MetricType, metricName string) (*metrics.BaseMetric, error) {
-	metricsIn, ok := m.storage[metricType]
-	if !ok {
-		return nil, fmt.Errorf("нет типа %q", metricType)
-	}
-
-	for _, metric := range metricsIn {
-		if metric.MetricName() == metricName {
-			return &metric, nil
-		}
-	}
-	return nil, fmt.Errorf("нет метрики %q", metricName)
+func (b *BaseMemStorage) PushMetric(metric metrics.Metric) {
+	//TODO implement me
+	//panic("implement me")
 }
 
-func (m *MemStorage) CreateMetric(metricType MetricType, metric metrics.BaseMetric) {
-	m.storage[metricType] = append(m.storage[metricType], metric)
+func (b *BaseMemStorage) PullMetric() {
+	//TODO implement me
+	//panic("implement me")
 }

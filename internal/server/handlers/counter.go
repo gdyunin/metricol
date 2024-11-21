@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func GaugeHandler(memStorage memstorage.MemStorage) http.HandlerFunc {
+func CounterHandler(memStorage memstorage.MemStorage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Разрешаем только POST
 		if r.Method != http.MethodPost {
@@ -21,8 +21,8 @@ func GaugeHandler(memStorage memstorage.MemStorage) http.HandlerFunc {
 			return
 		}
 
-		gauge := library.NewGauge()
-		err := gauge.ParseFromURLString(r.URL.String())
+		counter := library.NewCounter()
+		err := counter.ParseFromURLString(r.URL.String())
 		if err != nil {
 			switch err.Error() {
 			case metrics.ErrorParseMetricName:
@@ -37,7 +37,7 @@ func GaugeHandler(memStorage memstorage.MemStorage) http.HandlerFunc {
 			}
 		}
 
-		memStorage.PushMetric(gauge)
+		memStorage.PushMetric(counter)
 		w.WriteHeader(http.StatusOK)
 	}
 }
