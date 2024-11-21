@@ -1,6 +1,6 @@
 package metrics
 
 const (
-	ErrorParseMetricName  = "Error parse metric name"
-	ErrorParseMetricValue = "Error parse metric value"
+	ErrorParseMetricName  = "error parse metric name"
+	ErrorParseMetricValue = "error parse metric value"
 )
