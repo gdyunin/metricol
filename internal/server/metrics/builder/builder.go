@@ -1,7 +1,7 @@
 package builder
 
 import (
-	"fmt"
+	"errors"
 	"github.com/gdyunin/metricol.git/internal/server/metrics"
 	"github.com/gdyunin/metricol.git/internal/server/metrics/library"
 )
@@ -13,6 +13,6 @@ func NewMetric(metricType metrics.MetricType) (metrics.Metric, error) {
 	case metrics.MetricTypeCounter:
 		return library.NewCounter(), nil
 	default:
-		return nil, fmt.Errorf(metrics.ErrorUnknownMetricType, metricType)
+		return nil, errors.New(metrics.ErrorUnknownMetricType)
 	}
 }

@@ -1,7 +1,7 @@
 package memstorage
 
 import (
-	"fmt"
+	"errors"
 	"github.com/gdyunin/metricol.git/internal/server/metrics"
 	"strconv"
 )
@@ -30,7 +30,7 @@ func (s *BaseMemStorage) PushMetric(metric metrics.Metric) error {
 		s.pushCounter(metric)
 		return nil
 	default:
-		return fmt.Errorf(ErrorUnknownMetricType, metric.Type())
+		return errors.New(ErrorUnknownMetricType)
 	}
 }
 
