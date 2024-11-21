@@ -41,7 +41,7 @@ func MetricPostHandler(memStorage memstorage.MemStorage) http.HandlerFunc {
 
 		metric, err := builder.NewMetric(metrics.MetricType(metricType))
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
