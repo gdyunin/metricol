@@ -26,12 +26,16 @@ func MetricPostHandler(memStorage memstorage.MemStorage) http.HandlerFunc {
 		metricType, metricName, metricValue := urlArgs[0], urlArgs[1], urlArgs[2]
 
 		// Обрабатываем ошибки
-		if metricType == "" || metricValue == "" {
+		if metricType == "" {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 		if metricName == "" {
 			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		if metricValue == "" {
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
