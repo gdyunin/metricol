@@ -15,7 +15,7 @@ func main() {
 	reportInterval := 10 * time.Second
 
 	storage := fetch.NewStorage()
-	sender := send.NewClient(storage, "127.0.0.1", 8080)
+	sender := send.NewClient(storage, "localhost", 8080)
 
 	ms := runtime.MemStats{}
 
@@ -138,15 +138,15 @@ func main() {
 
 	go func() {
 		for {
-			storage.UpdateMetrics()
 			time.Sleep(pollPeriod)
+			storage.UpdateMetrics()
 		}
 	}()
 
 	for {
+		time.Sleep(reportInterval)
 		if err := sender.Send(); err != nil {
 			log.Fatal(err)
 		}
-		time.Sleep(reportInterval)
 	}
 }
