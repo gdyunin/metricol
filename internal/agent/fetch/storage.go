@@ -17,9 +17,7 @@ func (s *Storage) Metrics() []metrics.Metric {
 }
 
 func (s *Storage) AddMetrics(metric ...metrics.Metric) {
-	for _, m := range metric {
-		s.metrics = append(s.metrics, m)
-	}
+	s.metrics = append(s.metrics, metric...)
 }
 
 func (s *Storage) UpdateMetrics() {
