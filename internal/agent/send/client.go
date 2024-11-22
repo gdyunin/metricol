@@ -38,7 +38,8 @@ func (c *Client) Send() error {
 		}
 		r.Header.Set("Content-Type", "text/plain")
 
-		_, _ = c.client.Do(r)
+		res, _ := c.client.Do(r)
+		_ = res.Body.Close()
 	}
 	return nil
 }
