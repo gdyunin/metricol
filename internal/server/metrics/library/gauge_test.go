@@ -177,7 +177,7 @@ func TestGauge_Value(t *testing.T) {
 				name:  "simple_name",
 				value: 5.3,
 			},
-			strconv.FormatFloat(5.3, 'f', 12, 64),
+			strconv.FormatFloat(5.3, 'f', 6, 64),
 		},
 		{
 			"get gauge negative value",
@@ -185,7 +185,7 @@ func TestGauge_Value(t *testing.T) {
 				name:  "simple_name",
 				value: -5.3,
 			},
-			strconv.FormatFloat(-5.3, 'f', 12, 64),
+			strconv.FormatFloat(-5.3, 'f', 6, 64),
 		},
 		{
 			"get gauge big value",
@@ -193,7 +193,7 @@ func TestGauge_Value(t *testing.T) {
 				name:  "simple_name",
 				value: 9999999.3548762,
 			},
-			strconv.FormatFloat(9999999.3548762, 'f', 12, 64),
+			strconv.FormatFloat(9999999.3548762, 'f', 6, 64),
 		},
 	}
 	for _, tt := range tests {

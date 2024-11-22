@@ -39,7 +39,7 @@ func (g Gauge) Name() string {
 }
 
 func (g Gauge) Value() string {
-	return strconv.FormatFloat(g.value, 'f', 12, 64)
+	return strconv.FormatFloat(g.value, 'f', 6, 64)
 }
 
 func (g Gauge) Type() metrics.MetricType {
