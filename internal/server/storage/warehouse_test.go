@@ -152,11 +152,12 @@ func TestWarehouse_PushMetric(t *testing.T) {
 			w := tt.warehouse
 
 			err := w.PushMetric(tt.pushMetric)
-			require.EqualError(t, err, tt.wantErr.Error())
-
-			if err == nil {
-				require.Equal(t, tt.wantMetric.Value(), w.metrics[tt.pushMetric.Type()][tt.pushMetric.Name()])
+			if err != nil {
+				require.EqualError(t, err, tt.wantErr.Error())
+				return
 			}
+
+			require.Equal(t, tt.wantMetric.Value(), w.metrics[tt.pushMetric.Type()][tt.pushMetric.Name()])
 		})
 	}
 }
@@ -241,7 +242,11 @@ func TestWarehouse_pushCounter(t *testing.T) {
 			}(),
 			args{"test", "invalidInt"},
 			nil,
-			&strconv.NumError{},
+			&strconv.NumError{
+				Func: "ParseInt",
+				Num:  "invalidInt",
+				Err:  strconv.ErrSyntax,
+			},
 		},
 		{
 			"push repeat invalid counter",
@@ -257,7 +262,11 @@ func TestWarehouse_pushCounter(t *testing.T) {
 			}(),
 			args{"test", "invalidInt"},
 			nil,
-			&strconv.NumError{},
+			&strconv.NumError{
+				Func: "ParseInt",
+				Num:  "invalidInt",
+				Err:  strconv.ErrSyntax,
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -267,7 +276,7 @@ func TestWarehouse_pushCounter(t *testing.T) {
 
 			err := w.pushCounter(tt.args.name, tt.args.value)
 			if err != nil {
-				require.EqualError(t, err, tt.wantErr.Error())
+				require.ErrorAs(t, err, &tt.wantErr)
 				return
 			}
 
@@ -356,7 +365,7 @@ func TestWarehouse_pushGauge(t *testing.T) {
 
 			err := w.pushGauge(tt.args.name, tt.args.value)
 			if err != nil {
-				require.EqualError(t, err, tt.wantErr.Error())
+				require.ErrorAs(t, err, &tt.wantErr)
 				return
 			}
 

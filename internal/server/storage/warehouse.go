@@ -48,7 +48,7 @@ func (w *Warehouse) pushGauge(name string, value string) error {
 		return err
 	}
 
-	w.metrics[metricType][name] = strconv.FormatFloat(v, 'f', 12, 64)
+	w.metrics[metricType][name] = strconv.FormatFloat(v, 'f', 6, 64)
 	return nil
 }
 
