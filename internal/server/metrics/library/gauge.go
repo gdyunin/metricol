@@ -2,52 +2,35 @@ package library
 
 import (
 	"errors"
-	"fmt"
 	"github.com/gdyunin/metricol.git/internal/server/metrics"
 	"strconv"
-	"strings"
 )
 
 type Gauge struct {
-	name       string
-	value      float64
-	metricType metrics.MetricType
+	name  string
+	value float64
 }
 
 func NewGauge() *Gauge {
-	return &Gauge{
-		metricType: metrics.MetricTypeGauge,
-	}
+	return &Gauge{}
 }
 
-func (g *Gauge) SetName(name string) {
+func (g *Gauge) SetName(name string) error {
 	g.name = name
+	return nil
 }
 
 func (g *Gauge) SetValue(val string) error {
+	if len(val) < 1 {
+		return errors.New(metrics.ErrorEmptyValue)
+	}
+
 	v, err := strconv.ParseFloat(val, 64)
 	if err != nil {
 		return errors.New(metrics.ErrorParseMetricValue)
 	}
 
 	g.value = v
-	return nil
-}
-
-func (g *Gauge) ParseFromURLString(u string) error {
-	separated := strings.SplitN(u, "/", 2)
-
-	if len(separated) != 2 {
-		return fmt.Errorf(metrics.ErrorParseMetricName)
-	}
-	g.name = separated[0]
-
-	value, err := strconv.ParseFloat(separated[1], 64)
-	if err != nil {
-		return fmt.Errorf(metrics.ErrorParseMetricValue)
-	}
-	g.value = value
-
 	return nil
 }
 
@@ -60,5 +43,5 @@ func (g Gauge) Value() string {
 }
 
 func (g Gauge) Type() metrics.MetricType {
-	return g.metricType
+	return metrics.MetricTypeGauge
 }

@@ -4,6 +4,6 @@ type Metric interface {
 	Name() string
 	Value() string
 	Type() MetricType
-	SetName(string)
+	SetName(string) error
 	SetValue(string) error
 }

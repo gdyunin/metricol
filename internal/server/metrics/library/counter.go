@@ -2,50 +2,36 @@ package library
 
 import (
 	"errors"
-	"fmt"
 	"github.com/gdyunin/metricol.git/internal/server/metrics"
 	"strconv"
-	"strings"
 )
 
 type Counter struct {
-	name       string
-	value      int64
-	metricType metrics.MetricType
+	name  string
+	value int64
 }
 
 func NewCounter() *Counter {
-	return &Counter{
-		metricType: metrics.MetricTypeCounter,
-	}
-}
-
-func (c *Counter) ParseFromURLString(u string) error {
-	separated := strings.SplitN(u, "/", 2)
-
-	if len(separated) != 2 {
-		return fmt.Errorf(metrics.ErrorParseMetricName)
-	}
-	c.name = separated[0]
-
-	value, err := strconv.ParseInt(separated[1], 0, 64)
-	if err != nil {
-		return fmt.Errorf(metrics.ErrorParseMetricValue)
-	}
-	c.value = value
-
-	return nil
+	return &Counter{}
 }
 
 func (c Counter) Name() string {
 	return c.name
 }
 
-func (c *Counter) SetName(name string) {
+func (c *Counter) SetName(name string) error {
+	if len(name) < 1 {
+		return errors.New(metrics.ErrorEmptyName)
+	}
 	c.name = name
+	return nil
 }
 
 func (c *Counter) SetValue(val string) error {
+	if len(val) < 1 {
+		return errors.New(metrics.ErrorEmptyValue)
+	}
+
 	v, err := strconv.ParseInt(val, 10, 64)
 	if err != nil {
 		return errors.New(metrics.ErrorParseMetricValue)
@@ -60,5 +46,5 @@ func (c Counter) Value() string {
 }
 
 func (c Counter) Type() metrics.MetricType {
-	return c.metricType
+	return metrics.MetricTypeCounter
 }

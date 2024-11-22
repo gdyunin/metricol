@@ -42,31 +42,33 @@ func (w *Warehouse) init() {
 
 func (w *Warehouse) pushGauge(name string, value string) error {
 	metricType := metrics.MetricTypeGauge
-	w.metrics[metricType][name] = value
+
+	v, err := strconv.ParseFloat(value, 64)
+	if err != nil {
+		return err
+	}
+
+	w.metrics[metricType][name] = strconv.FormatFloat(v, 'f', 12, 64)
 	return nil
 }
 
 func (w *Warehouse) pushCounter(name string, value string) error {
 	metricType := metrics.MetricTypeCounter
 
-	curValue, ok := w.metrics[metricType][name]
-	if !ok {
-		w.metrics[metricType][name] = value
-		return nil
-	}
-
-	cv, err := strconv.ParseInt(curValue, 10, 64)
-	if err != nil {
-		return err
-	}
-
 	v, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
 		return err
 	}
 
-	newValue := strconv.FormatInt(cv+v, 10)
+	curValue, ok := w.metrics[metricType][name]
+	if !ok {
+		w.metrics[metricType][name] = value
+		return nil
+	}
+	cv, _ := strconv.ParseInt(curValue, 10, 64)
 
+	newValue := strconv.FormatInt(cv+v, 10)
 	w.metrics[metricType][name] = newValue
+
 	return nil
 }

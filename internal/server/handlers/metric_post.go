@@ -22,7 +22,7 @@ func MetricPostHandler(repository storage.Repository) http.HandlerFunc {
 		}
 
 		// Parse params from URL
-		urlArgs := splitURL(r.URL.String(), 3)
+		urlArgs := splitURI(r.URL.String(), 3)
 		metricType, metricName, metricValue := urlArgs[0], urlArgs[1], urlArgs[2]
 
 		// Check exists require params
@@ -47,7 +47,10 @@ func MetricPostHandler(repository storage.Repository) http.HandlerFunc {
 		}
 
 		// Fill metric
-		metric.SetName(metricName)
+		if err := metric.SetName(metricName); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 		if err := metric.SetValue(metricValue); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			return
@@ -59,6 +62,10 @@ func MetricPostHandler(repository storage.Repository) http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+
+		// Headers
+		h := w.Header()
+		h.Set("Content-Type", "text/plain")
 
 		// Response
 		w.WriteHeader(http.StatusOK)

@@ -2,7 +2,7 @@ package handlers
 
 import "strings"
 
-func splitURL(s string, n int) []string {
+func splitURI(s string, n int) []string {
 	args := make([]string, n)
 	for i := range n {
 		args[i] = ""

@@ -12,6 +12,8 @@ func NewMetric(metricType metrics.MetricType) (metrics.Metric, error) {
 		return library.NewGauge(), nil
 	case metrics.MetricTypeCounter:
 		return library.NewCounter(), nil
+	case metrics.MetricTypeOther:
+		return library.NewOther(), nil
 	default:
 		return nil, errors.New(metrics.ErrorUnknownMetricType)
 	}
