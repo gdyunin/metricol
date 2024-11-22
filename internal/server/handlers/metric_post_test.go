@@ -98,7 +98,7 @@ func TestMetricPostHandler(t *testing.T) {
 			func() storage.Repository {
 				s := storage.NewWarehouse()
 				m := library.NewGauge()
-				m.SetName("mainLifeQuestion")
+				_ = m.SetName("mainLifeQuestion")
 				_ = m.SetValue("4.2")
 				_ = s.PushMetric(m)
 				return s
@@ -122,7 +122,7 @@ func TestMetricPostHandler(t *testing.T) {
 			func() storage.Repository {
 				s := storage.NewWarehouse()
 				m := library.NewCounter()
-				m.SetName("mainLifeQuestion")
+				_ = m.SetName("mainLifeQuestion")
 				_ = m.SetValue("42")
 				_ = s.PushMetric(m)
 				return s
@@ -257,7 +257,9 @@ func TestMetricPostHandler(t *testing.T) {
 			})
 
 			h(w, r)
+
 			res := w.Result()
+			defer func() { _ = res.Body.Close() }()
 
 			require.Equal(t, tt.want.statusCode, res.StatusCode)
 			if res.StatusCode == http.StatusOK {
