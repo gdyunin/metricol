@@ -1,13 +1,13 @@
 package handlers
 
 import (
-	"github.com/gdyunin/metricol.git/internal/server/memstorage"
 	"github.com/gdyunin/metricol.git/internal/server/metrics"
 	"github.com/gdyunin/metricol.git/internal/server/metrics/builder"
+	"github.com/gdyunin/metricol.git/internal/server/storage"
 	"net/http"
 )
 
-func MetricPostHandler(memStorage memstorage.MemStorage) http.HandlerFunc {
+func MetricPostHandler(repository storage.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Allow only POST
 		if r.Method != http.MethodPost {
@@ -54,7 +54,7 @@ func MetricPostHandler(memStorage memstorage.MemStorage) http.HandlerFunc {
 		}
 
 		// Push metric to storage
-		err = memStorage.PushMetric(metric)
+		err = repository.PushMetric(metric)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return

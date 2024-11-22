@@ -2,19 +2,16 @@ package main
 
 import (
 	"github.com/gdyunin/metricol.git/internal/server/handlers"
-	"github.com/gdyunin/metricol.git/internal/server/memstorage"
+	"github.com/gdyunin/metricol.git/internal/server/storage"
 	"log"
 	"net/http"
 )
 
 func main() {
+	warehouse := storage.NewWarehouse()
+
 	mux := http.NewServeMux()
-	memStorage := memstorage.NewBaseMemStorage()
+	mux.Handle("/update/", http.StripPrefix("/update/", handlers.MetricPostHandler(warehouse)))
 
-	mux.Handle("/update/", http.StripPrefix("/update/", handlers.MetricPostHandler(&memStorage)))
-
-	err := http.ListenAndServe(":8080", mux)
-	if err != nil {
-		log.Fatal(err)
-	}
+	log.Fatal(http.ListenAndServe(":8080", mux))
 }
