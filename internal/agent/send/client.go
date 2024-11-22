@@ -39,7 +39,9 @@ func (c *Client) Send() error {
 		r.Header.Set("Content-Type", "text/plain")
 
 		res, _ := c.client.Do(r)
-		_ = res.Body.Close()
+		if res != nil {
+			_ = res.Body.Close()
+		}
 	}
 	return nil
 }
