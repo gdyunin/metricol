@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/gdyunin/metricol.git/internal/server/metrics"
 	"strconv"
+	"strings"
 )
 
 type Warehouse struct {
@@ -52,7 +53,12 @@ func (w *Warehouse) pushGauge(name string, value string) error {
 		return err
 	}
 
-	w.metrics[metricType][name] = strconv.FormatFloat(v, 'f', 6, 64)
+	var prec int
+	if splitFloat := strings.Split(value, "."); len(splitFloat) == 2 {
+		prec = len(splitFloat[1])
+	}
+
+	w.metrics[metricType][name] = strconv.FormatFloat(v, 'f', prec, 64)
 	return nil
 }
 
