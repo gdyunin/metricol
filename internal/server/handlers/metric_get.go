@@ -9,19 +9,13 @@ import (
 
 func MetricGetHandler(repository storage.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Check Content-Type
-		if r.Header.Get("Content-Type") != "text/plain" {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
 		// Parse params from URL
 		metricType := chi.URLParam(r, "metricType")
 		metricName := chi.URLParam(r, "metricName")
 
 		metricValue, ok := repository.Metrics()[metrics.MetricType(metricType)][metricName]
 		if !ok {
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
