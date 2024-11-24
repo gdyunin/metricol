@@ -16,7 +16,7 @@ func main() {
 	reportInterval := time.Duration(flagReportInterval) * time.Second
 
 	storage := fetch.NewStorage()
-	sender := send.NewClient(storage, "localhost", 8080)
+	sender := send.NewClient(storage, flagNetAddress.Host, flagNetAddress.Port)
 
 	ms := runtime.MemStats{}
 
