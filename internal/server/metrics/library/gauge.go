@@ -40,7 +40,7 @@ func (g Gauge) Name() string {
 }
 
 func (g Gauge) Value() string {
-	return fmt.Sprintf("%f", g.value)
+	return fmt.Sprintf("%g", g.value)
 }
 
 func (g Gauge) Type() metrics.MetricType {

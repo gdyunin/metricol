@@ -53,7 +53,7 @@ func (w *Warehouse) pushGauge(name string, value string) error {
 		return err
 	}
 
-	w.metrics[metricType][name] = fmt.Sprintf("%f", v)
+	w.metrics[metricType][name] = fmt.Sprintf("%g", v)
 	return nil
 }
 

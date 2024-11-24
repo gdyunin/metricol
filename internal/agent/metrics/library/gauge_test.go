@@ -147,7 +147,7 @@ func TestGauge_Value(t *testing.T) {
 				value:   4.2,
 				fetcher: nil,
 			},
-			fmt.Sprintf("%f", 4.2),
+			fmt.Sprintf("%g", 4.2),
 		},
 	}
 	for _, tt := range tests {

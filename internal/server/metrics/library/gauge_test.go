@@ -177,7 +177,7 @@ func TestGauge_Value(t *testing.T) {
 				name:  "simple_name",
 				value: 5.3,
 			},
-			fmt.Sprintf("%f", 5.3),
+			fmt.Sprintf("%g", 5.3),
 		},
 		{
 			"get gauge negative value",
@@ -185,7 +185,7 @@ func TestGauge_Value(t *testing.T) {
 				name:  "simple_name",
 				value: -5.3,
 			},
-			fmt.Sprintf("%f", -5.3),
+			fmt.Sprintf("%g", -5.3),
 		},
 		{
 			"get gauge big value",
@@ -193,7 +193,7 @@ func TestGauge_Value(t *testing.T) {
 				name:  "simple_name",
 				value: 9999999.3548762,
 			},
-			fmt.Sprintf("%f", 9999999.3548762),
+			fmt.Sprintf("%g", 9999999.3548762),
 		},
 	}
 	for _, tt := range tests {
