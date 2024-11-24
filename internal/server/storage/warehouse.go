@@ -16,6 +16,10 @@ func NewWarehouse() *Warehouse {
 	return w
 }
 
+func (w *Warehouse) Metrics() map[metrics.MetricType]map[string]string {
+	return w.metrics
+}
+
 func (w *Warehouse) PushMetric(metric metrics.Metric) error {
 	mName := metric.Name()
 	mValue := metric.Value()

@@ -4,17 +4,12 @@ import (
 	"github.com/gdyunin/metricol.git/internal/server/metrics"
 	"github.com/gdyunin/metricol.git/internal/server/metrics/builder"
 	"github.com/gdyunin/metricol.git/internal/server/storage"
+	"github.com/go-chi/chi/v5"
 	"net/http"
 )
 
 func MetricPostHandler(repository storage.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Allow only POST
-		if r.Method != http.MethodPost {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			return
-		}
-
 		// Check Content-Type
 		if r.Header.Get("Content-Type") != "text/plain" {
 			w.WriteHeader(http.StatusBadRequest)
@@ -22,22 +17,9 @@ func MetricPostHandler(repository storage.Repository) http.HandlerFunc {
 		}
 
 		// Parse params from URL
-		urlArgs := splitURI(r.URL.String(), 3)
-		metricType, metricName, metricValue := urlArgs[0], urlArgs[1], urlArgs[2]
-
-		// Check exists require params
-		if metricType == "" {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		if metricName == "" {
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		if metricValue == "" {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
+		metricType := chi.URLParam(r, "metricType")
+		metricName := chi.URLParam(r, "metricName")
+		metricValue := chi.URLParam(r, "metricValue")
 
 		// Create metric
 		metric, err := builder.NewMetric(metrics.MetricType(metricType))
