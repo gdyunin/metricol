@@ -2,6 +2,7 @@ package storage
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gdyunin/metricol.git/internal/server/metrics"
 	"strconv"
 )
@@ -52,7 +53,7 @@ func (w *Warehouse) pushGauge(name string, value string) error {
 		return err
 	}
 
-	w.metrics[metricType][name] = strconv.FormatFloat(v, 'f', 3, 64)
+	w.metrics[metricType][name] = fmt.Sprintf("%f", v)
 	return nil
 }
 

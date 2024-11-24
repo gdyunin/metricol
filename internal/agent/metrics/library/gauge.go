@@ -1,8 +1,8 @@
 package library
 
 import (
+	"fmt"
 	"github.com/gdyunin/metricol.git/internal/agent/metrics"
-	"strconv"
 )
 
 type Gauge struct {
@@ -29,7 +29,7 @@ func (g Gauge) Name() string {
 }
 
 func (g Gauge) Value() string {
-	return strconv.FormatFloat(g.value, 'f', 6, 64)
+	return fmt.Sprintf("%f", g.value)
 }
 
 func (g *Gauge) UpdateValue() {

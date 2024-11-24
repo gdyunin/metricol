@@ -1,9 +1,9 @@
 package library
 
 import (
+	"fmt"
 	"github.com/gdyunin/metricol.git/internal/agent/metrics"
 	"github.com/stretchr/testify/require"
-	"strconv"
 	"testing"
 )
 
@@ -147,7 +147,7 @@ func TestGauge_Value(t *testing.T) {
 				value:   4.2,
 				fetcher: nil,
 			},
-			strconv.FormatFloat(4.2, 'f', 6, 64),
+			fmt.Sprintf("%f", 4.2),
 		},
 	}
 	for _, tt := range tests {

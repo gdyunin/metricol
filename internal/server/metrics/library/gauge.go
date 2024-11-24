@@ -2,6 +2,7 @@ package library
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gdyunin/metricol.git/internal/server/metrics"
 	"strconv"
 )
@@ -39,7 +40,7 @@ func (g Gauge) Name() string {
 }
 
 func (g Gauge) Value() string {
-	return strconv.FormatFloat(g.value, 'f', 3, 64)
+	return fmt.Sprintf("%f", g.value)
 }
 
 func (g Gauge) Type() metrics.MetricType {

@@ -2,9 +2,9 @@ package library
 
 import (
 	"errors"
+	"fmt"
 	"github.com/gdyunin/metricol.git/internal/server/metrics"
 	"github.com/stretchr/testify/require"
-	"strconv"
 	"testing"
 )
 
@@ -177,7 +177,7 @@ func TestGauge_Value(t *testing.T) {
 				name:  "simple_name",
 				value: 5.3,
 			},
-			strconv.FormatFloat(5.3, 'f', 3, 64),
+			fmt.Sprintf("%f", 5.3),
 		},
 		{
 			"get gauge negative value",
@@ -185,7 +185,7 @@ func TestGauge_Value(t *testing.T) {
 				name:  "simple_name",
 				value: -5.3,
 			},
-			strconv.FormatFloat(-5.3, 'f', 3, 64),
+			fmt.Sprintf("%f", -5.3),
 		},
 		{
 			"get gauge big value",
@@ -193,7 +193,7 @@ func TestGauge_Value(t *testing.T) {
 				name:  "simple_name",
 				value: 9999999.3548762,
 			},
-			strconv.FormatFloat(9999999.3548762, 'f', 3, 64),
+			fmt.Sprintf("%f", 9999999.3548762),
 		},
 	}
 	for _, tt := range tests {
