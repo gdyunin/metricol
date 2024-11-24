@@ -48,8 +48,5 @@ func MetricPostHandler(repository storage.Repository) http.HandlerFunc {
 		// Headers
 		h := w.Header()
 		h.Set("Content-Type", "text/plain")
-
-		// Response
-		w.WriteHeader(http.StatusOK)
 	}
 }

@@ -21,7 +21,7 @@ func MetricGetHandler(repository storage.Repository) http.HandlerFunc {
 
 		metricValue, ok := repository.Metrics()[metrics.MetricType(metricType)][metricName]
 		if !ok {
-			w.WriteHeader(http.StatusNotFound)
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
@@ -30,8 +30,5 @@ func MetricGetHandler(repository storage.Repository) http.HandlerFunc {
 		// Headers
 		h := w.Header()
 		h.Set("Content-Type", "text/plain")
-
-		// Response
-		w.WriteHeader(http.StatusOK)
 	}
 }
