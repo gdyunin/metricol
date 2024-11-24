@@ -9,6 +9,8 @@ import (
 )
 
 func main() {
+	parseFlags()
+
 	warehouse := storage.NewWarehouse()
 	router := chi.NewRouter()
 
@@ -26,5 +28,5 @@ func main() {
 		})
 	})
 
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(flagRunAddr, router))
 }

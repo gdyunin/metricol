@@ -11,8 +11,9 @@ import (
 )
 
 func main() {
-	pollPeriod := 2 * time.Second
-	reportInterval := 10 * time.Second
+	parseFlags()
+	pollPeriod := time.Duration(flagPollInterval) * time.Second
+	reportInterval := time.Duration(flagReportInterval) * time.Second
 
 	storage := fetch.NewStorage()
 	sender := send.NewClient(storage, "localhost", 8080)
