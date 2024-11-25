@@ -13,9 +13,9 @@ const (
 )
 
 type config struct {
-	pollInterval   time.Duration `env:"POLL_INTERVAL"`
-	reportInterval time.Duration `env:"REPORT_INTERVAL"`
-	serverAddress  string        `env:"ADDRESS"`
+	pollInterval   time.Duration `env:"POLL_INTERVAL,require"`
+	reportInterval time.Duration `env:"REPORT_INTERVAL,require"`
+	serverAddress  string        `env:"ADDRESS,require"`
 }
 
 func appConfig() config {

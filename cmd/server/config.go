@@ -10,7 +10,7 @@ const (
 )
 
 type config struct {
-	serverAddress string `env:"ADDRESS"`
+	serverAddress string `env:"ADDRESS,require"`
 }
 
 func appConfig() config {
