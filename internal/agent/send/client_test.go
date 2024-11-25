@@ -10,9 +10,8 @@ import (
 
 func TestClient_Send(t *testing.T) {
 	type args struct {
-		s    *fetch.Storage
-		host string
-		port int
+		s       *fetch.Storage
+		address string
 	}
 	tests := []struct {
 		name    string
@@ -27,15 +26,14 @@ func TestClient_Send(t *testing.T) {
 					s.AddMetrics(library.NewCounter("PollCount", func() int64 { return 1 }))
 					return s
 				}(),
-				host: "localhost",
-				port: 8080,
+				address: "localhost:8080",
 			},
 			nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := NewClient(tt.args.s, tt.args.host, tt.args.port)
+			c := NewClient(tt.args.s, tt.args.address)
 			if err := c.Send(); err != nil {
 				require.ErrorAs(t, err, &tt.wantErr)
 			}
@@ -45,9 +43,8 @@ func TestClient_Send(t *testing.T) {
 
 func TestNewClient(t *testing.T) {
 	type args struct {
-		s    *fetch.Storage
-		host string
-		port int
+		s       *fetch.Storage
+		address string
 	}
 	tests := []struct {
 		name string
@@ -57,9 +54,8 @@ func TestNewClient(t *testing.T) {
 		{
 			"generate new client",
 			args{
-				s:    fetch.NewStorage(),
-				host: "localhost",
-				port: 8080,
+				s:       fetch.NewStorage(),
+				address: "localhost:8080",
 			},
 			&Client{
 				storage:  fetch.NewStorage(),
@@ -71,7 +67,7 @@ func TestNewClient(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NewClient(tt.args.s, tt.args.host, tt.args.port)
+			got := NewClient(tt.args.s, tt.args.address)
 			require.Equal(t, tt.want, got)
 		})
 	}

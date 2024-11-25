@@ -11,12 +11,13 @@ import (
 )
 
 func main() {
-	parseFlags()
-	pollPeriod := time.Duration(flagPollInterval) * time.Second
-	reportInterval := time.Duration(flagReportInterval) * time.Second
+	appCfg := appConfig()
+	pollPeriod := appCfg.pollInterval
+	reportInterval := appCfg.reportInterval
+	serverAddress := appCfg.serverAddress
 
 	storage := fetch.NewStorage()
-	sender := send.NewClient(storage, flagNetAddress.Host, flagNetAddress.Port)
+	sender := send.NewClient(storage, serverAddress)
 
 	ms := runtime.MemStats{}
 

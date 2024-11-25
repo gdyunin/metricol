@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"net/url"
 	"path"
-	"strconv"
 )
 
 type Client struct {
@@ -15,10 +14,10 @@ type Client struct {
 	client   http.Client
 }
 
-func NewClient(s *fetch.Storage, host string, port int) *Client {
+func NewClient(s *fetch.Storage, address string) *Client {
 	return &Client{
 		storage:  s,
-		host:     host + ":" + strconv.Itoa(port),
+		host:     address,
 		basePath: newBasePath(),
 		client:   http.Client{},
 	}

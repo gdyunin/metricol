@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	parseFlags()
+	appCfg := appConfig()
 
 	warehouse := storage.NewWarehouse()
 	router := chi.NewRouter()
@@ -28,5 +28,5 @@ func main() {
 		})
 	})
 
-	log.Fatal(http.ListenAndServe(flagRunAddr, router))
+	log.Fatal(http.ListenAndServe(appCfg.serverAddress, router))
 }
