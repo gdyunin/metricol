@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"github.com/caarlos0/env/v6"
 )
 
 const (
@@ -10,7 +9,7 @@ const (
 )
 
 type config struct {
-	serverAddress string `env:"ADDRESS,require"`
+	serverAddress string `env:"ADDRESS"`
 }
 
 func appConfig() config {
@@ -21,7 +20,7 @@ func appConfig() config {
 	flag.StringVar(&cfg.serverAddress, "a", cfg.serverAddress, "Адрес сервера")
 
 	flag.Parse()
-	env.Parse(&cfg)
+	//env.Parse(&cfg)
 
 	return cfg
 }

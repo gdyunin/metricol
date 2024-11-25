@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"github.com/caarlos0/env/v6"
 	"time"
 )
 
@@ -13,9 +12,9 @@ const (
 )
 
 type config struct {
-	pollInterval   time.Duration `env:"POLL_INTERVAL,require"`
-	reportInterval time.Duration `env:"REPORT_INTERVAL,require"`
-	serverAddress  string        `env:"ADDRESS,require"`
+	pollInterval   time.Duration `env:"POLL_INTERVAL"`
+	reportInterval time.Duration `env:"REPORT_INTERVAL"`
+	serverAddress  string        `env:"ADDRESS"`
 }
 
 func appConfig() config {
@@ -30,7 +29,7 @@ func appConfig() config {
 	flag.StringVar(&cfg.serverAddress, "a", cfg.serverAddress, "Адрес сервера")
 
 	flag.Parse()
-	env.Parse(&cfg)
+	//env.Parse(&cfg)
 
 	return cfg
 }
