@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/caarlos0/env/v6"
 	"time"
 )
@@ -14,26 +13,24 @@ const (
 )
 
 type config struct {
-	pollInterval   time.Duration `env:"POLL_INTERVAL"`
-	reportInterval time.Duration `env:"REPORT_INTERVAL"`
-	serverAddress  string        `env:"ADDRESS"`
+	PollInterval   time.Duration `env:"POLL_INTERVAL"`
+	ReportInterval time.Duration `env:"REPORT_INTERVAL"`
+	ServerAddress  string        `env:"ADDRESS"`
 }
 
 func appConfig() config {
 	cfg := config{
-		pollInterval:   defaultPollInterval,
-		reportInterval: defaultReportInterval,
-		serverAddress:  defaultServerAddress,
+		PollInterval:   defaultPollInterval,
+		ReportInterval: defaultReportInterval,
+		ServerAddress:  defaultServerAddress,
 	}
 
-	flag.DurationVar(&cfg.pollInterval, "p", cfg.pollInterval, "Интервал сбора метрик")
-	flag.DurationVar(&cfg.reportInterval, "r", cfg.reportInterval, "Интервал отправки метрик")
-	flag.StringVar(&cfg.serverAddress, "a", cfg.serverAddress, "Адрес сервера")
+	flag.DurationVar(&cfg.PollInterval, "p", cfg.PollInterval, "Интервал сбора метрик")
+	flag.DurationVar(&cfg.ReportInterval, "r", cfg.ReportInterval, "Интервал отправки метрик")
+	flag.StringVar(&cfg.ServerAddress, "a", cfg.ServerAddress, "Адрес сервера")
 
 	flag.Parse()
 	env.Parse(&cfg)
-
-	fmt.Println(cfg)
 
 	return cfg
 }

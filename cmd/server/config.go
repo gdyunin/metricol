@@ -10,15 +10,15 @@ const (
 )
 
 type config struct {
-	serverAddress string `env:"ADDRESS"`
+	ServerAddress string `env:"ADDRESS"`
 }
 
 func appConfig() config {
 	cfg := config{
-		serverAddress: defaultServerAddress,
+		ServerAddress: defaultServerAddress,
 	}
 
-	flag.StringVar(&cfg.serverAddress, "a", cfg.serverAddress, "Адрес сервера")
+	flag.StringVar(&cfg.ServerAddress, "a", cfg.ServerAddress, "Адрес сервера")
 
 	flag.Parse()
 	env.Parse(&cfg)

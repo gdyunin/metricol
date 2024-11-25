@@ -28,5 +28,5 @@ func main() {
 		})
 	})
 
-	log.Fatal(http.ListenAndServe(appCfg.serverAddress, router))
+	log.Fatal(http.ListenAndServe(appCfg.ServerAddress, router))
 }

@@ -12,12 +12,9 @@ import (
 
 func main() {
 	appCfg := appConfig()
-	pollPeriod := appCfg.pollInterval
-	reportInterval := appCfg.reportInterval
-	serverAddress := appCfg.serverAddress
 
 	storage := fetch.NewStorage()
-	sender := send.NewClient(storage, serverAddress)
+	sender := send.NewClient(storage, appCfg.ServerAddress)
 
 	ms := runtime.MemStats{}
 
@@ -140,13 +137,13 @@ func main() {
 
 	go func() {
 		for {
-			time.Sleep(pollPeriod)
+			time.Sleep(appCfg.PollInterval)
 			storage.UpdateMetrics()
 		}
 	}()
 
 	for {
-		time.Sleep(reportInterval)
+		time.Sleep(appCfg.ReportInterval)
 		if err := sender.Send(); err != nil {
 			log.Fatal(err)
 		}
