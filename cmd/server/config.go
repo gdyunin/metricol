@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"github.com/caarlos0/env/v6"
 )
 
 const (
@@ -20,7 +21,7 @@ func appConfig() config {
 	flag.StringVar(&cfg.serverAddress, "a", cfg.serverAddress, "Адрес сервера")
 
 	flag.Parse()
-	//env.Parse(&cfg)
+	env.Parse(&cfg)
 
 	return cfg
 }

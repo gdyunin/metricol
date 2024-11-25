@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"github.com/caarlos0/env/v6"
 	"time"
 )
 
@@ -29,7 +31,9 @@ func appConfig() config {
 	flag.StringVar(&cfg.serverAddress, "a", cfg.serverAddress, "Адрес сервера")
 
 	flag.Parse()
-	//env.Parse(&cfg)
+	env.Parse(&cfg)
+
+	fmt.Println(cfg)
 
 	return cfg
 }
