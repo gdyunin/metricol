@@ -137,13 +137,13 @@ func main() {
 
 	go func() {
 		for {
-			time.Sleep(appCfg.PollInterval)
+			time.Sleep(time.Duration(appCfg.PollInterval) * time.Second)
 			storage.UpdateMetrics()
 		}
 	}()
 
 	for {
-		time.Sleep(appCfg.ReportInterval)
+		time.Sleep(time.Duration(appCfg.ReportInterval) * time.Second)
 		if err := sender.Send(); err != nil {
 			log.Fatal(err)
 		}
