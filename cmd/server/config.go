@@ -1,8 +1,8 @@
 package main
 
 import (
+	"flag"
 	"github.com/caarlos0/env/v6"
-	"github.com/spf13/pflag"
 )
 
 const (
@@ -10,7 +10,7 @@ const (
 )
 
 type config struct {
-	serverAddress string `env:"SERVER_ADDRESS"`
+	serverAddress string `env:"ADDRESS"`
 }
 
 func appConfig() config {
@@ -18,9 +18,9 @@ func appConfig() config {
 		serverAddress: defaultServerAddress,
 	}
 
-	pflag.StringVar(&cfg.serverAddress, "a", cfg.serverAddress, "Адрес сервера")
+	flag.StringVar(&cfg.serverAddress, "a", cfg.serverAddress, "Адрес сервера")
 
-	pflag.Parse()
+	flag.Parse()
 	env.Parse(&cfg)
 
 	return cfg

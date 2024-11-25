@@ -1,8 +1,8 @@
 package main
 
 import (
+	"flag"
 	"github.com/caarlos0/env/v6"
-	"github.com/spf13/pflag"
 	"time"
 )
 
@@ -15,7 +15,7 @@ const (
 type config struct {
 	pollInterval   time.Duration `env:"POLL_INTERVAL"`
 	reportInterval time.Duration `env:"REPORT_INTERVAL"`
-	serverAddress  string        `env:"SERVER_ADDRESS"`
+	serverAddress  string        `env:"ADDRESS"`
 }
 
 func appConfig() config {
@@ -25,11 +25,11 @@ func appConfig() config {
 		serverAddress:  defaultServerAddress,
 	}
 
-	pflag.DurationVar(&cfg.pollInterval, "p", cfg.pollInterval, "Интервал сбора метрик")
-	pflag.DurationVar(&cfg.reportInterval, "r", cfg.reportInterval, "Интервал отправки метрик")
-	pflag.StringVar(&cfg.serverAddress, "a", cfg.serverAddress, "Адрес сервера")
+	flag.DurationVar(&cfg.pollInterval, "p", cfg.pollInterval, "Интервал сбора метрик")
+	flag.DurationVar(&cfg.reportInterval, "r", cfg.reportInterval, "Интервал отправки метрик")
+	flag.StringVar(&cfg.serverAddress, "a", cfg.serverAddress, "Адрес сервера")
 
-	pflag.Parse()
+	flag.Parse()
 	env.Parse(&cfg)
 
 	return cfg
