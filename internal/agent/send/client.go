@@ -7,6 +7,10 @@ import (
 	"path"
 )
 
+type Sender interface {
+	Send() error
+}
+
 type Client struct {
 	storage  *fetch.Storage
 	host     string

@@ -1,6 +1,8 @@
 package storage
 
-import "github.com/gdyunin/metricol.git/internal/server/metrics"
+import (
+	"github.com/gdyunin/metricol.git/internal/server/metrics"
+)
 
 const (
 	ErrorUnknownMetricType = "error unknown metric type"

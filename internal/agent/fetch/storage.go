@@ -2,6 +2,10 @@ package fetch
 
 import "github.com/gdyunin/metricol.git/internal/agent/metrics"
 
+type Updater interface {
+	UpdateMetrics()
+}
+
 type Storage struct {
 	metrics []metrics.Metric
 }
