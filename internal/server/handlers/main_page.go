@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/gdyunin/metricol.git/internal/server/storage"
 	"net/http"
 )
 
+// Full page template
 const mainPageTemplate = `<!DOCTYPE html>
 <html>
   <head>
@@ -44,27 +46,32 @@ const mainPageTemplate = `<!DOCTYPE html>
         <th>Метрика</th>
         <th>Значение</th>
       </tr>
-	  <!-- ↓ INSERT TABLE ROWS WITH METRIC ↓ -->
-      %s
+      %s <!-- rows with metrics will be here -->
     </table>
   </body>
 </html>`
 
+// One table row template
+const rowTemplate = "<tr><th>%s</th><th>%s</th></tr>"
+
+// MainPageHandler return a handler that generates a page with known metrics
 func MainPageHandler(repository storage.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var values string
-		metricsAll := repository.Metrics()
+		var buffer bytes.Buffer
 
-		for _, t := range metricsAll {
-			for k, v := range t {
-				values += fmt.Sprintf("<tr><th>%s</th><th>%s</th></tr>", k, v)
+		// Pull known metrics and fill body
+		metricsAll := repository.Metrics()
+		for _, metricMap := range metricsAll {
+			for metricName, metricValue := range metricMap {
+				buffer.WriteString(fmt.Sprintf(rowTemplate, metricName, metricValue))
 			}
 		}
+		body := fmt.Sprintf(mainPageTemplate, buffer.String())
 
-		body := fmt.Sprintf(mainPageTemplate, values)
+		// The error is ignored as it has no effect
+		// A logger could be added in the future
+		_, _ = w.Write([]byte(body))
 
-		w.Write([]byte(body))
-		header := w.Header()
-		header.Set("Content-Type", "text/html")
+		w.Header().Set("Content-Type", "text/html")
 	}
 }

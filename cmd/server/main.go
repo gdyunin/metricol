@@ -9,14 +9,18 @@ import (
 )
 
 func main() {
+	// Get config
 	appCfg := appConfig()
 
+	// Create structures
 	warehouse := storage.NewWarehouse()
 	router := chi.NewRouter()
 
+	// Setup GET methods
 	router.Get("/", handlers.MainPageHandler(warehouse))
 	router.Get("/value/{metricType}/{metricName}", handlers.MetricGetHandler(warehouse))
 
+	// Setup POST methods
 	router.Route("/update/", func(r chi.Router) {
 		r.Post("/", handlers.BadRequest)
 		r.Route("/{metricType}", func(r chi.Router) {
@@ -28,5 +32,6 @@ func main() {
 		})
 	})
 
+	// Start server
 	log.Fatal(http.ListenAndServe(appCfg.ServerAddress, router))
 }
