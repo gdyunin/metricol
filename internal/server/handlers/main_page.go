@@ -51,7 +51,7 @@ const mainPageTemplate = `<!DOCTYPE html>
   </body>
 </html>`
 
-// One table row template
+// Table row template
 const rowTemplate = "<tr><th>%s</th><th>%s</th></tr>"
 
 // MainPageHandler return a handler that generates a page with known metrics

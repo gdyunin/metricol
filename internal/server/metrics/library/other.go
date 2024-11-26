@@ -15,12 +15,15 @@ func NewOther() *Other {
 }
 
 func (o *Other) SetName(name string) error {
+	if name == "" {
+		return errors.New(metrics.ErrorEmptyName)
+	}
 	o.name = name
 	return nil
 }
 
 func (o *Other) SetValue(val string) error {
-	if len(val) < 1 {
+	if val == "" {
 		return errors.New(metrics.ErrorEmptyValue)
 	}
 

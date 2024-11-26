@@ -72,8 +72,6 @@ func (w *Warehouse) pushCounter(name string, value string) error {
 	}
 	cv, _ := strconv.ParseInt(curValue, 10, 64)
 
-	newValue := strconv.FormatInt(cv+v, 10)
-	w.metrics[metricType][name] = newValue
-
+	w.metrics[metricType][name] = strconv.FormatInt(cv+v, 10)
 	return nil
 }

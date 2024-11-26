@@ -17,12 +17,15 @@ func NewGauge() *Gauge {
 }
 
 func (g *Gauge) SetName(name string) error {
+	if name == "" {
+		return errors.New(metrics.ErrorEmptyName)
+	}
 	g.name = name
 	return nil
 }
 
 func (g *Gauge) SetValue(val string) error {
-	if len(val) < 1 {
+	if val == "" {
 		return errors.New(metrics.ErrorEmptyValue)
 	}
 

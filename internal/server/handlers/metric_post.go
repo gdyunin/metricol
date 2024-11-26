@@ -10,6 +10,9 @@ import (
 
 func MetricPostHandler(repository storage.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Set Content-Type
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+
 		// Parse params from URL
 		metricType := chi.URLParam(r, "metricType")
 		metricName := chi.URLParam(r, "metricName")
@@ -38,9 +41,5 @@ func MetricPostHandler(repository storage.Repository) http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-
-		// Headers
-		h := w.Header()
-		h.Set("Content-Type", "text/plain")
 	}
 }

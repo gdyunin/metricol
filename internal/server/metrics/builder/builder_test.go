@@ -49,7 +49,7 @@ func TestNewMetric(t *testing.T) {
 				return
 			}
 
-			require.Equal(t, got, tt.want)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }

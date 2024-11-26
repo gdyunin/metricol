@@ -5,6 +5,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 )
 
@@ -26,14 +27,19 @@ func TestBadRequest(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.method, func(t *testing.T) {
+			// Send request
 			req := resty.New().R()
 			req.Method = tt.method
 			req.URL = srv.URL
-
 			resp, err := req.Send()
 
+			// Want no errors
 			require.NoError(t, err, "error making request")
-			require.Equal(t, tt.expectedCode, resp.StatusCode(), "response code didn't match expected")
+
+			// Want status code
+			expectedCode := tt.expectedCode
+			actualCode := resp.StatusCode()
+			require.Equalf(t, expectedCode, actualCode, "expected response code %q, but got %q", tt.expectedCode, actualCode)
 		})
 	}
 }
@@ -56,14 +62,20 @@ func TestNotFound(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.method, func(t *testing.T) {
+			// Send request
 			req := resty.New().R()
 			req.Method = tt.method
 			req.URL = srv.URL
-
 			resp, err := req.Send()
 
-			require.NoError(t, err, "error making request")
-			require.Equal(t, tt.expectedCode, resp.StatusCode(), "response code didn't match expected")
+			// Want no errors
+			require.NoErrorf(t, err, "error making request")
+
+			// Want status code
+			expectedCode := tt.expectedCode
+			actualCode := resp.StatusCode()
+			require.Equalf(t, expectedCode, actualCode, "expected response code %s, but got %s",
+				strconv.Itoa(expectedCode), strconv.Itoa(actualCode))
 		})
 	}
 }

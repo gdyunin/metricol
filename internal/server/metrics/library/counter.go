@@ -20,7 +20,7 @@ func (c Counter) Name() string {
 }
 
 func (c *Counter) SetName(name string) error {
-	if len(name) < 1 {
+	if name == "" {
 		return errors.New(metrics.ErrorEmptyName)
 	}
 	c.name = name
@@ -28,7 +28,7 @@ func (c *Counter) SetName(name string) error {
 }
 
 func (c *Counter) SetValue(val string) error {
-	if len(val) < 1 {
+	if val == "" {
 		return errors.New(metrics.ErrorEmptyValue)
 	}
 
