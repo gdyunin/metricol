@@ -1,16 +1,17 @@
 package handlers
 
 import (
-	"github.com/gdyunin/metricol.git/internal/metrics"
-	"github.com/gdyunin/metricol.git/internal/server/storage"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-resty/resty/v2"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strconv"
 	"testing"
+
+	"github.com/gdyunin/metricol.git/internal/metrics"
+	"github.com/gdyunin/metricol.git/internal/server/storage"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-resty/resty/v2"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMetricPostHandler(t *testing.T) {
@@ -103,7 +104,8 @@ func TestMetricPostHandler(t *testing.T) {
 			// Send request
 			req := resty.New().R()
 			req.Method = http.MethodPost
-			req.URL, _ = url.JoinPath(srv.URL, "update/", string(tt.metric.metricType), tt.metric.metricName, tt.metric.metricValue)
+			req.URL, _ = url.JoinPath(srv.URL, "update/", tt.metric.metricType,
+				tt.metric.metricName, tt.metric.metricValue)
 			resp, err := req.Send()
 
 			// Want no errors
@@ -117,7 +119,8 @@ func TestMetricPostHandler(t *testing.T) {
 
 			// Want Content-Type
 			actualContentType := resp.Header().Get("Content-Type")
-			require.Equalf(t, expectedContentType, actualContentType, "expected Content-Type %s, but got %s", expectedContentType, actualContentType)
+			require.Equalf(t, expectedContentType, actualContentType, "expected Content-Type %s, but got %s",
+				expectedContentType, actualContentType)
 		})
 	}
 }

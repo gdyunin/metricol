@@ -1,22 +1,23 @@
 package main
 
 import (
+	"log"
+	"net/http"
+
 	"github.com/gdyunin/metricol.git/internal/server/handlers"
 	"github.com/gdyunin/metricol.git/internal/server/storage"
 	"github.com/go-chi/chi/v5"
-	"log"
-	"net/http"
 )
 
 func main() {
-	// Get config
+	// Get config.
 	appCfg := appConfig()
 
-	// Create structures
+	// Create structures.
 	warehouse := storage.NewWarehouse()
 	router := chi.NewRouter()
 
-	// Setup GET methods
+	// Setup GET methods.
 	router.Get("/", handlers.MainPageHandler(warehouse))
 	router.Get("/value/{metricType}/{metricName}", handlers.MetricGetHandler(warehouse))
 
@@ -32,6 +33,6 @@ func main() {
 		})
 	})
 
-	// Start server
+	// Start server.
 	log.Fatal(http.ListenAndServe(appCfg.ServerAddress, router))
 }

@@ -3,8 +3,9 @@ package storage
 import (
 	"errors"
 	"fmt"
-	"github.com/gdyunin/metricol.git/internal/metrics"
 	"strconv"
+
+	"github.com/gdyunin/metricol.git/internal/metrics"
 )
 
 type Warehouse struct {

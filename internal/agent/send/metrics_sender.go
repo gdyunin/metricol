@@ -2,17 +2,18 @@ package send
 
 import (
 	"fmt"
-	"github.com/gdyunin/metricol.git/internal/agent/fetch"
-	"github.com/go-resty/resty/v2"
 	"net/http"
 	"net/url"
 	"path"
+
+	"github.com/gdyunin/metricol.git/internal/agent/fetch"
+	"github.com/go-resty/resty/v2"
 )
 
 type MetricsSender struct {
 	metricsFetcher fetch.Fetcher
-	serverAddress  string
 	client         *resty.Client
+	serverAddress  string
 }
 
 func NewMetricsSender(fetcher fetch.Fetcher, address string) *MetricsSender {
@@ -38,6 +39,5 @@ func (m *MetricsSender) Send() {
 			// A logger could be added in the future
 			fmt.Println(err.Error())
 		}
-
 	}
 }

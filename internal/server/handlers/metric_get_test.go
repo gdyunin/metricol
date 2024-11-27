@@ -1,16 +1,17 @@
 package handlers
 
 import (
-	"github.com/gdyunin/metricol.git/internal/metrics"
-	"github.com/gdyunin/metricol.git/internal/server/storage"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-resty/resty/v2"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strconv"
 	"testing"
+
+	"github.com/gdyunin/metricol.git/internal/metrics"
+	"github.com/gdyunin/metricol.git/internal/server/storage"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-resty/resty/v2"
+	"github.com/stretchr/testify/require"
 )
 
 func TestMetricGetHandler(t *testing.T) {
@@ -101,7 +102,8 @@ func TestMetricGetHandler(t *testing.T) {
 
 			// Want Content-Type
 			actualContentType := resp.Header().Get("Content-Type")
-			require.Equalf(t, expectedContentType, actualContentType, "expected Content-Type %s, but got %s", expectedContentType, actualContentType)
+			require.Equalf(t, expectedContentType, actualContentType, "expected Content-Type %s, but got %s",
+				expectedContentType, actualContentType)
 
 			// Want body
 			if expectedBody := tt.expectedValue; expectedBody != "" {

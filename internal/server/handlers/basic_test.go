@@ -1,12 +1,13 @@
 package handlers
 
 import (
-	"github.com/go-resty/resty/v2"
-	"github.com/stretchr/testify/require"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"testing"
+
+	"github.com/go-resty/resty/v2"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBadRequest(t *testing.T) {

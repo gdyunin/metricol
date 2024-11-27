@@ -2,13 +2,14 @@ package send
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/gdyunin/metricol.git/internal/agent/fetch"
 	"github.com/gdyunin/metricol.git/internal/metrics"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/require"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 func TestMetricsSender_Send(t *testing.T) {

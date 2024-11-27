@@ -2,6 +2,7 @@ package fetch
 
 import (
 	"fmt"
+
 	"github.com/gdyunin/metricol.git/internal/metrics"
 )
 

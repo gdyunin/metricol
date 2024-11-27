@@ -1,9 +1,10 @@
 package fetch
 
 import (
+	"testing"
+
 	"github.com/gdyunin/metricol.git/internal/metrics"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestMetricsFetcher_AddMetrics(t *testing.T) {

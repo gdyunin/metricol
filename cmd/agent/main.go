@@ -11,11 +11,15 @@ import (
 )
 
 func main() {
+	// Get config.
 	appCfg := appConfig()
 
+	// Fetcher collects and stores metrics.
 	fetcher := fetch.NewMetricsFetcher()
+	// Sender push metrics to server
 	sender := send.NewMetricsSender(fetcher, appCfg.ServerAddress)
 
+	// Setup fetcher.
 	ms := &runtime.MemStats{}
 	fetcher.AddMetrics(
 		metrics.NewGauge("Alloc", 0).SetFetcherAndReturn(func() float64 {
@@ -105,6 +109,7 @@ func main() {
 		}),
 	)
 
+	// Start update and collect metrics with the poll interval.
 	go func() {
 		for {
 			time.Sleep(time.Duration(appCfg.PollInterval) * time.Second)
@@ -113,6 +118,7 @@ func main() {
 		}
 	}()
 
+	// Start send metrics to server with the report interval.
 	for {
 		time.Sleep(time.Duration(appCfg.ReportInterval) * time.Second)
 		sender.Send()

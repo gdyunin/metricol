@@ -6,9 +6,9 @@ import (
 )
 
 type Counter struct {
+	fetcher func() int64
 	name    string
 	value   int64
-	fetcher func() int64
 }
 
 func (c *Counter) Name() string {

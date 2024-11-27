@@ -2,9 +2,10 @@ package storage
 
 import (
 	"errors"
+	"testing"
+
 	"github.com/gdyunin/metricol.git/internal/metrics"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestNewWarehouse(t *testing.T) {
@@ -179,9 +180,7 @@ func TestWarehouse_PushMetric(t *testing.T) {
 	}{
 		{
 			"push new gauge",
-			func() *Warehouse {
-				return NewWarehouse()
-			}(),
+			NewWarehouse(),
 			func() metrics.Metric {
 				m, _ := metrics.NewFromStrings("test_gauge0", "42.0", metrics.MetricTypeGauge)
 				return m
@@ -212,9 +211,7 @@ func TestWarehouse_PushMetric(t *testing.T) {
 		},
 		{
 			"push new counter",
-			func() *Warehouse {
-				return NewWarehouse()
-			}(),
+			NewWarehouse(),
 			func() metrics.Metric {
 				m, _ := metrics.NewFromStrings("test_counter", "42", metrics.MetricTypeCounter)
 				return m
@@ -245,9 +242,7 @@ func TestWarehouse_PushMetric(t *testing.T) {
 		},
 		{
 			"push unknown metric",
-			func() *Warehouse {
-				return NewWarehouse()
-			}(),
+			NewWarehouse(),
 			func() metrics.Metric {
 				m, _ := metrics.NewFromStrings("test_counter", "84", "some_unknown_metric_type")
 				return m

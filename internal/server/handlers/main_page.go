@@ -3,11 +3,12 @@ package handlers
 import (
 	"bytes"
 	"fmt"
-	"github.com/gdyunin/metricol.git/internal/server/storage"
 	"net/http"
+
+	"github.com/gdyunin/metricol.git/internal/server/storage"
 )
 
-// Full page template
+// Full page template.
 const mainPageTemplate = `<!DOCTYPE html>
 <html>
   <head>
@@ -51,15 +52,15 @@ const mainPageTemplate = `<!DOCTYPE html>
   </body>
 </html>`
 
-// Table row template
+// Table row template.
 const rowTemplate = "<tr><th>%s</th><th>%s</th></tr>"
 
-// MainPageHandler return a handler that generates a page with known metrics
+// MainPageHandler return a handler that generates a page with known metrics.
 func MainPageHandler(repository storage.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var buffer bytes.Buffer
 
-		// Pull known metrics and fill body
+		// Pull known metrics and fill body.
 		metricsAll := repository.Metrics()
 		for _, metricMap := range metricsAll {
 			for metricName, metricValue := range metricMap {
@@ -68,8 +69,8 @@ func MainPageHandler(repository storage.Repository) http.HandlerFunc {
 		}
 		body := fmt.Sprintf(mainPageTemplate, buffer.String())
 
-		// The error is ignored as it has no effect
-		// A logger could be added in the future
+		// The error is ignored as it has no effect.
+		// A logger could be added in the future.
 		_, _ = w.Write([]byte(body))
 
 		w.Header().Set("Content-Type", "text/html")

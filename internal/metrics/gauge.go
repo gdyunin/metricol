@@ -7,9 +7,9 @@ import (
 )
 
 type Gauge struct {
+	fetcher func() float64
 	name    string
 	value   float64
-	fetcher func() float64
 }
 
 func (g *Gauge) Name() string {
