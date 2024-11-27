@@ -1,8 +1,7 @@
 package handlers
 
 import (
-	"github.com/gdyunin/metricol.git/internal/server/metrics"
-	"github.com/gdyunin/metricol.git/internal/server/metrics/builder"
+	"github.com/gdyunin/metricol.git/internal/metrics"
 	"github.com/gdyunin/metricol.git/internal/server/storage"
 	"github.com/go-chi/chi/v5"
 	"net/http"
@@ -19,26 +18,16 @@ func MetricPostHandler(repository storage.Repository) http.HandlerFunc {
 		metricValue := chi.URLParam(r, "metricValue")
 
 		// Create metric
-		metric, err := builder.NewMetric(metrics.MetricType(metricType))
+		metric, err := metrics.NewFromStrings(metricName, metricValue, metricType)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		// Fill metric
-		if err := metric.SetName(metricName); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-		if err := metric.SetValue(metricValue); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
 		// Push metric to storage
 		err = repository.PushMetric(metric)
 		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}

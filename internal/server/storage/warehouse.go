@@ -3,75 +3,68 @@ package storage
 import (
 	"errors"
 	"fmt"
-	"github.com/gdyunin/metricol.git/internal/server/metrics"
+	"github.com/gdyunin/metricol.git/internal/metrics"
 	"strconv"
 )
 
 type Warehouse struct {
-	metrics map[metrics.MetricType]map[string]string
+	counters map[string]int64
+	gauges   map[string]float64
 }
 
 func NewWarehouse() *Warehouse {
-	w := &Warehouse{}
-	w.init()
-	return w
-}
-
-func (w *Warehouse) Metrics() map[metrics.MetricType]map[string]string {
-	return w.metrics
+	return &Warehouse{
+		counters: make(map[string]int64),
+		gauges:   make(map[string]float64),
+	}
 }
 
 func (w *Warehouse) PushMetric(metric metrics.Metric) error {
-	mName := metric.Name()
-	mValue := metric.Value()
-	mType := metric.Type()
-
-	switch mType {
-	case metrics.MetricTypeGauge:
-		return w.pushGauge(mName, mValue)
-	case metrics.MetricTypeCounter:
-		return w.pushCounter(mName, mValue)
+	switch m := metric.(type) {
+	case *metrics.Counter:
+		w.counters[m.Name()] += m.Value()
+	case *metrics.Gauge:
+		w.gauges[m.Name()] = m.Value()
 	default:
 		return errors.New(ErrorUnknownMetricType)
 	}
-}
-
-func (w *Warehouse) init() {
-	initMetrics := func() map[metrics.MetricType]map[string]string { return make(map[metrics.MetricType]map[string]string) }
-	initMetricType := func() map[string]string { return make(map[string]string) }
-
-	w.metrics = initMetrics()
-	w.metrics[metrics.MetricTypeGauge] = initMetricType()
-	w.metrics[metrics.MetricTypeCounter] = initMetricType()
-}
-
-func (w *Warehouse) pushGauge(name string, value string) error {
-	metricType := metrics.MetricTypeGauge
-
-	v, err := strconv.ParseFloat(value, 64)
-	if err != nil {
-		return err
-	}
-
-	w.metrics[metricType][name] = fmt.Sprintf("%g", v)
 	return nil
 }
 
-func (w *Warehouse) pushCounter(name string, value string) error {
-	metricType := metrics.MetricTypeCounter
-
-	v, err := strconv.ParseInt(value, 10, 64)
-	if err != nil {
-		return err
+func (w *Warehouse) GetMetric(name, metricType string) (string, error) {
+	var value string
+	switch metricType {
+	case metrics.MetricTypeCounter:
+		v, ok := w.counters[name]
+		if !ok {
+			return "", errors.New(ErrorUnknownMetricName)
+		}
+		value = strconv.FormatInt(v, 10)
+	case metrics.MetricTypeGauge:
+		v, ok := w.gauges[name]
+		if !ok {
+			return "", errors.New(ErrorUnknownMetricName)
+		}
+		value = fmt.Sprintf("%g", v)
+	default:
+		return "", errors.New(ErrorUnknownMetricType)
 	}
 
-	curValue, ok := w.metrics[metricType][name]
-	if !ok {
-		w.metrics[metricType][name] = value
-		return nil
-	}
-	cv, _ := strconv.ParseInt(curValue, 10, 64)
+	return value, nil
+}
 
-	w.metrics[metricType][name] = strconv.FormatInt(cv+v, 10)
-	return nil
+func (w *Warehouse) Metrics() map[string]map[string]string {
+	allMetricsMap := make(map[string]map[string]string)
+
+	allMetricsMap[metrics.MetricTypeCounter] = make(map[string]string)
+	for name, value := range w.counters {
+		allMetricsMap[metrics.MetricTypeCounter][name] = strconv.FormatInt(value, 10)
+	}
+
+	allMetricsMap[metrics.MetricTypeGauge] = make(map[string]string)
+	for name, value := range w.gauges {
+		allMetricsMap[metrics.MetricTypeGauge][name] = fmt.Sprintf("%g", value)
+	}
+
+	return allMetricsMap
 }

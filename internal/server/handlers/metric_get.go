@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"github.com/gdyunin/metricol.git/internal/server/metrics"
+	"github.com/gdyunin/metricol.git/internal/metrics"
 	"github.com/gdyunin/metricol.git/internal/server/storage"
 	"github.com/go-chi/chi/v5"
 	"net/http"
@@ -17,10 +17,16 @@ func MetricGetHandler(repository storage.Repository) http.HandlerFunc {
 		metricName := chi.URLParam(r, "metricName")
 
 		// Get metric
-		metricValue, ok := repository.Metrics()[metrics.MetricType(metricType)][metricName]
-		if !ok {
-			w.WriteHeader(http.StatusNotFound)
-			return
+		metricValue, err := repository.GetMetric(metricName, metricType)
+		if err != nil {
+			switch err.Error() {
+			case metrics.ErrorUnknownMetricType:
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			case storage.ErrorUnknownMetricName:
+				http.Error(w, err.Error(), http.StatusNotFound)
+				return
+			}
 		}
 
 		// The error is ignored as it has no effect

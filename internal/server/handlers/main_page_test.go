@@ -2,8 +2,7 @@ package handlers
 
 import (
 	"fmt"
-	"github.com/gdyunin/metricol.git/internal/server/metrics"
-	"github.com/gdyunin/metricol.git/internal/server/metrics/builder"
+	"github.com/gdyunin/metricol.git/internal/metrics"
 	"github.com/gdyunin/metricol.git/internal/server/storage"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/require"
@@ -32,13 +31,9 @@ func TestMainPageHandler(t *testing.T) {
 			method: http.MethodGet,
 			repository: func() storage.Repository {
 				w := storage.NewWarehouse()
-
 				// Add single metric
-				m, _ := builder.NewMetric(metrics.MetricTypeCounter)
-				_ = m.SetName("test counter")
-				_ = m.SetValue("42")
+				m, _ := metrics.NewFromStrings("test_counter", "42", metrics.MetricTypeCounter)
 				_ = w.PushMetric(m)
-
 				return w
 			}(),
 			expectedCode: http.StatusOK,
@@ -48,13 +43,9 @@ func TestMainPageHandler(t *testing.T) {
 			method: http.MethodGet,
 			repository: func() storage.Repository {
 				w := storage.NewWarehouse()
-
 				// Add single metric
-				m, _ := builder.NewMetric(metrics.MetricTypeGauge)
-				_ = m.SetName("test gauge")
-				_ = m.SetValue("42.4242")
+				m, _ := metrics.NewFromStrings("test_gauge", "42.4242", metrics.MetricTypeGauge)
 				_ = w.PushMetric(m)
-
 				return w
 			}(),
 			expectedCode: http.StatusOK,
@@ -64,26 +55,21 @@ func TestMainPageHandler(t *testing.T) {
 			method: http.MethodGet,
 			repository: func() storage.Repository {
 				w := storage.NewWarehouse()
-
 				// Add several metrics
 				metricsList := []struct {
 					name  string
 					value string
-					mType metrics.MetricType
+					mType string
 				}{
 					{"test_gauge0", "42.0", metrics.MetricTypeGauge},
 					{"test_gauge43", "42.431", metrics.MetricTypeGauge},
 					{"test_gauge542", "42.43641", metrics.MetricTypeGauge},
 					{"test_counter4242", "4242", metrics.MetricTypeCounter},
 				}
-
 				for _, mData := range metricsList {
-					m, _ := builder.NewMetric(mData.mType)
-					_ = m.SetName(mData.name)
-					_ = m.SetValue(mData.value)
+					m, _ := metrics.NewFromStrings(mData.name, mData.value, mData.mType)
 					_ = w.PushMetric(m)
 				}
-
 				return w
 			}(),
 			expectedCode: http.StatusOK,

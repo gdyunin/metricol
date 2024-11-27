@@ -1,8 +1,7 @@
 package handlers
 
 import (
-	"github.com/gdyunin/metricol.git/internal/server/metrics"
-	"github.com/gdyunin/metricol.git/internal/server/metrics/builder"
+	"github.com/gdyunin/metricol.git/internal/metrics"
 	"github.com/gdyunin/metricol.git/internal/server/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-resty/resty/v2"
@@ -17,7 +16,7 @@ import (
 func TestMetricPostHandler(t *testing.T) {
 	expectedContentType := "text/plain; charset=utf-8"
 	type metric struct {
-		metricType  metrics.MetricType
+		metricType  string
 		metricName  string
 		metricValue string
 	}
@@ -39,10 +38,7 @@ func TestMetricPostHandler(t *testing.T) {
 			expectedCode: http.StatusOK,
 			wantRepository: func() storage.Repository {
 				w := storage.NewWarehouse()
-				m, _ := builder.NewMetric(metrics.MetricTypeGauge)
-				_ = m.SetName("test_gauge")
-				_ = m.SetValue("4.2")
-				_ = w.PushMetric(m)
+				_ = w.PushMetric(metrics.NewGauge("test_gauge", 4.2))
 				return w
 			}(),
 		},
@@ -68,10 +64,7 @@ func TestMetricPostHandler(t *testing.T) {
 			expectedCode: http.StatusOK,
 			wantRepository: func() storage.Repository {
 				w := storage.NewWarehouse()
-				m, _ := builder.NewMetric(metrics.MetricTypeCounter)
-				_ = m.SetName("test_counter")
-				_ = m.SetValue("42")
-				_ = w.PushMetric(m)
+				_ = w.PushMetric(metrics.NewCounter("test_counter", 42))
 				return w
 			}(),
 		},

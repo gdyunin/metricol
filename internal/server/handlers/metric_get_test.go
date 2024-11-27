@@ -1,8 +1,7 @@
 package handlers
 
 import (
-	"github.com/gdyunin/metricol.git/internal/server/metrics"
-	"github.com/gdyunin/metricol.git/internal/server/metrics/builder"
+	"github.com/gdyunin/metricol.git/internal/metrics"
 	"github.com/gdyunin/metricol.git/internal/server/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-resty/resty/v2"
@@ -22,7 +21,7 @@ func TestMetricGetHandler(t *testing.T) {
 	metricsList := []struct {
 		name  string
 		value string
-		mType metrics.MetricType
+		mType string
 	}{
 		{"test_gauge0", "42.0", metrics.MetricTypeGauge},
 		{"test_gauge43", "42.431", metrics.MetricTypeGauge},
@@ -30,9 +29,7 @@ func TestMetricGetHandler(t *testing.T) {
 		{"test_counter4242", "4242", metrics.MetricTypeCounter},
 	}
 	for _, mData := range metricsList {
-		m, _ := builder.NewMetric(mData.mType)
-		_ = m.SetName(mData.name)
-		_ = m.SetValue(mData.value)
+		m, _ := metrics.NewFromStrings(mData.name, mData.value, mData.mType)
 		_ = testRepository.PushMetric(m)
 	}
 
