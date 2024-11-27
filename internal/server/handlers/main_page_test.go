@@ -24,14 +24,14 @@ func TestMainPageHandler(t *testing.T) {
 		{
 			name:         "empty repo",
 			method:       http.MethodGet,
-			repository:   storage.NewWarehouse(),
+			repository:   storage.NewStore(),
 			expectedCode: http.StatusOK,
 		},
 		{
 			name:   "single counter metric in repo",
 			method: http.MethodGet,
 			repository: func() storage.Repository {
-				w := storage.NewWarehouse()
+				w := storage.NewStore()
 				// Add single metric
 				m, _ := metrics.NewFromStrings("test_counter", "42", metrics.MetricTypeCounter)
 				_ = w.PushMetric(m)
@@ -43,7 +43,7 @@ func TestMainPageHandler(t *testing.T) {
 			name:   "single gauge metric in repo",
 			method: http.MethodGet,
 			repository: func() storage.Repository {
-				w := storage.NewWarehouse()
+				w := storage.NewStore()
 				// Add single metric
 				m, _ := metrics.NewFromStrings("test_gauge", "42.4242", metrics.MetricTypeGauge)
 				_ = w.PushMetric(m)
@@ -55,7 +55,7 @@ func TestMainPageHandler(t *testing.T) {
 			name:   "multi metric in repo",
 			method: http.MethodGet,
 			repository: func() storage.Repository {
-				w := storage.NewWarehouse()
+				w := storage.NewStore()
 				// Add several metrics
 				metricsList := []struct {
 					name  string

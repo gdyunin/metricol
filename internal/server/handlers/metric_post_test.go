@@ -30,7 +30,7 @@ func TestMetricPostHandler(t *testing.T) {
 	}{
 		{
 			name:       "add valid gauge",
-			repository: storage.NewWarehouse(),
+			repository: storage.NewStore(),
 			metric: metric{
 				metricType:  metrics.MetricTypeGauge,
 				metricName:  "test_gauge",
@@ -38,14 +38,14 @@ func TestMetricPostHandler(t *testing.T) {
 			},
 			expectedCode: http.StatusOK,
 			wantRepository: func() storage.Repository {
-				w := storage.NewWarehouse()
+				w := storage.NewStore()
 				_ = w.PushMetric(metrics.NewGauge("test_gauge", 4.2))
 				return w
 			}(),
 		},
 		{
 			name:       "add invalid gauge",
-			repository: storage.NewWarehouse(),
+			repository: storage.NewStore(),
 			metric: metric{
 				metricType:  metrics.MetricTypeGauge,
 				metricName:  "test_counter",
@@ -56,7 +56,7 @@ func TestMetricPostHandler(t *testing.T) {
 		},
 		{
 			name:       "add valid counter",
-			repository: storage.NewWarehouse(),
+			repository: storage.NewStore(),
 			metric: metric{
 				metricType:  metrics.MetricTypeCounter,
 				metricName:  "test_counter",
@@ -64,14 +64,14 @@ func TestMetricPostHandler(t *testing.T) {
 			},
 			expectedCode: http.StatusOK,
 			wantRepository: func() storage.Repository {
-				w := storage.NewWarehouse()
+				w := storage.NewStore()
 				_ = w.PushMetric(metrics.NewCounter("test_counter", 42))
 				return w
 			}(),
 		},
 		{
 			name:       "add invalid counter",
-			repository: storage.NewWarehouse(),
+			repository: storage.NewStore(),
 			metric: metric{
 				metricType:  metrics.MetricTypeCounter,
 				metricName:  "test_counter",
@@ -82,7 +82,7 @@ func TestMetricPostHandler(t *testing.T) {
 		},
 		{
 			name:       "add empty metric name metric",
-			repository: storage.NewWarehouse(),
+			repository: storage.NewStore(),
 			metric: metric{
 				metricType:  metrics.MetricTypeCounter,
 				metricName:  "",

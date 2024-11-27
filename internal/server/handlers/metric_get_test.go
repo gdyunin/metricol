@@ -16,7 +16,7 @@ import (
 
 func TestMetricGetHandler(t *testing.T) {
 	// Init test repo
-	testRepository := storage.NewWarehouse()
+	testRepository := storage.NewStore()
 
 	// Add several metrics
 	metricsList := []struct {

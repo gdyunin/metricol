@@ -11,11 +11,11 @@ import (
 func TestNewWarehouse(t *testing.T) {
 	tests := []struct {
 		name string
-		want *Warehouse
+		want *Store
 	}{
 		{
 			"simple create warehouse",
-			&Warehouse{
+			&Store{
 				counters: make(map[string]int64),
 				gauges:   make(map[string]float64),
 			},
@@ -23,7 +23,7 @@ func TestNewWarehouse(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.want, NewWarehouse())
+			require.Equal(t, tt.want, NewStore())
 		})
 	}
 }
@@ -31,7 +31,7 @@ func TestNewWarehouse(t *testing.T) {
 func TestWarehouse_GetMetric(t *testing.T) {
 	tests := []struct {
 		name       string
-		warehouse  *Warehouse
+		warehouse  *Store
 		nameMetric string
 		metricType string
 		want       string
@@ -39,8 +39,8 @@ func TestWarehouse_GetMetric(t *testing.T) {
 	}{
 		{
 			name: "get existing counter",
-			warehouse: func() *Warehouse {
-				w := NewWarehouse()
+			warehouse: func() *Store {
+				w := NewStore()
 				_ = w.PushMetric(metrics.NewCounter("test_counter", 10))
 				return w
 			}(),
@@ -51,8 +51,8 @@ func TestWarehouse_GetMetric(t *testing.T) {
 		},
 		{
 			name: "get existing gauge",
-			warehouse: func() *Warehouse {
-				w := NewWarehouse()
+			warehouse: func() *Store {
+				w := NewStore()
 				_ = w.PushMetric(metrics.NewGauge("test_gauge", 3.14))
 				return w
 			}(),
@@ -63,7 +63,7 @@ func TestWarehouse_GetMetric(t *testing.T) {
 		},
 		{
 			name:       "get unknown metric name",
-			warehouse:  NewWarehouse(),
+			warehouse:  NewStore(),
 			nameMetric: "unknown_metric",
 			metricType: metrics.MetricTypeCounter,
 			want:       "",
@@ -71,8 +71,8 @@ func TestWarehouse_GetMetric(t *testing.T) {
 		},
 		{
 			name: "get metric with unknown type",
-			warehouse: func() *Warehouse {
-				w := NewWarehouse()
+			warehouse: func() *Store {
+				w := NewStore()
 				_ = w.PushMetric(metrics.NewCounter("test_counter", 10))
 				return w
 			}(),
@@ -98,12 +98,12 @@ func TestWarehouse_GetMetric(t *testing.T) {
 func TestWarehouse_Metrics(t *testing.T) {
 	tests := []struct {
 		name      string
-		warehouse *Warehouse
+		warehouse *Store
 		want      map[string]map[string]string
 	}{
 		{
 			name:      "empty warehouse",
-			warehouse: NewWarehouse(),
+			warehouse: NewStore(),
 			want: map[string]map[string]string{
 				metrics.MetricTypeCounter: {},
 				metrics.MetricTypeGauge:   {},
@@ -111,8 +111,8 @@ func TestWarehouse_Metrics(t *testing.T) {
 		},
 		{
 			name: "only counters in warehouse",
-			warehouse: func() *Warehouse {
-				w := NewWarehouse()
+			warehouse: func() *Store {
+				w := NewStore()
 				_ = w.PushMetric(metrics.NewCounter("counter1", 10))
 				_ = w.PushMetric(metrics.NewCounter("counter2", 20))
 				return w
@@ -127,8 +127,8 @@ func TestWarehouse_Metrics(t *testing.T) {
 		},
 		{
 			name: "only gauges in warehouse",
-			warehouse: func() *Warehouse {
-				w := NewWarehouse()
+			warehouse: func() *Store {
+				w := NewStore()
 				_ = w.PushMetric(metrics.NewGauge("gauge1", 3.14))
 				_ = w.PushMetric(metrics.NewGauge("gauge2", 42.42))
 				return w
@@ -143,8 +143,8 @@ func TestWarehouse_Metrics(t *testing.T) {
 		},
 		{
 			name: "mixed metrics in warehouse",
-			warehouse: func() *Warehouse {
-				w := NewWarehouse()
+			warehouse: func() *Store {
+				w := NewStore()
 				_ = w.PushMetric(metrics.NewCounter("counter1", 10))
 				_ = w.PushMetric(metrics.NewGauge("gauge1", 3.14))
 				_ = w.PushMetric(metrics.NewCounter("counter2", 20))
@@ -173,14 +173,14 @@ func TestWarehouse_Metrics(t *testing.T) {
 func TestWarehouse_PushMetric(t *testing.T) {
 	tests := []struct {
 		name       string
-		warehouse  *Warehouse
+		warehouse  *Store
 		pushMetric metrics.Metric
 		wantMetric metrics.Metric
 		wantErr    error
 	}{
 		{
 			"push new gauge",
-			NewWarehouse(),
+			NewStore(),
 			func() metrics.Metric {
 				m, _ := metrics.NewFromStrings("test_gauge0", "42.0", metrics.MetricTypeGauge)
 				return m
@@ -193,8 +193,8 @@ func TestWarehouse_PushMetric(t *testing.T) {
 		},
 		{
 			"push repeat gauge",
-			func() *Warehouse {
-				w := NewWarehouse()
+			func() *Store {
+				w := NewStore()
 				m, _ := metrics.NewFromStrings("test", "42.0", metrics.MetricTypeGauge)
 				_ = w.PushMetric(m)
 				return w
@@ -211,7 +211,7 @@ func TestWarehouse_PushMetric(t *testing.T) {
 		},
 		{
 			"push new counter",
-			NewWarehouse(),
+			NewStore(),
 			func() metrics.Metric {
 				m, _ := metrics.NewFromStrings("test_counter", "42", metrics.MetricTypeCounter)
 				return m
@@ -224,8 +224,8 @@ func TestWarehouse_PushMetric(t *testing.T) {
 		},
 		{
 			"push repeat counter",
-			func() *Warehouse {
-				w := NewWarehouse()
+			func() *Store {
+				w := NewStore()
 				m, _ := metrics.NewFromStrings("test_counter", "42", metrics.MetricTypeCounter)
 				_ = w.PushMetric(m)
 				return w
@@ -242,7 +242,7 @@ func TestWarehouse_PushMetric(t *testing.T) {
 		},
 		{
 			"push unknown metric",
-			NewWarehouse(),
+			NewStore(),
 			func() metrics.Metric {
 				m, _ := metrics.NewFromStrings("test_counter", "84", "some_unknown_metric_type")
 				return m

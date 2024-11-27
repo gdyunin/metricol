@@ -14,7 +14,7 @@ func main() {
 	appCfg := appConfig()
 
 	// Create structures.
-	warehouse := storage.NewWarehouse()
+	warehouse := storage.NewStore()
 	router := chi.NewRouter()
 
 	// Setup GET methods.
