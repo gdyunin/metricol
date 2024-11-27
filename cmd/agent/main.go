@@ -1,12 +1,13 @@
 package main
 
 import (
-	"github.com/gdyunin/metricol.git/internal/agent/fetch"
-	"github.com/gdyunin/metricol.git/internal/agent/send"
-	"github.com/gdyunin/metricol.git/internal/metrics"
 	"math/rand"
 	"runtime"
 	"time"
+
+	"github.com/gdyunin/metricol.git/internal/agent/fetch"
+	"github.com/gdyunin/metricol.git/internal/agent/send"
+	"github.com/gdyunin/metricol.git/internal/metrics"
 )
 
 func main() {
@@ -98,9 +99,7 @@ func main() {
 		metrics.NewGauge("TotalAlloc", 0).SetFetcherAndReturn(func() float64 {
 			return float64(ms.TotalAlloc)
 		}),
-		metrics.NewGauge("RandomValue", 0).SetFetcherAndReturn(func() float64 {
-			return rand.Float64()
-		}),
+		metrics.NewGauge("RandomValue", 0).SetFetcherAndReturn(rand.Float64),
 		metrics.NewCounter("PollCount", 0).SetFetcherAndReturn(func() int64 {
 			return 1
 		}),

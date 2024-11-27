@@ -23,7 +23,4 @@ vendor/
 # IDEs directories
 .idea
 .vscode
-
-# Linters
-golangci-lint/
-.golangci.yml
+/golangci-lint/

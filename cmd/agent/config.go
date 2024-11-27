@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+
 	"github.com/caarlos0/env/v6"
 )
 
@@ -13,9 +14,9 @@ const (
 )
 
 type config struct {
+	ServerAddress  string `env:"ADDRESS"`
 	PollInterval   int    `env:"POLL_INTERVAL"`
 	ReportInterval int    `env:"REPORT_INTERVAL"`
-	ServerAddress  string `env:"ADDRESS"`
 }
 
 func appConfig() config {
