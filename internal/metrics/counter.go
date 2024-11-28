@@ -36,7 +36,7 @@ func (c *Counter) Update() error {
 	if c.fetcher == nil {
 		return errors.New(ErrorFetcherNotSet)
 	}
-	c.value = c.fetcher()
+	c.value += c.fetcher()
 	return nil
 }
 
