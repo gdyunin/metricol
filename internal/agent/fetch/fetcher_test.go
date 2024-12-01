@@ -1,146 +1,170 @@
 package fetch
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/gdyunin/metricol.git/internal/metrics"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+// TestMetricsFetcher_AddMetrics tests the AddMetrics method of the MetricsFetcher.
 func TestMetricsFetcher_AddMetrics(t *testing.T) {
 	tests := []struct {
-		name       string
-		newMetrics []metrics.Metric
+		name     string           // Name of the test case
+		initial  []metrics.Metric // Initial metrics in the fetcher
+		toAdd    []metrics.Metric // Metrics to be added
+		expected int              // Expected number of metrics after addition
 	}{
 		{
-			"simple add metrics",
-			[]metrics.Metric{
-				metrics.NewCounter("counter1", 0),
-				metrics.NewGauge("gauge1", 0.0),
+			name:    "Add single metric to empty fetcher",
+			initial: []metrics.Metric{},
+			toAdd: []metrics.Metric{
+				metrics.NewCounter("test_counter", 42),
 			},
+			expected: 1,
+		},
+		{
+			name: "Add multiple metrics to existing fetcher",
+			initial: []metrics.Metric{
+				metrics.NewCounter("test_counter", 4242),
+			},
+			toAdd: []metrics.Metric{
+				metrics.NewCounter("test_counter", 42),
+				metrics.NewGauge("test_gauge", 3.14),
+			},
+			expected: 3,
+		},
+		{
+			name: "Add no metrics",
+			initial: []metrics.Metric{
+				metrics.NewCounter("test_counter", 4242),
+			},
+			toAdd:    []metrics.Metric{},
+			expected: 1,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fetcher := NewMetricsFetcher()
-			fetcher.AddMetrics(tt.newMetrics...)
-
-			require.Len(t, fetcher.metrics, len(tt.newMetrics))
-			require.Equal(t, "counter1", fetcher.metrics[0].Name())
-			require.Equal(t, "gauge1", fetcher.metrics[1].Name())
+			fetcher := &MetricsFetcher{
+				metrics: tt.initial,
+			}
+			fetcher.AddMetrics(tt.toAdd...)
+			require.Equal(t, tt.expected, len(fetcher.metrics))
 		})
 	}
 }
 
-func TestMetricsFetcher_Fetch(t *testing.T) {
+// TestMetricsFetcher_Metrics tests the Metrics method of the MetricsFetcher.
+func TestMetricsFetcher_Metrics(t *testing.T) {
 	tests := []struct {
-		name        string
-		testMetrics []metrics.Metric
-		wantMetrics []metrics.Metric
+		name     string           // Name of the test case
+		initial  []metrics.Metric // Initial metrics in the fetcher
+		expected []metrics.Metric // Expected metrics to be retrieved
 	}{
 		{
-			"with one metric",
-			[]metrics.Metric{
-				metrics.NewCounter("test_counter", 0).SetFetcherAndReturn(func() int64 {
-					return 42
-				}),
-			},
-			[]metrics.Metric{
-				metrics.NewCounter("test_counter", 42).SetFetcherAndReturn(func() int64 {
-					return 42
-				}),
-			},
+			name:     "Retrieve metrics from empty fetcher",
+			initial:  []metrics.Metric{},
+			expected: []metrics.Metric{},
 		},
 		{
-			"with many metrics",
-			[]metrics.Metric{
-				metrics.NewCounter("test_counter", 0).SetFetcherAndReturn(func() int64 {
-					return 42
-				}),
-				metrics.NewGauge("test_gauge", 0).SetFetcherAndReturn(func() float64 {
-					return 3.14
-				}),
+			name: "Retrieve multiple metrics",
+			initial: []metrics.Metric{
+				metrics.NewCounter("test_counter", 42),
+				metrics.NewGauge("test_gauge", 3.14),
 			},
-			[]metrics.Metric{
+			expected: []metrics.Metric{
 				metrics.NewCounter("test_counter", 42),
 				metrics.NewGauge("test_gauge", 3.14),
 			},
 		},
-		{
-			"without fetcher",
-			[]metrics.Metric{
-				metrics.NewCounter("test_counter", 15),
-			},
-			[]metrics.Metric{
-				metrics.NewCounter("test_counter", 15),
-			},
-		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fetcher := NewMetricsFetcher()
-			fetcher.AddMetrics(tt.testMetrics...)
-			fetcher.Fetch()
-
-			var testValues []string
-			for _, tm := range fetcher.metrics {
-				testValues = append(testValues, tm.StringValue())
+			fetcher := &MetricsFetcher{
+				metrics: tt.initial,
 			}
-
-			var wantValues []string
-			for _, wm := range tt.wantMetrics {
-				wantValues = append(wantValues, wm.StringValue())
-			}
-
-			require.Equal(t, wantValues, testValues)
+			result := fetcher.Metrics()
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
 
-func TestNewMetricsFetcher(t *testing.T) {
+// TestMetricsFetcher_Fetch tests the Fetch method of the MetricsFetcher.
+func TestMetricsFetcher_Fetch(t *testing.T) {
 	tests := []struct {
-		name string
-		want *MetricsFetcher
-	}{
-		{"simple MetricsFetcher init", &MetricsFetcher{metrics: []metrics.Metric{}}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.want, NewMetricsFetcher())
-		})
-	}
-}
-
-func TestMetricsFetcher_Metrics(t *testing.T) {
-	tests := []struct {
-		name        string
-		newMetrics  []metrics.Metric
-		wantMetrics []metrics.Metric
+		name          string           // Name of the test case
+		initial       []metrics.Metric // Initial metrics in the fetcher
+		updateErrors  []error          // Errors expected during metric updates (not used in this test)
+		expectedError error            // Expected error after fetching metrics
 	}{
 		{
-			"simple test metrics",
-			[]metrics.Metric{
-				metrics.NewCounter("counter1", 0),
-				metrics.NewGauge("gauge1", 0.0),
+			name:          "No metrics",
+			initial:       []metrics.Metric{},
+			expectedError: nil,
+		},
+		{
+			name: "All metrics update successful",
+			initial: []metrics.Metric{
+				metrics.NewCounter("test_counter", 42).SetFetcherAndReturn(func() int64 {
+					return 42
+				}),
+				metrics.NewGauge("test_gauge", 3.14).SetFetcherAndReturn(func() float64 {
+					return 3.14
+				}),
 			},
-			[]metrics.Metric{
-				metrics.NewCounter("counter1", 0),
-				metrics.NewGauge("gauge1", 0.0),
+			expectedError: nil,
+		},
+		{
+			name: "One metric update fail",
+			initial: []metrics.Metric{
+				metrics.NewCounter("test_counter", 42).SetFetcherAndReturn(func() int64 {
+					return 42
+				}),
+				metrics.NewGauge("test_gauge", 3.14), // This gauge does not have a fetcher set
 			},
+			expectedError: fmt.Errorf(
+				"one or more metrics were not fetch: metric %v update fail: error updating metric test_gauge: fetcher not set\n",
+				metrics.NewGauge("test_gauge", 3.14),
+			),
+		},
+		{
+			name: "Several metrics update fail",
+			initial: []metrics.Metric{
+				metrics.NewCounter("test_counter", 42), // This counter does not have a fetcher set
+				metrics.NewCounter("test_counter2", 42).SetFetcherAndReturn(func() int64 {
+					return 42
+				}),
+				metrics.NewGauge("test_gauge", 3.14), // This gauge does not have a fetcher set
+			},
+			expectedError: fmt.Errorf(
+				"one or more metrics were not fetch: "+
+					"metric %v update fail: error updating metric test_counter: fetcher not set\n"+
+					"metric %v update fail: error updating metric test_gauge: fetcher not set\n",
+				metrics.NewCounter("test_counter", 42),
+				metrics.NewGauge("test_gauge", 3.14),
+			),
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			fetcher := NewMetricsFetcher()
-			fetcher.AddMetrics(tt.newMetrics...)
-
-			testMetrics := fetcher.Metrics()
-
-			require.Len(t, testMetrics, len(tt.newMetrics))
-
-			for i, m := range tt.wantMetrics {
-				require.Equal(t, m.Name(), testMetrics[i].Name())
+			fetcher := &MetricsFetcher{
+				metrics: tt.initial,
 			}
+
+			err := fetcher.Fetch()
+
+			if err != nil {
+				require.Error(t, tt.expectedError)
+				require.EqualError(t, err, tt.expectedError.Error())
+				return
+			}
+
+			require.NoError(t, tt.expectedError) // Ensure no error is expected if err is nil
 		})
 	}
 }

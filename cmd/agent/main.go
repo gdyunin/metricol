@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"math/rand"
 	"runtime"
 	"time"
@@ -12,34 +13,38 @@ import (
 )
 
 func main() {
-	// Get AgentConfig.
-	appCfg := agent.ParseAgentConfig()
+	// Get application configuration.
+	appCfg := agent.ParseConfig()
 
-	// Fetcher collects and stores metrics.
+	// Create a new metrics fetcher to collect and store metrics.
 	fetcher := fetch.NewMetricsFetcher()
 	ms := &runtime.MemStats{}
 	setupFetcher(fetcher, ms)
 
-	// Sender push metrics to server
+	// Create a new metrics sender to push metrics to the server.
 	sender := send.NewMetricsSender(fetcher, appCfg.ServerAddress)
 
-	// Start update and collect metrics with the poll interval.
+	// Periodically collect metrics based on the polling interval in a standalone goroutine.
 	go func() {
 		for {
 			time.Sleep(time.Duration(appCfg.PollInterval) * time.Second)
 			runtime.ReadMemStats(ms)
-			fetcher.Fetch()
+			if err := fetcher.Fetch(); err != nil {
+				log.Printf("error fetching metric: %s", err)
+			}
 		}
 	}()
 
-	// Start send metrics to server with the report interval.
+	// Periodically send collected metrics to the server based on the reporting interval.
 	for {
 		time.Sleep(time.Duration(appCfg.ReportInterval) * time.Second)
-		sender.Send()
+		if err := sender.Send(); err != nil {
+			log.Printf("error sending metric: %s", err)
+		}
 	}
 }
 
-// setupFetcher add metric to got fetcher with got MemStats
+// setupFetcher initializes the fetcher with metrics based on runtime MemStats.
 func setupFetcher(fetcher fetch.Fetcher, ms *runtime.MemStats) {
 	fetcher.AddMetrics(
 		metrics.NewGauge("Alloc", 0).SetFetcherAndReturn(func() float64 {

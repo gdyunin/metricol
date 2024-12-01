@@ -1,39 +1,11 @@
 package metrics
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
-
-func TestGauge_Name(t *testing.T) {
-	tests := []struct {
-		name     string
-		gauge    *Gauge
-		expected string
-	}{
-		{
-			name: "simple name test",
-			gauge: &Gauge{
-				name: "test_gauge",
-			},
-			expected: "test_gauge",
-		},
-		{
-			name: "empty name",
-			gauge: &Gauge{
-				name: "",
-			},
-			expected: "",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.expected, tt.gauge.Name())
-		})
-	}
-}
 
 func TestGauge_SetFetcher(t *testing.T) {
 	tests := []struct {
@@ -82,8 +54,8 @@ func TestGauge_SetFetcher(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			g := &Gauge{
-				name:  "test_gauge",
-				value: tt.initialValue,
+				Name:  "test_gauge",
+				Value: tt.initialValue,
 			}
 
 			if tt.fetcher != nil {
@@ -91,11 +63,14 @@ func TestGauge_SetFetcher(t *testing.T) {
 			}
 
 			err := g.Update()
+
 			if err != nil {
 				require.True(t, tt.expectError)
-				require.Equal(t, ErrorFetcherNotSet, err.Error())
+				require.EqualError(t, fmt.Errorf("error updating metric %s: fetcher not set", g.Name), err.Error())
+				return
 			}
-			require.Equal(t, tt.expectedValue, g.value)
+			require.Equal(t, tt.expectedValue, g.Value)
+			require.False(t, tt.expectError)
 		})
 	}
 }
@@ -147,8 +122,8 @@ func TestGauge_SetFetcherAndReturn(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			g := &Gauge{
-				name:  "test_gauge",
-				value: tt.initialValue,
+				Name:  "test_gauge",
+				Value: tt.initialValue,
 			}
 
 			if tt.fetcher != nil {
@@ -159,9 +134,11 @@ func TestGauge_SetFetcherAndReturn(t *testing.T) {
 			err := g.Update()
 			if err != nil {
 				require.True(t, tt.expectError)
-				require.Equal(t, ErrorFetcherNotSet, err.Error())
+				require.EqualError(t, fmt.Errorf("error updating metric %s: fetcher not set", g.Name), err.Error())
+				return
 			}
-			require.Equal(t, tt.expectedValue, g.value)
+			require.Equal(t, tt.expectedValue, g.Value)
+			require.False(t, tt.expectError)
 		})
 	}
 }
@@ -175,14 +152,14 @@ func TestGauge_StringValue(t *testing.T) {
 		{
 			name: "test with integer",
 			gauge: &Gauge{
-				value: 42.0,
+				Value: 42.0,
 			},
 			expected: "42",
 		},
 		{
 			name: "test with float",
 			gauge: &Gauge{
-				value: 3.1415,
+				Value: 3.1415,
 			},
 			expected: "3.1415",
 		},
@@ -191,26 +168,6 @@ func TestGauge_StringValue(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			require.Equal(t, tt.expected, tt.gauge.StringValue())
-		})
-	}
-}
-
-func TestGauge_Type(t *testing.T) {
-	tests := []struct {
-		name     string
-		gauge    *Gauge
-		expected string
-	}{
-		{
-			name:     "simple test return type",
-			gauge:    &Gauge{},
-			expected: MetricTypeGauge,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.expected, tt.gauge.Type())
 		})
 	}
 }
@@ -263,8 +220,8 @@ func TestGauge_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			g := &Gauge{
-				name:  "test_gauge",
-				value: tt.initialValue,
+				Name:  "test_gauge",
+				Value: tt.initialValue,
 			}
 
 			if tt.fetcher != nil {
@@ -274,38 +231,11 @@ func TestGauge_Update(t *testing.T) {
 			err := g.Update()
 			if err != nil {
 				require.True(t, tt.expectError)
-				require.Equal(t, ErrorFetcherNotSet, err.Error())
+				require.EqualError(t, fmt.Errorf("error updating metric %s: fetcher not set", g.Name), err.Error())
+				return
 			}
-			require.Equal(t, tt.expectedValue, g.value)
-		})
-	}
-}
-
-func TestGauge_Value(t *testing.T) {
-	tests := []struct {
-		name     string
-		gauge    *Gauge
-		expected float64
-	}{
-		{
-			name: "test with integer",
-			gauge: &Gauge{
-				value: 42.0,
-			},
-			expected: 42.0,
-		},
-		{
-			name: "test with float",
-			gauge: &Gauge{
-				value: 3.1415,
-			},
-			expected: 3.1415,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			require.Equal(t, tt.expected, tt.gauge.Value())
+			require.Equal(t, tt.expectedValue, g.Value)
+			require.False(t, tt.expectError)
 		})
 	}
 }
@@ -346,8 +276,14 @@ func TestNewGaugeFromStrings(t *testing.T) {
 				return
 			}
 			require.NotEmpty(t, gauge)
-			require.Equal(t, tt.inputName, gauge.Name())
-			require.Equal(t, tt.inputValue, gauge.StringValue())
+
+			switch g := gauge.(type) {
+			case *Gauge:
+				require.Equal(t, tt.inputName, g.Name)
+				require.Equal(t, tt.inputValue, g.StringValue())
+			default:
+				require.Fail(t, "Metric isn`t counter!")
+			}
 		})
 	}
 }

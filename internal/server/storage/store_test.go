@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/gdyunin/metricol.git/internal/metrics"
@@ -14,7 +14,7 @@ func TestNewWarehouse(t *testing.T) {
 		want *Store
 	}{
 		{
-			"simple create warehouse",
+			"simple create store",
 			&Store{
 				counters: make(map[string]int64),
 				gauges:   make(map[string]float64),
@@ -31,7 +31,7 @@ func TestNewWarehouse(t *testing.T) {
 func TestWarehouse_GetMetric(t *testing.T) {
 	tests := []struct {
 		name       string
-		warehouse  *Store
+		store      *Store
 		nameMetric string
 		metricType string
 		want       string
@@ -39,7 +39,7 @@ func TestWarehouse_GetMetric(t *testing.T) {
 	}{
 		{
 			name: "get existing counter",
-			warehouse: func() *Store {
+			store: func() *Store {
 				w := NewStore()
 				_ = w.PushMetric(metrics.NewCounter("test_counter", 10))
 				return w
@@ -51,7 +51,7 @@ func TestWarehouse_GetMetric(t *testing.T) {
 		},
 		{
 			name: "get existing gauge",
-			warehouse: func() *Store {
+			store: func() *Store {
 				w := NewStore()
 				_ = w.PushMetric(metrics.NewGauge("test_gauge", 3.14))
 				return w
@@ -63,15 +63,15 @@ func TestWarehouse_GetMetric(t *testing.T) {
 		},
 		{
 			name:       "get unknown metric name",
-			warehouse:  NewStore(),
+			store:      NewStore(),
 			nameMetric: "unknown_metric",
 			metricType: metrics.MetricTypeCounter,
 			want:       "",
-			wantErr:    errors.New(ErrorUnknownMetricName),
+			wantErr:    fmt.Errorf("error get metric %s %s: unknown metric name", "unknown_metric", metrics.MetricTypeCounter),
 		},
 		{
 			name: "get metric with unknown type",
-			warehouse: func() *Store {
+			store: func() *Store {
 				w := NewStore()
 				_ = w.PushMetric(metrics.NewCounter("test_counter", 10))
 				return w
@@ -79,13 +79,13 @@ func TestWarehouse_GetMetric(t *testing.T) {
 			nameMetric: "test_counter",
 			metricType: "unknown_type",
 			want:       "",
-			wantErr:    errors.New(ErrorUnknownMetricType),
+			wantErr:    fmt.Errorf("error get metric %s %s: %w", "test_counter", "unknown_type", ErrUnknownMetricType),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			m, err := tt.warehouse.GetMetric(tt.nameMetric, tt.metricType)
+			m, err := tt.store.GetMetric(tt.nameMetric, tt.metricType)
 			if err != nil {
 				require.EqualError(t, err, tt.wantErr.Error())
 			}
@@ -102,7 +102,7 @@ func TestWarehouse_Metrics(t *testing.T) {
 		want      map[string]map[string]string
 	}{
 		{
-			name:      "empty warehouse",
+			name:      "empty store",
 			warehouse: NewStore(),
 			want: map[string]map[string]string{
 				metrics.MetricTypeCounter: {},
@@ -110,7 +110,7 @@ func TestWarehouse_Metrics(t *testing.T) {
 			},
 		},
 		{
-			name: "only counters in warehouse",
+			name: "only counters in store",
 			warehouse: func() *Store {
 				w := NewStore()
 				_ = w.PushMetric(metrics.NewCounter("counter1", 10))
@@ -126,7 +126,7 @@ func TestWarehouse_Metrics(t *testing.T) {
 			},
 		},
 		{
-			name: "only gauges in warehouse",
+			name: "only gauges in store",
 			warehouse: func() *Store {
 				w := NewStore()
 				_ = w.PushMetric(metrics.NewGauge("gauge1", 3.14))
@@ -142,7 +142,7 @@ func TestWarehouse_Metrics(t *testing.T) {
 			},
 		},
 		{
-			name: "mixed metrics in warehouse",
+			name: "mixed metrics in store",
 			warehouse: func() *Store {
 				w := NewStore()
 				_ = w.PushMetric(metrics.NewCounter("counter1", 10))
@@ -173,7 +173,7 @@ func TestWarehouse_Metrics(t *testing.T) {
 func TestWarehouse_PushMetric(t *testing.T) {
 	tests := []struct {
 		name       string
-		warehouse  *Store
+		store      *Store
 		pushMetric metrics.Metric
 		wantMetric metrics.Metric
 		wantErr    error
@@ -248,20 +248,39 @@ func TestWarehouse_PushMetric(t *testing.T) {
 				return m
 			}(),
 			nil,
-			errors.New(ErrorUnknownMetricType),
+			fmt.Errorf("error push metric %v: %w", func() metrics.Metric {
+				m, _ := metrics.NewFromStrings("test_counter", "84", "some_unknown_metric_type")
+				return m
+			}(), ErrUnknownMetricType),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w := tt.warehouse
+			s := tt.store
 
-			err := w.PushMetric(tt.pushMetric)
+			err := s.PushMetric(tt.pushMetric)
 			if err != nil {
 				require.EqualError(t, err, tt.wantErr.Error())
 				return
 			}
 
-			newValue, err := w.GetMetric(tt.pushMetric.Name(), tt.pushMetric.Type())
+			var (
+				metricName string
+				metricType string
+			)
+
+			switch m := tt.pushMetric.(type) {
+			case *metrics.Counter:
+				metricName = m.Name
+				metricType = metrics.MetricTypeCounter
+			case *metrics.Gauge:
+				metricName = m.Name
+				metricType = metrics.MetricTypeGauge
+			default:
+				require.Fail(t, "Metric isn`t counter or gauge!")
+			}
+
+			newValue, err := s.GetMetric(metricName, metricType)
 			require.NoError(t, err)
 			require.Equal(t, tt.wantMetric.StringValue(), newValue)
 		})

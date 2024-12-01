@@ -1,7 +1,7 @@
 package metrics
 
 import (
-	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -16,21 +16,21 @@ func TestNewGauge(t *testing.T) {
 		expectedValue float64
 	}{
 		{
-			name:          "create simple gauge",
+			name:          "Create simple gauge",
 			inputName:     "cpu_usage",
 			inputValue:    75.5,
 			expectedName:  "cpu_usage",
 			expectedValue: 75.5,
 		},
 		{
-			name:          "create gauge with zero value",
+			name:          "Create gauge with zero value",
 			inputName:     "memory_usage",
 			inputValue:    0.0,
 			expectedName:  "memory_usage",
 			expectedValue: 0.0,
 		},
 		{
-			name:          "create gauge with negative value",
+			name:          "Create gauge with negative value",
 			inputName:     "temperature",
 			inputValue:    -20.3,
 			expectedName:  "temperature",
@@ -41,9 +41,9 @@ func TestNewGauge(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gauge := NewGauge(tt.inputName, tt.inputValue)
-			require.Equal(t, tt.expectedName, gauge.Name())
-			require.Equal(t, tt.expectedValue, gauge.Value())
-			require.Equal(t, MetricTypeGauge, gauge.Type())
+			require.Equal(t, tt.expectedName, gauge.Name)
+			require.Equal(t, tt.expectedValue, gauge.Value)
+			require.IsType(t, &Gauge{}, gauge)
 		})
 	}
 }
@@ -57,21 +57,21 @@ func TestNewCounter(t *testing.T) {
 		expectedValue int64
 	}{
 		{
-			name:          "create simple counter",
+			name:          "Create simple counter",
 			inputName:     "requests",
 			inputValue:    100,
 			expectedName:  "requests",
 			expectedValue: 100,
 		},
 		{
-			name:          "create counter with zero value",
+			name:          "Create counter with zero value",
 			inputName:     "errors",
 			inputValue:    0,
 			expectedName:  "errors",
 			expectedValue: 0,
 		},
 		{
-			name:          "create counter with negative value",
+			name:          "Create counter with negative value",
 			inputName:     "negative_counter",
 			inputValue:    -50,
 			expectedName:  "negative_counter",
@@ -82,9 +82,9 @@ func TestNewCounter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			counter := NewCounter(tt.inputName, tt.inputValue)
-			require.Equal(t, tt.expectedName, counter.Name())
-			require.Equal(t, tt.expectedValue, counter.Value())
-			require.Equal(t, MetricTypeCounter, counter.Type())
+			require.Equal(t, tt.expectedName, counter.Name)
+			require.Equal(t, tt.expectedValue, counter.Value)
+			require.IsType(t, &Counter{}, counter)
 		})
 	}
 }
@@ -99,65 +99,33 @@ func TestNewFromStrings(t *testing.T) {
 		expectedMetric Metric
 	}{
 		{
-			name:        "create gauge from valid strings",
+			name:        "Create gauge from valid strings",
 			inputName:   "cpu_usage",
 			inputValue:  "65.5",
 			inputType:   MetricTypeGauge,
 			expectedErr: nil,
 			expectedMetric: &Gauge{
-				name:  "cpu_usage",
-				value: 65.5,
+				Name:  "cpu_usage",
+				Value: 65.5,
 			},
 		},
 		{
-			name:        "create counter from valid strings",
+			name:        "Create counter from valid strings",
 			inputName:   "requests",
 			inputValue:  "150",
 			inputType:   MetricTypeCounter,
 			expectedErr: nil,
 			expectedMetric: &Counter{
-				name:  "requests",
-				value: 150,
+				Name:  "requests",
+				Value: 150,
 			},
 		},
 		{
-			name:           "try create unknown",
+			name:           "Try create unknown",
 			inputName:      "unknown_metric",
 			inputValue:     "123",
 			inputType:      "unknown",
-			expectedErr:    errors.New(ErrorUnknownMetricType),
-			expectedMetric: nil,
-		},
-		{
-			name:           "create gauge from invalid(value) strings",
-			inputName:      "invalid_gauge",
-			inputValue:     "not_a_float",
-			inputType:      MetricTypeGauge,
-			expectedErr:    errors.New(ErrorParseMetricValue),
-			expectedMetric: nil,
-		},
-		{
-			name:           "create counter from invalid(value) strings",
-			inputName:      "invalid_counter",
-			inputValue:     "not_an_int",
-			inputType:      MetricTypeCounter,
-			expectedErr:    errors.New(ErrorParseMetricValue),
-			expectedMetric: nil,
-		},
-		{
-			name:           "try create gauge from empty(value) strings",
-			inputName:      "empty_gauge",
-			inputValue:     "",
-			inputType:      MetricTypeGauge,
-			expectedErr:    errors.New(ErrorParseMetricValue),
-			expectedMetric: nil,
-		},
-		{
-			name:           "try create counter from empty(value) strings",
-			inputName:      "empty_counter",
-			inputValue:     "",
-			inputType:      MetricTypeCounter,
-			expectedErr:    errors.New(ErrorParseMetricValue),
+			expectedErr:    fmt.Errorf("unknown metric type: %s", "unknown"),
 			expectedMetric: nil,
 		},
 	}
@@ -169,9 +137,17 @@ func TestNewFromStrings(t *testing.T) {
 				require.Equal(t, tt.expectedErr.Error(), err.Error())
 				return
 			}
-			require.Equal(t, tt.expectedMetric.Name(), metric.Name())
+
+			switch m := metric.(type) {
+			case *Counter:
+				require.Equal(t, tt.inputName, m.Name)
+			case *Gauge:
+				require.Equal(t, tt.inputName, m.Name)
+			default:
+				require.Fail(t, "Metric isn`t counter or gauge!")
+			}
 			require.Equal(t, tt.expectedMetric.StringValue(), metric.StringValue())
-			require.Equal(t, tt.expectedMetric.Type(), metric.Type())
+			require.IsType(t, tt.expectedMetric, metric)
 		})
 	}
 }

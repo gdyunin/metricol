@@ -1,8 +1,15 @@
+/*
+Package handlers provides HTTP handler functions for managing metrics.
+
+This package includes handlers for sending error responses,
+displaying metrics, and interacting with a storage repository.
+*/
 package handlers
 
 import (
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -10,87 +17,77 @@ import (
 	"github.com/gdyunin/metricol.git/internal/server/storage"
 )
 
-// Full page template.
-const mainPageTemplate = `<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>Известные метрики</title>
-    <style>
-      body {
-      background: #003366
-      }
-      table {
-      font-family: "Lucida Sans Unicode", "Lucida Grande", Sans-Serif;
-      font-size: 18px;
-      border-collapse: collapse;
-      text-align: center;
-      }
-      th, td:first-child {
-      background: #AFCDE7;
-      padding: 10px 20px;
-      }
-      th, td {
-      border-style: solid;
-      border-width: 0 1px 1px 0;
-      border-color: white;
-      }
-      td {
-      background: #D8E6F3;
-      }
-      th:first-child, td:first-child {
-      text-align: left;
-      }
-    </style>
-  </head>
-  <body>
-    <table>
-      <tr>
-        <th>Метрика</th>
-        <th>Значение</th>
-      </tr>
-      %s <!-- rows with metrics will be here -->
-    </table>
-  </body>
-</html>`
+const mainPageTemplatePath = "web/template/main_page.html"
 
-// Table row template.
-const rowTemplate = "<tr><th>%s</th><th>%s</th></tr>"
+var cachedTemplate *template.Template
 
-// MainPageHandler return a handler that generates a page with known metrics.
+type TableRow struct {
+	Name  string
+	Value string
+}
+
+// MainPageHandler returns an HTTP handler function that generates
+// an HTML page displaying metrics from the provided repository.
 func MainPageHandler(repository storage.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		//var buffer bytes.Buffer
-		type tableRow struct {
-			Name  string
-			Value string
+		metricsTable := fillMetricsTable(repository)
+
+		t, err := parseTemplate(mainPageTemplatePath)
+		if err != nil {
+			log.Printf("failure getting template: %v\n", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
 		}
-		body := []tableRow{}
-
-		// Pull known metrics and fill body.
-		metricsAll := repository.Metrics()
-		for _, metricMap := range metricsAll {
-			for metricName, metricValue := range metricMap {
-				body = append(body, tableRow{
-					Name:  metricName,
-					Value: metricValue,
-				})
-				//buffer.WriteString(fmt.Sprintf(rowTemplate, metricName, metricValue))
-			}
-		}
-		//_ = fmt.Sprintf(mainPageTemplate, buffer.String())
-
-		currentDir, _ := os.Getwd()
-		t, err := template.ParseFiles(filepath.Join(currentDir, "web", "template", "main_page.html"))
-		t.Execute(w, body)
-
-		fmt.Println(t)
-		fmt.Println(err)
-
-		// The error is ignored as it has no effect.
-		// A logger could be added in the future.
-		//_, _ = w.Write([]byte(body))
 
 		w.Header().Set("Content-Type", "text/html")
+
+		if err := t.Execute(w, metricsTable); err != nil {
+			log.Printf("failure executing template: %v\n", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
 	}
+}
+
+// fillMetricsTable constructs a slice of TableRow from the metrics
+// stored in the provided repository.
+func fillMetricsTable(repository storage.Repository) []TableRow {
+	// Initialize a slice of TableRow with an initial length of 0 and a capacity
+	// equal to the number of metrics in the repository. This avoids
+	// multiple allocations as we append elements to the slice later.
+	body := make([]TableRow, 0, repository.MetricsCount())
+
+	metricsAll := repository.Metrics()
+	for _, metricMap := range metricsAll {
+		for metricName, metricValue := range metricMap {
+			body = append(body, TableRow{
+				Name:  metricName,
+				Value: metricValue,
+			})
+		}
+	}
+
+	return body
+}
+
+// parseTemplate parses the main page HTML template and caches it for future use.
+func parseTemplate(path string) (*template.Template, error) {
+	// If the template was previously cached, return the cached version
+	if cachedTemplate != nil {
+		return cachedTemplate, nil
+	}
+
+	currentDir, err := os.Getwd()
+	if err != nil {
+		// This is sad :(
+		// TODO: In the future, if os.Getwd doesn't work, find another way to get the path to the template
+		// to avoid breaking the function at this point.
+		return nil, fmt.Errorf("error getting current working directory: %w", err)
+	}
+	cachedTemplate, err = template.ParseFiles(filepath.Join(currentDir, path))
+	if err != nil {
+		cachedTemplate = nil
+		return nil, fmt.Errorf("error parsing template: %w", err)
+	}
+
+	return cachedTemplate, nil
 }

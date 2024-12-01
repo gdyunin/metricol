@@ -40,7 +40,10 @@ func TestBadRequest(t *testing.T) {
 			// Want status code
 			expectedCode := tt.expectedCode
 			actualCode := resp.StatusCode()
-			require.Equalf(t, expectedCode, actualCode, "expected response code %q, but got %q", tt.expectedCode, actualCode)
+			require.Equalf(
+				t, expectedCode, actualCode,
+				"expected response code %q, but got %q", tt.expectedCode, actualCode,
+			)
 		})
 	}
 }

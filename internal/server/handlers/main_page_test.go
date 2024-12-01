@@ -4,90 +4,89 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"os"
 	"strconv"
 	"testing"
 
 	"github.com/gdyunin/metricol.git/internal/metrics"
 	"github.com/gdyunin/metricol.git/internal/server/storage"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-resty/resty/v2"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+var (
+	emptyRepo        *storage.Store
+	singleMetricRepo *storage.Store
+	multiMetricRepo  *storage.Store
+)
+
+func initTestRepos() {
+	if emptyRepo != nil && singleMetricRepo != nil && multiMetricRepo != nil {
+		return
+	}
+
+	emptyRepo = storage.NewStore()
+
+	singleMetricRepo = storage.NewStore()
+	_ = singleMetricRepo.PushMetric(metrics.NewCounter("test_counter", 42))
+
+	multiMetricRepo = storage.NewStore()
+	_ = multiMetricRepo.PushMetric(metrics.NewCounter("test_counter", 42))
+	_ = multiMetricRepo.PushMetric(metrics.NewCounter("test_counter2", 84))
+	_ = multiMetricRepo.PushMetric(metrics.NewGauge("test_gauge", 3.14))
+}
+
 func TestMainPageHandler(t *testing.T) {
-	expectedContentType := "text/html; charset=utf-8"
+	cwd, _ := os.Getwd()
+	_ = os.Chdir("../../..")
+	defer func() { _ = os.Chdir(cwd) }()
+	initTestRepos()
 	tests := []struct {
-		name         string
-		method       string
-		repository   storage.Repository
-		expectedCode int
+		name                string
+		repository          *storage.Store
+		expectedCode        int
+		expectedContentType string
+		expectedBody        string
 	}{
 		{
-			name:         "empty repo",
-			method:       http.MethodGet,
-			repository:   storage.NewStore(),
-			expectedCode: http.StatusOK,
+			name:                "Single metric",
+			repository:          singleMetricRepo,
+			expectedCode:        http.StatusOK,
+			expectedContentType: "text/html",
+			expectedBody:        "metric1",
 		},
 		{
-			name:   "single counter metric in repo",
-			method: http.MethodGet,
-			repository: func() storage.Repository {
-				w := storage.NewStore()
-				// Add single metric
-				m, _ := metrics.NewFromStrings("test_counter", "42", metrics.MetricTypeCounter)
-				_ = w.PushMetric(m)
-				return w
-			}(),
-			expectedCode: http.StatusOK,
+			name:                "Multiple metrics",
+			repository:          multiMetricRepo,
+			expectedCode:        http.StatusOK,
+			expectedContentType: "text/html",
+			expectedBody:        "metric1",
 		},
 		{
-			name:   "single gauge metric in repo",
-			method: http.MethodGet,
-			repository: func() storage.Repository {
-				w := storage.NewStore()
-				// Add single metric
-				m, _ := metrics.NewFromStrings("test_gauge", "42.4242", metrics.MetricTypeGauge)
-				_ = w.PushMetric(m)
-				return w
-			}(),
-			expectedCode: http.StatusOK,
-		},
-		{
-			name:   "multi metric in repo",
-			method: http.MethodGet,
-			repository: func() storage.Repository {
-				w := storage.NewStore()
-				// Add several metrics
-				metricsList := []struct {
-					name  string
-					value string
-					mType string
-				}{
-					{"test_gauge0", "42.0", metrics.MetricTypeGauge},
-					{"test_gauge43", "42.431", metrics.MetricTypeGauge},
-					{"test_gauge542", "42.43641", metrics.MetricTypeGauge},
-					{"test_counter4242", "4242", metrics.MetricTypeCounter},
-				}
-				for _, mData := range metricsList {
-					m, _ := metrics.NewFromStrings(mData.name, mData.value, mData.mType)
-					_ = w.PushMetric(m)
-				}
-				return w
-			}(),
-			expectedCode: http.StatusOK,
+			name:                "No metrics",
+			repository:          emptyRepo,
+			expectedCode:        http.StatusOK,
+			expectedContentType: "text/html",
+			expectedBody:        "",
 		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.method, func(t *testing.T) {
-			// Run test server
+		t.Run(tt.name, func(t *testing.T) {
+			// Run test server.
 			handler := MainPageHandler(tt.repository)
-			srv := httptest.NewServer(handler)
+			router := chi.NewRouter()
+			router.Get("/", handler)
+			srv := httptest.NewServer(router)
 			defer srv.Close()
 
-			// Send request
+			// Send request.
 			req := resty.New().R()
-			req.Method = tt.method
-			req.URL = srv.URL
+			req.Method = http.MethodGet
+			req.URL, _ = url.JoinPath(srv.URL, "/")
 			resp, err := req.Send()
 
 			// Want no errors
@@ -100,6 +99,7 @@ func TestMainPageHandler(t *testing.T) {
 				strconv.Itoa(expectedCode), strconv.Itoa(actualCode))
 
 			// Want Content-Type
+			expectedContentType := tt.expectedContentType
 			actualContentType := resp.Header().Get("Content-Type")
 			require.Equalf(t, expectedContentType, actualContentType, "expected Content-Type %s, but got %s",
 				expectedContentType, actualContentType)
@@ -109,10 +109,79 @@ func TestMainPageHandler(t *testing.T) {
 			defer func() { _ = resp.RawBody().Close() }()
 			for _, metricType := range tt.repository.Metrics() {
 				for name, value := range metricType {
-					require.Containsf(t, actualBody, fmt.Sprintf(rowTemplate, name, value),
-						"expected metric %s with value %s don`t exist in got body %s", name, value, actualBody)
+					require.Containsf(
+						t,
+						actualBody,
+						fmt.Sprintf(`%s</td><td>%s`, name, value),
+						"expected metric %s with value %s don`t exist in got body %s", name, value, actualBody,
+					)
 				}
 			}
+		})
+	}
+}
+
+func TestFillMetricsTable(t *testing.T) {
+	initTestRepos()
+	tests := []struct {
+		name       string
+		repository *storage.Store
+		expected   []TableRow
+	}{
+		{
+			name:       "Single metric",
+			repository: singleMetricRepo,
+			expected: []TableRow{
+				{Name: "test_counter", Value: "42"},
+			},
+		},
+		{
+			name:       "Multiple metrics",
+			repository: multiMetricRepo,
+			expected: []TableRow{
+				{Name: "test_counter", Value: "42"},
+				{Name: "test_counter2", Value: "84"},
+				{Name: "test_gauge", Value: "3.14"},
+			},
+		},
+		{
+			name:       "No metrics",
+			repository: emptyRepo,
+			expected:   []TableRow{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := fillMetricsTable(tt.repository)
+
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestParseTemplate(t *testing.T) {
+	tests := []struct {
+		name string
+		path string
+	}{
+		{
+			name: "Valid template path",
+			path: "web/template/main_page.html",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cwd, _ := os.Getwd()
+			_ = os.Chdir("../../..")
+			defer func() { _ = os.Chdir(cwd) }()
+
+			template, err := parseTemplate(tt.path)
+			require.Nil(t, err)
+			require.NotNil(t, template)
+
+			cachedTemplate = nil // Reset cache
 		})
 	}
 }
