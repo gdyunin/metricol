@@ -4,22 +4,32 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gdyunin/metricol.git/internal/config/server"
 	"github.com/gdyunin/metricol.git/internal/server/handlers"
 	"github.com/gdyunin/metricol.git/internal/server/storage"
 	"github.com/go-chi/chi/v5"
 )
 
 func main() {
-	// Get config.
-	appCfg := appConfig()
+	// Get ServerConfig.
+	appCfg := server.ParseServerConfig()
 
 	// Create structures.
-	warehouse := storage.NewStore()
+	store := storage.NewStore()
 	router := chi.NewRouter()
 
+	// Setup router.
+	setupRouter(router, store)
+
+	// Start server.
+	log.Fatal(http.ListenAndServe(appCfg.ServerAddress, router))
+}
+
+// setupRouter configure chi.Router with got storage.Repository.
+func setupRouter(router chi.Router, store storage.Repository) {
 	// Setup GET methods.
-	router.Get("/", handlers.MainPageHandler(warehouse))
-	router.Get("/value/{metricType}/{metricName}", handlers.MetricGetHandler(warehouse))
+	router.Get("/", handlers.MainPageHandler(store))
+	router.Get("/value/{metricType}/{metricName}", handlers.MetricGetHandler(store))
 
 	// Setup POST methods
 	router.Route("/update/", func(r chi.Router) {
@@ -28,11 +38,8 @@ func main() {
 			r.Post("/", handlers.NotFound)
 			r.Route("/{metricName}", func(r chi.Router) {
 				r.Post("/", handlers.BadRequest)
-				r.Post("/{metricValue}", handlers.MetricPostHandler(warehouse))
+				r.Post("/{metricValue}", handlers.MetricPostHandler(store))
 			})
 		})
 	})
-
-	// Start server.
-	log.Fatal(http.ListenAndServe(appCfg.ServerAddress, router))
 }

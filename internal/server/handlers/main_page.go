@@ -1,9 +1,11 @@
 package handlers
 
 import (
-	"bytes"
 	"fmt"
+	"html/template"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/gdyunin/metricol.git/internal/server/storage"
 )
@@ -58,20 +60,36 @@ const rowTemplate = "<tr><th>%s</th><th>%s</th></tr>"
 // MainPageHandler return a handler that generates a page with known metrics.
 func MainPageHandler(repository storage.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var buffer bytes.Buffer
+		//var buffer bytes.Buffer
+		type tableRow struct {
+			Name  string
+			Value string
+		}
+		body := []tableRow{}
 
 		// Pull known metrics and fill body.
 		metricsAll := repository.Metrics()
 		for _, metricMap := range metricsAll {
 			for metricName, metricValue := range metricMap {
-				buffer.WriteString(fmt.Sprintf(rowTemplate, metricName, metricValue))
+				body = append(body, tableRow{
+					Name:  metricName,
+					Value: metricValue,
+				})
+				//buffer.WriteString(fmt.Sprintf(rowTemplate, metricName, metricValue))
 			}
 		}
-		body := fmt.Sprintf(mainPageTemplate, buffer.String())
+		//_ = fmt.Sprintf(mainPageTemplate, buffer.String())
+
+		currentDir, _ := os.Getwd()
+		t, err := template.ParseFiles(filepath.Join(currentDir, "web", "template", "main_page.html"))
+		t.Execute(w, body)
+
+		fmt.Println(t)
+		fmt.Println(err)
 
 		// The error is ignored as it has no effect.
 		// A logger could be added in the future.
-		_, _ = w.Write([]byte(body))
+		//_, _ = w.Write([]byte(body))
 
 		w.Header().Set("Content-Type", "text/html")
 	}

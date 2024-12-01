@@ -10,8 +10,6 @@ const (
 )
 
 type Metric interface {
-	Name() string
 	StringValue() string
-	Type() string
 	Update() error
 }

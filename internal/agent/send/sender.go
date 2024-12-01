@@ -1,7 +1,7 @@
 package send
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"path"
@@ -9,6 +9,10 @@ import (
 	"github.com/gdyunin/metricol.git/internal/agent/fetch"
 	"github.com/go-resty/resty/v2"
 )
+
+type Sender interface {
+	Send()
+}
 
 type MetricsSender struct {
 	metricsFetcher fetch.Fetcher
@@ -37,7 +41,7 @@ func (m *MetricsSender) Send() {
 
 		if _, err := req.Send(); err != nil {
 			// A logger could be added in the future
-			fmt.Println(err.Error())
+			log.Printf("error send request for update metric %s: %v", mm.Name(), err)
 		}
 	}
 }

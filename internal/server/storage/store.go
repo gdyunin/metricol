@@ -8,6 +8,17 @@ import (
 	"github.com/gdyunin/metricol.git/internal/metrics"
 )
 
+const (
+	ErrorUnknownMetricType = "error unknown metric type"
+	ErrorUnknownMetricName = "error unknown metric name"
+)
+
+type Repository interface {
+	PushMetric(metrics.Metric) error
+	GetMetric(string, string) (string, error)
+	Metrics() map[string]map[string]string
+}
+
 type Store struct {
 	counters map[string]int64
 	gauges   map[string]float64
@@ -23,9 +34,9 @@ func NewStore() *Store {
 func (s *Store) PushMetric(metric metrics.Metric) error {
 	switch m := metric.(type) {
 	case *metrics.Counter:
-		s.counters[m.Name()] += m.Value()
+		s.counters[m.Name] += m.Value
 	case *metrics.Gauge:
-		s.gauges[m.Name()] = m.Value()
+		s.gauges[m.Name] = m.Value
 	default:
 		return errors.New(ErrorUnknownMetricType)
 	}

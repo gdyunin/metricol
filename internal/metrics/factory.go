@@ -4,15 +4,15 @@ import "errors"
 
 func NewCounter(name string, value int64) *Counter {
 	return &Counter{
-		name:  name,
-		value: value,
+		Name:  name,
+		Value: value,
 	}
 }
 
 func NewGauge(name string, value float64) *Gauge {
 	return &Gauge{
-		name:  name,
-		value: value,
+		Name:  name,
+		Value: value,
 	}
 }
 

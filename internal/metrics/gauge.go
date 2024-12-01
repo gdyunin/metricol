@@ -8,24 +8,12 @@ import (
 
 type Gauge struct {
 	fetcher func() float64
-	name    string
-	value   float64
-}
-
-func (g *Gauge) Name() string {
-	return g.name
+	Name    string
+	Value   float64
 }
 
 func (g *Gauge) StringValue() string {
-	return fmt.Sprintf("%g", g.value)
-}
-
-func (g *Gauge) Value() float64 {
-	return g.value
-}
-
-func (g *Gauge) Type() string {
-	return MetricTypeGauge
+	return fmt.Sprintf("%g", g.Value)
 }
 
 func (g *Gauge) SetFetcher(f func() float64) {
@@ -41,7 +29,7 @@ func (g *Gauge) Update() error {
 	if g.fetcher == nil {
 		return errors.New(ErrorFetcherNotSet)
 	}
-	g.value = g.fetcher()
+	g.Value = g.fetcher()
 	return nil
 }
 
@@ -52,7 +40,7 @@ func newGaugeFromStrings(name, value string) (Metric, error) {
 	}
 
 	return &Gauge{
-		name:  name,
-		value: v,
+		Name:  name,
+		Value: v,
 	}, nil
 }

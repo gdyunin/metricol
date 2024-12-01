@@ -7,20 +7,8 @@ import (
 
 type Counter struct {
 	fetcher func() int64
-	name    string
-	value   int64
-}
-
-func (c *Counter) Name() string {
-	return c.name
-}
-
-func (c *Counter) Value() int64 {
-	return c.value
-}
-
-func (c *Counter) Type() string {
-	return MetricTypeCounter
+	Name    string
+	Value   int64
 }
 
 func (c *Counter) SetFetcher(f func() int64) {
@@ -36,12 +24,12 @@ func (c *Counter) Update() error {
 	if c.fetcher == nil {
 		return errors.New(ErrorFetcherNotSet)
 	}
-	c.value += c.fetcher()
+	c.Value = c.fetcher()
 	return nil
 }
 
 func (c *Counter) StringValue() string {
-	return strconv.FormatInt(c.value, 10)
+	return strconv.FormatInt(c.Value, 10)
 }
 
 func newCounterFromStrings(name, value string) (Metric, error) {
@@ -51,7 +39,7 @@ func newCounterFromStrings(name, value string) (Metric, error) {
 	}
 
 	return &Counter{
-		name:  name,
-		value: v,
+		Name:  name,
+		Value: v,
 	}, nil
 }

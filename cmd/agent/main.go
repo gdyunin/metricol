@@ -7,20 +7,40 @@ import (
 
 	"github.com/gdyunin/metricol.git/internal/agent/fetch"
 	"github.com/gdyunin/metricol.git/internal/agent/send"
+	"github.com/gdyunin/metricol.git/internal/config/agent"
 	"github.com/gdyunin/metricol.git/internal/metrics"
 )
 
 func main() {
-	// Get config.
-	appCfg := appConfig()
+	// Get AgentConfig.
+	appCfg := agent.ParseAgentConfig()
 
 	// Fetcher collects and stores metrics.
 	fetcher := fetch.NewMetricsFetcher()
+	ms := &runtime.MemStats{}
+	setupFetcher(fetcher, ms)
+
 	// Sender push metrics to server
 	sender := send.NewMetricsSender(fetcher, appCfg.ServerAddress)
 
-	// Setup fetcher.
-	ms := &runtime.MemStats{}
+	// Start update and collect metrics with the poll interval.
+	go func() {
+		for {
+			time.Sleep(time.Duration(appCfg.PollInterval) * time.Second)
+			runtime.ReadMemStats(ms)
+			fetcher.Fetch()
+		}
+	}()
+
+	// Start send metrics to server with the report interval.
+	for {
+		time.Sleep(time.Duration(appCfg.ReportInterval) * time.Second)
+		sender.Send()
+	}
+}
+
+// setupFetcher add metric to got fetcher with got MemStats
+func setupFetcher(fetcher fetch.Fetcher, ms *runtime.MemStats) {
 	fetcher.AddMetrics(
 		metrics.NewGauge("Alloc", 0).SetFetcherAndReturn(func() float64 {
 			return float64(ms.Alloc)
@@ -108,19 +128,4 @@ func main() {
 			return 1
 		}),
 	)
-
-	// Start update and collect metrics with the poll interval.
-	go func() {
-		for {
-			time.Sleep(time.Duration(appCfg.PollInterval) * time.Second)
-			runtime.ReadMemStats(ms)
-			fetcher.Fetch()
-		}
-	}()
-
-	// Start send metrics to server with the report interval.
-	for {
-		time.Sleep(time.Duration(appCfg.ReportInterval) * time.Second)
-		sender.Send()
-	}
 }
