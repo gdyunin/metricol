@@ -13,7 +13,6 @@ import (
 	"github.com/gdyunin/metricol.git/internal/server/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-resty/resty/v2"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -155,7 +154,7 @@ func TestFillMetricsTable(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := fillMetricsTable(tt.repository)
 
-			assert.Equal(t, tt.expected, result)
+			require.Equal(t, tt.expected, result)
 		})
 	}
 }
