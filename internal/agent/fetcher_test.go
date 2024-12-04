@@ -1,4 +1,4 @@
-package fetch
+package agent
 
 import (
 	"fmt"
@@ -93,7 +93,7 @@ func TestMetricsFetcher_Metrics(t *testing.T) {
 	}
 }
 
-// TestMetricsFetcher_Fetch tests the Fetch method of the MetricsFetcher.
+// TestMetricsFetcher_Fetch tests the Polling method of the MetricsFetcher.
 func TestMetricsFetcher_Fetch(t *testing.T) {
 	tests := []struct {
 		name          string           // Name of the test case

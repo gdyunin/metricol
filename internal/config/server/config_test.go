@@ -14,11 +14,12 @@ func TestParseAgentConfig(t *testing.T) {
 		name           string
 		envVars        map[string]string
 		flags          []string
-		expectedConfig Config
+		expectedConfig *Config
+		wantErr        bool
 	}{
 		{
 			name: "Default config",
-			expectedConfig: Config{
+			expectedConfig: &Config{
 				ServerAddress: "localhost:8080",
 			},
 		},
@@ -27,14 +28,14 @@ func TestParseAgentConfig(t *testing.T) {
 			envVars: map[string]string{
 				"ADDRESS": "127.0.0.1:9090",
 			},
-			expectedConfig: Config{
+			expectedConfig: &Config{
 				ServerAddress: "127.0.0.1:9090",
 			},
 		},
 		{
 			name:  "Override with command-line flags",
 			flags: []string{"-a", "192.168.1.1:8080"},
-			expectedConfig: Config{
+			expectedConfig: &Config{
 				ServerAddress: "192.168.1.1:8080",
 			},
 		},
@@ -59,7 +60,11 @@ func TestParseAgentConfig(t *testing.T) {
 				os.Args = []string{"cmd"} //nolint // need for test
 			}
 
-			cfg := ParseConfig()
+			cfg, err := ParseConfig()
+			if err != nil {
+				require.True(t, tt.wantErr)
+				return
+			}
 			require.Equal(t, tt.expectedConfig, cfg)
 		})
 	}

@@ -1,21 +1,10 @@
-// Package fetch provides functionality to retrieve and manage metrics.
-package fetch
+package agent
 
 import (
 	"fmt"
 
 	"github.com/gdyunin/metricol.git/internal/metrics"
 )
-
-// Fetcher defines an interface for fetching metrics.
-type Fetcher interface {
-	// Fetch retrieves the latest values for the metrics.
-	Fetch() error
-	// Metrics returns the list of metrics being managed.
-	Metrics() []metrics.Metric
-	// AddMetrics adds new metrics to the fetcher's collection.
-	AddMetrics(newMetrics ...metrics.Metric)
-}
 
 // MetricsFetcher implements the Fetcher interface, managing a collection of metrics.
 type MetricsFetcher struct {

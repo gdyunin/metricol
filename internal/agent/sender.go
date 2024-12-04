@@ -1,5 +1,4 @@
-// Package send provides functionality to send metrics to a server.
-package send
+package agent
 
 import (
 	"fmt"
@@ -7,26 +6,19 @@ import (
 	"net/url"
 	"path"
 
-	"github.com/gdyunin/metricol.git/internal/agent/fetch"
 	"github.com/gdyunin/metricol.git/internal/metrics"
 	"github.com/go-resty/resty/v2"
 )
 
-// Sender defines an interface for sending metrics.
-type Sender interface {
-	// Send sends the metrics to the server and returns an error if the operation fails.
-	Send() error
-}
-
 // MetricsSender implements the Sender interface, responsible for sending metrics.
 type MetricsSender struct {
-	metricsFetcher fetch.Fetcher // Fetcher to retrieve metrics.
+	metricsFetcher Fetcher       // Fetcher to retrieve metrics.
 	client         *resty.Client // HTTP client for sending requests.
 	serverAddress  string        // Address of the server to send metrics to.
 }
 
 // NewMetricsSender creates a new instance of MetricsSender with the provided fetcher and server address.
-func NewMetricsSender(fetcher fetch.Fetcher, address string) *MetricsSender {
+func NewMetricsSender(fetcher Fetcher, address string) *MetricsSender {
 	return &MetricsSender{
 		metricsFetcher: fetcher,
 		serverAddress:  address,

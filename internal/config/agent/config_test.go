@@ -14,11 +14,12 @@ func TestParseAgentConfig(t *testing.T) {
 		name           string
 		envVars        map[string]string
 		flags          []string
-		expectedConfig Config
+		expectedConfig *Config
+		wantErr        bool
 	}{
 		{
 			name: "Default config",
-			expectedConfig: Config{
+			expectedConfig: &Config{
 				ServerAddress:  "localhost:8080",
 				PollInterval:   2,
 				ReportInterval: 10,
@@ -31,7 +32,7 @@ func TestParseAgentConfig(t *testing.T) {
 				"POLL_INTERVAL":   "5",
 				"REPORT_INTERVAL": "15",
 			},
-			expectedConfig: Config{
+			expectedConfig: &Config{
 				ServerAddress:  "127.0.0.1:9090",
 				PollInterval:   5,
 				ReportInterval: 15,
@@ -40,11 +41,21 @@ func TestParseAgentConfig(t *testing.T) {
 		{
 			name:  "Override with command-line flags",
 			flags: []string{"-a", "192.168.1.1:8080", "-p", "3", "-r", "12"},
-			expectedConfig: Config{
+			expectedConfig: &Config{
 				ServerAddress:  "192.168.1.1:8080",
 				PollInterval:   3,
 				ReportInterval: 12,
 			},
+		},
+		{
+			name: "Override with invalid environment variables",
+			envVars: map[string]string{
+				"ADDRESS":         "127.0.0.1:9090",
+				"POLL_INTERVAL":   "5",
+				"REPORT_INTERVAL": "invalid",
+			},
+			expectedConfig: nil,
+			wantErr:        true,
 		},
 	}
 
@@ -67,7 +78,12 @@ func TestParseAgentConfig(t *testing.T) {
 				os.Args = []string{"cmd"} //nolint // need for test
 			}
 
-			cfg := ParseConfig()
+			cfg, err := ParseConfig()
+			if err != nil {
+				require.True(t, tt.wantErr)
+				return
+			}
+
 			require.Equal(t, tt.expectedConfig, cfg)
 		})
 	}
