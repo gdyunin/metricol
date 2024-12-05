@@ -101,6 +101,7 @@ func (a *Agent) Reporting(interval int) {
 // setDefaultMetrics initializes default memory metrics for the given fetcher.
 func setDefaultMetrics(fetcher Fetcher) {
 	ms := &runtime.MemStats{}
+	var pollCounter int64 = 0
 	// Start the MemStats update in a separate goroutine with default update interval.
 	go func() {
 		for {
@@ -193,7 +194,8 @@ func setDefaultMetrics(fetcher Fetcher) {
 		}),
 		metrics.NewGauge("RandomValue", 0).SetFetcherAndReturn(rand.Float64),
 		metrics.NewCounter("PollCount", 0).SetFetcherAndReturn(func() int64 {
-			return 1
+			pollCounter++
+			return pollCounter
 		}),
 	)
 }
