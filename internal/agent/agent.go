@@ -30,12 +30,27 @@ type Fetcher interface {
 type Sender interface {
 	// Send sends the metrics to the server and returns an error if the operation fails.
 	Send() error
+	RegisterObserver(Observer)
+	RemoveObserver(Observer)
 }
 
 // Agent is responsible for fetching and sending metrics.
 type Agent struct {
 	fetcher Fetcher // The component that fetches metrics.
 	sender  Sender  // The component that sends metrics.
+}
+
+type SenderObserver struct {
+	actions []func()
+}
+
+func (o *SenderObserver) OnNotify() { // TODO: make tests for this
+	for _, a := range o.actions {
+		a()
+	}
+}
+func (o *SenderObserver) addAction(a func()) { // TODO: make tests for this
+	o.actions = append(o.actions, a)
 }
 
 // NewAgent creates a new Agent instance with the provided configuration.
@@ -52,7 +67,7 @@ func NewAgent(cfg *agent.Config) *Agent {
 // DefaultAgent creates a new Agent with default metrics set.
 func DefaultAgent(cfg *agent.Config) *Agent {
 	a := NewAgent(cfg)
-	setDefaultMetrics(a.fetcher) // Set default metrics for the agent.
+	a.setDefaultMetrics() // Set default metrics for the agent.
 	return a
 }
 
@@ -99,9 +114,18 @@ func (a *Agent) Reporting(interval int) {
 }
 
 // setDefaultMetrics initializes default memory metrics for the given fetcher.
-func setDefaultMetrics(fetcher Fetcher) {
+func (a *Agent) setDefaultMetrics() {
 	ms := &runtime.MemStats{}
-	var pollCounter int64 = 0
+	var pollCounter int64 = 0 // TODO: protect against data race (?)
+
+	// Create and setup new observer and subscribe on sender then.
+	// TODO: place it in a separate function, e.g. makeObserver()
+	senderObserver := &SenderObserver{}
+	senderObserver.addAction(func() {
+		pollCounter = 0
+	})
+	a.sender.RegisterObserver(senderObserver)
+
 	// Start the MemStats update in a separate goroutine with default update interval.
 	go func() {
 		for {
@@ -110,7 +134,7 @@ func setDefaultMetrics(fetcher Fetcher) {
 		}
 	}()
 
-	fetcher.AddMetrics(
+	a.fetcher.AddMetrics(
 		metrics.NewGauge("Alloc", 0).SetFetcherAndReturn(func() float64 {
 			return float64(ms.Alloc)
 		}),

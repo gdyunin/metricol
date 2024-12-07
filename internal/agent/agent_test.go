@@ -153,18 +153,20 @@ func TestNewAgent(t *testing.T) {
 }
 
 func Test_setDefaultMetrics(t *testing.T) {
+	fetcher := NewMetricsFetcher()
+	sender := NewMetricsSender(fetcher, "localhost:8080")
 	tests := []struct {
-		name    string
-		fetcher Fetcher
+		name  string
+		agent *Agent
 	}{
 		{
 			"Successful setup default fetcher",
-			NewMetricsFetcher(),
+			&Agent{fetcher: fetcher, sender: sender},
 		},
 	}
 	for _, tt := range tests {
-		fetcher := tt.fetcher
-		setDefaultMetrics(fetcher)
+		fetcher := tt.agent.fetcher
+		tt.agent.setDefaultMetrics()
 		require.Len(t, fetcher.Metrics(), 29)
 	}
 }

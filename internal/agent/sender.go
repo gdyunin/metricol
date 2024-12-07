@@ -10,11 +10,17 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
+// Observer interface represent followers of sender.
+type Observer interface {
+	OnNotify()
+}
+
 // MetricsSender implements the Sender interface, responsible for sending metrics.
 type MetricsSender struct {
-	metricsFetcher Fetcher       // Fetcher to retrieve metrics.
-	client         *resty.Client // HTTP client for sending requests.
-	serverAddress  string        // Address of the server to send metrics to.
+	observers      map[Observer]struct{} // List of unique Observer.
+	metricsFetcher Fetcher               // Fetcher to retrieve metrics.
+	client         *resty.Client         // HTTP-client for sending requests.
+	serverAddress  string                // Address of the server to send metrics to.
 }
 
 // NewMetricsSender creates a new instance of MetricsSender with the provided fetcher and server address.
@@ -23,6 +29,7 @@ func NewMetricsSender(fetcher Fetcher, address string) *MetricsSender {
 		metricsFetcher: fetcher,
 		serverAddress:  address,
 		client:         resty.New(),
+		observers:      make(map[Observer]struct{}),
 	}
 }
 
@@ -33,28 +40,28 @@ func (m *MetricsSender) Send() error {
 	for _, mm := range m.metricsFetcher.Metrics() {
 		var metricName, metricType string
 
+		// TODO: place it in a separate function, e.g. recognizeMetric()
 		switch currentMetricStruct := mm.(type) {
 		case *metrics.Counter:
 			metricName = currentMetricStruct.Name
 			metricType = metrics.MetricTypeCounter
 		case *metrics.Gauge:
 			metricName = currentMetricStruct.Name
-			metricType = metrics.MetricTypeGauge // Fixed to use Gauge type
+			metricType = metrics.MetricTypeGauge
 		default:
 			errString += fmt.Sprintf("error sending metric %v: failed conversion Metric to Struct\n", mm)
-			continue // Skip to the next metric
+			continue // Skip to the next metric.
 		}
 
+		// TODO: place it in a separate function, e.g. sendUpdateRequest()
 		u := url.URL{
 			Scheme: "http",
 			Path:   path.Join(m.serverAddress, "/update/", metricType, metricName, mm.StringValue()),
 		}
-
 		req := m.client.R()
 		req.Method = http.MethodPost
 		req.Header.Set("Content-Type", "text/plain; charset=utf-8")
 		req.URL = u.String()
-
 		if _, err := req.Send(); err != nil {
 			errString += fmt.Sprintf("error sending metric %v: %v\n", mm, err)
 		}
@@ -63,5 +70,24 @@ func (m *MetricsSender) Send() error {
 	if errString != "" {
 		return fmt.Errorf("one or more metrics were not sent to the server: %s", errString)
 	}
+
+	m.Notify() // Send notifications for observers.
 	return nil
+}
+
+// RegisterObserver registration new observer.
+func (m *MetricsSender) RegisterObserver(observer Observer) { // TODO: make tests for this
+	m.observers[observer] = struct{}{}
+}
+
+// RemoveObserver remove observer from list of observers.
+func (m *MetricsSender) RemoveObserver(observer Observer) { // TODO: make tests for this
+	delete(m.observers, observer)
+}
+
+// Notify sending notifications for all observers.
+func (m *MetricsSender) Notify() { // TODO: make tests for this
+	for o := range m.observers {
+		o.OnNotify()
+	}
 }
