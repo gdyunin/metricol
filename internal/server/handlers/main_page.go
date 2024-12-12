@@ -19,8 +19,9 @@ import (
 
 const mainPageTemplatePath = "web/template/main_page.html"
 
-var cachedTemplate *template.Template
+var cachedTemplate *template.Template // Cached HTML template for efficiency
 
+// TableRow represents a single row in the metrics table.
 type TableRow struct {
 	Name  string
 	Value string
@@ -30,7 +31,7 @@ type TableRow struct {
 // an HTML page displaying metrics from the provided repository.
 func MainPageHandler(repository storage.Repository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		metricsTable := fillMetricsTable(repository)
+		metricsTable := fillMetricsTable(repository) // Construct the metrics table
 
 		t, err := parseTemplate(mainPageTemplatePath)
 		if err != nil {
@@ -39,7 +40,7 @@ func MainPageHandler(repository storage.Repository) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "text/html")
+		w.Header().Set("Content-Type", "text/html") // Set the response content type to HTML
 
 		if err = t.Execute(w, metricsTable); err != nil {
 			log.Printf("failure executing template: %v\n", err)
@@ -56,7 +57,7 @@ func fillMetricsTable(repository storage.Repository) []TableRow {
 	// multiple allocations as we append elements to the slice later.
 	body := make([]TableRow, 0, repository.MetricsCount())
 
-	metricsAll := repository.Metrics()
+	metricsAll := repository.Metrics() // Retrieve all metrics from the repository
 	for _, metricMap := range metricsAll {
 		for metricName, metricValue := range metricMap {
 			body = append(body, TableRow{
@@ -66,7 +67,7 @@ func fillMetricsTable(repository storage.Repository) []TableRow {
 		}
 	}
 
-	return body
+	return body // Return the constructed slice of TableRow
 }
 
 // parseTemplate parses the main page HTML template and caches it for future use.
@@ -78,14 +79,12 @@ func parseTemplate(path string) (*template.Template, error) {
 
 	currentDir, err := os.Getwd()
 	if err != nil {
-		// This is sad :(
-		// TODO: In the future, if os.Getwd doesn't work, find another way to get the path to the template
-		// to avoid breaking the function at this point.
 		return nil, fmt.Errorf("error getting current working directory: %w", err)
 	}
+
 	cachedTemplate, err = template.ParseFiles(filepath.Join(currentDir, path))
 	if err != nil {
-		cachedTemplate = nil
+		cachedTemplate = nil // Set nil to cache on error
 		return nil, fmt.Errorf("error parsing template: %w", err)
 	}
 

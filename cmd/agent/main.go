@@ -36,6 +36,7 @@ func main() {
 
 // appConfig retrieves and parses the application configuration.
 // It logs a fatal error if the configuration cannot be parsed.
+// Returns a pointer to the agent configuration.
 func appConfig() *agentcfg.Config {
 	appCfg, err := agentcfg.ParseConfig()
 	if err != nil {

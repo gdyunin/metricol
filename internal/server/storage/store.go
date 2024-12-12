@@ -54,9 +54,9 @@ func NewStore() *Store {
 func (s *Store) PushMetric(metric metrics.Metric) error {
 	switch m := metric.(type) {
 	case *metrics.Counter:
-		s.counters[m.Name] += m.Value
+		s.counters[m.Name] += m.Value // Increment the counter value
 	case *metrics.Gauge:
-		s.gauges[m.Name] = m.Value
+		s.gauges[m.Name] = m.Value // Set the gauge value
 	default:
 		return fmt.Errorf("error push metric %v: %w", metric, ErrUnknownMetricType)
 	}
@@ -69,13 +69,13 @@ func (s *Store) GetMetric(name, metricType string) (string, error) {
 	var value string
 	switch metricType {
 	case metrics.MetricTypeCounter:
-		v, ok := s.counters[name]
+		v, ok := s.counters[name] // Check if the counter exists
 		if !ok {
 			return "", fmt.Errorf("error get metric %s %s: unknown metric name", name, metricType)
 		}
 		value = strconv.FormatInt(v, 10)
 	case metrics.MetricTypeGauge:
-		v, ok := s.gauges[name]
+		v, ok := s.gauges[name] // Check if the gauge exists
 		if !ok {
 			return "", fmt.Errorf("error get metric %s %s: unknown metric name", name, metricType)
 		}
@@ -102,6 +102,7 @@ func (s *Store) MetricsCount() int {
 	return len(s.gauges) + len(s.counters)
 }
 
+// countersMap converts the counters to a map of string values for easier retrieval.
 func (s *Store) countersMap() map[string]string {
 	m := make(map[string]string)
 	for name, value := range s.counters {
@@ -110,6 +111,7 @@ func (s *Store) countersMap() map[string]string {
 	return m
 }
 
+// gaugesMap converts the gauges to a map of string values for easier retrieval.
 func (s *Store) gaugesMap() map[string]string {
 	m := make(map[string]string)
 	for name, value := range s.gauges {

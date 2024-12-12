@@ -10,6 +10,7 @@ import (
 )
 
 // NewCounter creates a new Counter metric with the specified name and initial value.
+// It returns a pointer to the newly created Counter.
 func NewCounter(name string, value int64) *Counter {
 	return &Counter{
 		Name:  name,
@@ -18,6 +19,7 @@ func NewCounter(name string, value int64) *Counter {
 }
 
 // NewGauge creates a new Gauge metric with the specified name and initial value.
+// It returns a pointer to the newly created Gauge.
 func NewGauge(name string, value float64) *Gauge {
 	return &Gauge{
 		Name:  name,
@@ -30,6 +32,7 @@ func NewGauge(name string, value float64) *Gauge {
 func NewFromStrings(name, value, metricType string) (Metric, error) {
 	var createMetric func(string, string) (Metric, error)
 
+	// Determine the appropriate function to create a metric based on its type.
 	switch metricType {
 	case MetricTypeGauge:
 		createMetric = newGaugeFromStrings

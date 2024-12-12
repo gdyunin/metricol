@@ -40,6 +40,7 @@ func (c *Counter) Update() error {
 	return nil
 }
 
+// StringName returns the name of the Counter as a string.
 func (c *Counter) StringName() string {
 	return c.Name
 }

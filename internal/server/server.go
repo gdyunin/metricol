@@ -21,13 +21,13 @@ type Server struct {
 // NewServer creates a new Server instance with the given configuration.
 func NewServer(cfg *server.Config, options ...func(*Server)) *Server {
 	s := &Server{
-		store:         storage.NewStore(),
-		router:        chi.NewRouter(),
-		serverAddress: cfg.ServerAddress,
+		store:         storage.NewStore(), // Creates a new storage instance.
+		router:        chi.NewRouter(),    // Creates a new router instance.
+		serverAddress: cfg.ServerAddress,  // Sets the server address from the config.
 	}
 
 	for _, o := range options {
-		o(s)
+		o(s) // Apply each option to the server instance.
 	}
 
 	return s
@@ -43,6 +43,7 @@ func (s *Server) Start() error {
 	return fmt.Errorf("error server run %w", http.ListenAndServe(s.serverAddress, s.router))
 }
 
+// withDefaultRoutes sets up default routes for the server.
 func withDefaultRoutes() func(*Server) {
 	return func(s *Server) {
 		// Setup GET methods for retrieving metrics.
@@ -52,11 +53,13 @@ func withDefaultRoutes() func(*Server) {
 	}
 }
 
+// setupDefaultGetRoutes configures the GET routes for the server.
 func setupDefaultGetRoutes(s *Server) {
-	s.router.Get("/", handlers.MainPageHandler(s.store))
-	s.router.Get("/value/{metricType}/{metricName}", handlers.MetricGetHandler(s.store))
+	s.router.Get("/", handlers.MainPageHandler(s.store))                                 // Main page handler.
+	s.router.Get("/value/{metricType}/{metricName}", handlers.MetricGetHandler(s.store)) // Handler to get metric values.
 }
 
+// setupDefaultPostRoutes configures the POST routes for updating metrics.
 func setupDefaultPostRoutes(s *Server) {
 	s.router.Route("/update/", func(r chi.Router) {
 		r.Post("/", handlers.BadRequest) // Handle case where metric type is not passed.

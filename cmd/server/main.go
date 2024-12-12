@@ -18,6 +18,7 @@ func main() {
 
 // appConfig retrieves and parses the application configuration.
 // It logs a fatal error if the configuration cannot be parsed.
+// Returns a pointer to the server configuration.
 func appConfig() *servercfg.Config {
 	appCfg, err := servercfg.ParseConfig()
 	if err != nil {

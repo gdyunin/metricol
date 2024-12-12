@@ -18,6 +18,7 @@ type Gauge struct {
 	Value   float64        // Current value of the metric
 }
 
+// StringName returns the name of the Gauge as a string.
 func (g *Gauge) StringName() string {
 	return g.Name
 }
@@ -45,7 +46,7 @@ func (g *Gauge) Update() error {
 	if g.fetcher == nil {
 		return fmt.Errorf("error updating metric %s: fetcher not set", g.Name)
 	}
-	g.Value = g.fetcher()
+	g.Value = g.fetcher() // Update Value using the fetcher function
 	return nil
 }
 

@@ -1,3 +1,4 @@
+// Package common provides common functionality for metricol.
 package common
 
 import "sync"

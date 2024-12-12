@@ -1,3 +1,4 @@
+// Package agent provides functionality for sending metrics to a server.
 package agent
 
 import (
@@ -27,7 +28,7 @@ func (m *MetricsFetcher) AddMetrics(newMetrics ...metrics.Metric) {
 // Fetch updates all metrics in the collection.
 // It returns an error if any metric fails to update.
 func (m *MetricsFetcher) Fetch() error {
-	var buf bytes.Buffer
+	var buf bytes.Buffer // Buffer to collect error messages
 	for _, mm := range m.metrics {
 		if err := mm.Update(); err != nil {
 			buf.WriteString(fmt.Sprintf("metric %v update fail: %v\n", mm, err))
@@ -36,7 +37,7 @@ func (m *MetricsFetcher) Fetch() error {
 	}
 
 	if buf.Len() != 0 {
-		return fmt.Errorf("one or more metrics were not fetch: %s", buf.String())
+		return fmt.Errorf("one or more metrics were not fetched: %s", buf.String())
 	}
 	return nil
 }
