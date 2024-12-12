@@ -19,19 +19,23 @@ type Server struct {
 }
 
 // NewServer creates a new Server instance with the given configuration.
-func NewServer(cfg *server.Config) *Server {
-	return &Server{
+func NewServer(cfg *server.Config, options ...func(*Server)) *Server {
+	s := &Server{
 		store:         storage.NewStore(),
 		router:        chi.NewRouter(),
 		serverAddress: cfg.ServerAddress,
 	}
+
+	for _, o := range options {
+		o(s)
+	}
+
+	return s
 }
 
 // DefaultServer initializes a Server with default routes based on the provided configuration.
 func DefaultServer(cfg *server.Config) *Server {
-	s := NewServer(cfg)
-	setDefaultRoutes(s.router, s.store)
-	return s
+	return NewServer(cfg, withDefaultRoutes())
 }
 
 // Start begins listening for HTTP requests on the server's address.
@@ -39,20 +43,28 @@ func (s *Server) Start() error {
 	return fmt.Errorf("error server run %w", http.ListenAndServe(s.serverAddress, s.router))
 }
 
-// setDefaultRoutes configures the default routes for the server's router.
-func setDefaultRoutes(router chi.Router, store storage.Repository) {
-	// Setup GET methods for retrieving metrics.
-	router.Get("/", handlers.MainPageHandler(store))
-	router.Get("/value/{metricType}/{metricName}", handlers.MetricGetHandler(store))
+func withDefaultRoutes() func(*Server) {
+	return func(s *Server) {
+		// Setup GET methods for retrieving metrics.
+		setupDefaultGetRoutes(s)
+		// Setup POST methods for updating metrics.
+		setupDefaultPostRoutes(s)
+	}
+}
 
-	// Setup POST methods for updating metrics.
-	router.Route("/update/", func(r chi.Router) {
+func setupDefaultGetRoutes(s *Server) {
+	s.router.Get("/", handlers.MainPageHandler(s.store))
+	s.router.Get("/value/{metricType}/{metricName}", handlers.MetricGetHandler(s.store))
+}
+
+func setupDefaultPostRoutes(s *Server) {
+	s.router.Route("/update/", func(r chi.Router) {
 		r.Post("/", handlers.BadRequest) // Handle case where metric type is not passed.
 		r.Route("/{metricType}", func(r chi.Router) {
 			r.Post("/", handlers.NotFound) // Handle case where metric name is not passed.
 			r.Route("/{metricName}", func(r chi.Router) {
-				r.Post("/", handlers.BadRequest)                            // Handle case where metric value is not passed.
-				r.Post("/{metricValue}", handlers.MetricPostHandler(store)) // Handle metric post query.
+				r.Post("/", handlers.BadRequest)                              // Handle case where metric value is not passed.
+				r.Post("/{metricValue}", handlers.MetricPostHandler(s.store)) // Handle metric post query.
 			})
 		})
 	})

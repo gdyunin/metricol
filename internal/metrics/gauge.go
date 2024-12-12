@@ -18,6 +18,10 @@ type Gauge struct {
 	Value   float64        // Current value of the metric
 }
 
+func (g *Gauge) StringName() string {
+	return g.Name
+}
+
 // StringValue returns the string representation of the current value of the Gauge.
 func (g *Gauge) StringValue() string {
 	return strconv.FormatFloat(g.Value, 'g', -1, 64)

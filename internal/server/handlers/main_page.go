@@ -41,7 +41,7 @@ func MainPageHandler(repository storage.Repository) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "text/html")
 
-		if err := t.Execute(w, metricsTable); err != nil {
+		if err = t.Execute(w, metricsTable); err != nil {
 			log.Printf("failure executing template: %v\n", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}

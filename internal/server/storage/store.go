@@ -91,15 +91,8 @@ func (s *Store) GetMetric(name, metricType string) (string, error) {
 func (s *Store) Metrics() map[string]map[string]string {
 	allMetricsMap := make(map[string]map[string]string)
 
-	allMetricsMap[metrics.MetricTypeCounter] = make(map[string]string)
-	for name, value := range s.counters {
-		allMetricsMap[metrics.MetricTypeCounter][name] = strconv.FormatInt(value, 10)
-	}
-
-	allMetricsMap[metrics.MetricTypeGauge] = make(map[string]string)
-	for name, value := range s.gauges {
-		allMetricsMap[metrics.MetricTypeGauge][name] = strconv.FormatFloat(value, 'g', -1, 64)
-	}
+	allMetricsMap[metrics.MetricTypeCounter] = s.countersMap()
+	allMetricsMap[metrics.MetricTypeGauge] = s.gaugesMap()
 
 	return allMetricsMap
 }
@@ -107,4 +100,20 @@ func (s *Store) Metrics() map[string]map[string]string {
 // MetricsCount returns the total number of metrics stored in both counters and gauges.
 func (s *Store) MetricsCount() int {
 	return len(s.gauges) + len(s.counters)
+}
+
+func (s *Store) countersMap() map[string]string {
+	m := make(map[string]string)
+	for name, value := range s.counters {
+		m[name] = strconv.FormatInt(value, 10)
+	}
+	return m
+}
+
+func (s *Store) gaugesMap() map[string]string {
+	m := make(map[string]string)
+	for name, value := range s.gauges {
+		m[name] = strconv.FormatFloat(value, 'g', -1, 64)
+	}
+	return m
 }

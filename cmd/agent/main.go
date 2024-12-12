@@ -22,10 +22,10 @@ func main() {
 	common.RunRoutinesWithWG(
 		&workGroup,
 		func() {
-			a.Polling(appCfg.PollInterval)
+			a.Polling(uint16(appCfg.PollInterval))
 		},
 		func() {
-			a.Reporting(appCfg.ReportInterval)
+			a.Reporting(uint16(appCfg.ReportInterval))
 		},
 	)
 

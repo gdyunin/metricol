@@ -17,6 +17,7 @@ const (
 // It requires methods for obtaining a string representation of the metric value
 // and updating the metric`s value.
 type Metric interface {
+	StringName() string
 	// StringValue returns the current value of the metric as a string.
 	StringValue() string
 

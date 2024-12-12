@@ -40,6 +40,10 @@ func (c *Counter) Update() error {
 	return nil
 }
 
+func (c *Counter) StringName() string {
+	return c.Name
+}
+
 // StringValue returns the string representation of the current value of the Counter.
 func (c *Counter) StringValue() string {
 	return strconv.FormatInt(c.Value, 10)
