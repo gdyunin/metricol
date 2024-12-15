@@ -122,8 +122,8 @@ func withDefaultMetrics() func(*Agent) {
 		// Start a goroutine to periodically read memory statistics.
 		go func() {
 			for {
-				runtime.ReadMemStats(ms)                                               // Update the MemStats instance with current memory stats.
-				time.Sleep(time.Duration(defaultMemStatsUpdateInterval) * time.Second) // Sleep for the defined interval before the next update.
+				runtime.ReadMemStats(ms)
+				time.Sleep(time.Duration(defaultMemStatsUpdateInterval) * time.Second)
 			}
 		}()
 
