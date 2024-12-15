@@ -127,7 +127,7 @@ func TestMetricsFetcher_Fetch(t *testing.T) {
 				metrics.NewGauge("test_gauge", 3.14), // This gauge does not have a fetcher set
 			},
 			expectedError: fmt.Errorf(
-				"one or more metrics were not fetch: metric %v update fail: error updating metric test_gauge: fetcher not set\n",
+				"one or more metrics were not fetched: metric %v update fail: error updating metric test_gauge: fetcher not set\n",
 				metrics.NewGauge("test_gauge", 3.14),
 			),
 		},
@@ -141,7 +141,7 @@ func TestMetricsFetcher_Fetch(t *testing.T) {
 				metrics.NewGauge("test_gauge", 3.14), // This gauge does not have a fetcher set
 			},
 			expectedError: fmt.Errorf(
-				"one or more metrics were not fetch: "+
+				"one or more metrics were not fetched: "+
 					"metric %v update fail: error updating metric test_counter: fetcher not set\n"+
 					"metric %v update fail: error updating metric test_gauge: fetcher not set\n",
 				metrics.NewCounter("test_counter", 42),

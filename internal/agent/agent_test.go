@@ -166,7 +166,7 @@ func Test_setDefaultMetrics(t *testing.T) {
 	}
 	for _, tt := range tests {
 		fetcher := tt.agent.fetcher
-		tt.agent.setDefaultMetrics()
+		withDefaultMetrics()(tt.agent)
 		require.Len(t, fetcher.Metrics(), 29)
 	}
 }
