@@ -95,7 +95,7 @@ func TestMetricPostHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Run test server
-			handler := MetricPostHandler(tt.repository)
+			handler := MetricPostFromURIHandler(tt.repository)
 			router := chi.NewRouter()
 			router.Post("/update/{metricType}/{metricName}/{metricValue}", handler)
 			srv := httptest.NewServer(router)

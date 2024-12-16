@@ -55,16 +55,17 @@ func withDefaultMiddlewares(s *Server) {
 func withDefaultRoutes(s *Server) {
 	// Setup GET methods for retrieving metrics.
 	s.router.Get("/", handlers.MainPageHandler(s.store))
-	s.router.Get("/value/{metricType}/{metricName}", handlers.MetricGetHandler(s.store))
+	s.router.Post("/value/", handlers.MetricGetFromBodyHandler(s.store))
+	s.router.Get("/value/{metricType}/{metricName}", handlers.MetricGetFromURIHandler(s.store))
 
 	// Setup POST methods for updating metrics.
-	s.router.Route("/update/", func(r chi.Router) {
-		r.Post("/", handlers.BadRequest) // Handle case where metric type is not passed.
+	s.router.Route("/update", func(r chi.Router) {
+		r.Post("/", handlers.MetricPostFromBodyHandler(s.store)) // Handle case where metric type is not passed.
 		r.Route("/{metricType}", func(r chi.Router) {
 			r.Post("/", handlers.NotFound) // Handle case where metric name is not passed.
 			r.Route("/{metricName}", func(r chi.Router) {
-				r.Post("/", handlers.BadRequest)                              // Handle case where metric value is not passed.
-				r.Post("/{metricValue}", handlers.MetricPostHandler(s.store)) // Handle metric post query.
+				r.Post("/", handlers.BadRequest)                                     // Handle case where metric value is not passed.
+				r.Post("/{metricValue}", handlers.MetricPostFromURIHandler(s.store)) // Handle metric post query.
 			})
 		})
 	})
