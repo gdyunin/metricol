@@ -20,7 +20,7 @@ type Server struct {
 	serverAddress string         // The address on which the server listens.
 }
 
-// NewServer creates a new Server instance with the given configuration.
+// NewServer creates a new Server instance with the given configuration and options.
 func NewServer(cfg *server.Config, options ...func(*Server)) *Server {
 	s := &Server{
 		store:         storage.NewStore(),
@@ -35,7 +35,7 @@ func NewServer(cfg *server.Config, options ...func(*Server)) *Server {
 	return s
 }
 
-// DefaultServer initializes a Server with default routes based on the provided configuration.
+// DefaultServer initializes a Server with default routes and middlewares based on the provided configuration.
 func DefaultServer(cfg *server.Config) *Server {
 	return NewServer(cfg, withDefaultMiddlewares, withDefaultRoutes)
 }
@@ -45,12 +45,13 @@ func (s *Server) Start() error {
 	return fmt.Errorf("error server run %w", http.ListenAndServe(s.serverAddress, s.router))
 }
 
+// withDefaultRoutes configures the default middlewares for the server's router.
 func withDefaultMiddlewares(s *Server) {
 	_ = logger.InitializeSugarLogger("INFO")
 	s.router.Use(middlewares.WithLogging)
 }
 
-// setDefaultRoutes configures the default routes for the server's router.
+// withDefaultRoutes configures the default routes for the server's router.
 func withDefaultRoutes(s *Server) {
 	// Setup GET methods for retrieving metrics.
 	s.router.Get("/", handlers.MainPageHandler(s.store))
