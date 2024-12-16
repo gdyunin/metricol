@@ -1,11 +1,13 @@
 package agent
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"path"
 
+	"github.com/gdyunin/metricol.git/internal/common/models"
 	"github.com/gdyunin/metricol.git/internal/metrics"
 	"github.com/go-resty/resty/v2"
 )
@@ -38,16 +40,20 @@ func NewMetricsSender(fetcher Fetcher, address string) *MetricsSender {
 func (m *MetricsSender) Send() error {
 	var errString string
 	for _, mm := range m.metricsFetcher.Metrics() {
-		var metricName, metricType string
+		//var metricName, metricType string
+
+		var metric models.Metrics
 
 		// TODO: place it in a separate function, e.g. recognizeMetric()
 		switch currentMetricStruct := mm.(type) {
 		case *metrics.Counter:
-			metricName = currentMetricStruct.Name
-			metricType = metrics.MetricTypeCounter
+			metric.ID = currentMetricStruct.Name
+			metric.MType = metrics.MetricTypeCounter
+			metric.Delta = &currentMetricStruct.Value
 		case *metrics.Gauge:
-			metricName = currentMetricStruct.Name
-			metricType = metrics.MetricTypeGauge
+			metric.ID = currentMetricStruct.Name
+			metric.MType = metrics.MetricTypeGauge
+			metric.Value = &currentMetricStruct.Value
 		default:
 			errString += fmt.Sprintf("error sending metric %v: failed conversion Metric to Struct\n", mm)
 			continue // Skip to the next metric.
@@ -56,12 +62,15 @@ func (m *MetricsSender) Send() error {
 		// TODO: place it in a separate function, e.g. sendUpdateRequest()
 		u := url.URL{
 			Scheme: "http",
-			Path:   path.Join(m.serverAddress, "/update/", metricType, metricName, mm.StringValue()),
+			Path:   path.Join(m.serverAddress, "/update/"),
 		}
 		req := m.client.R()
 		req.Method = http.MethodPost
-		req.Header.Set("Content-Type", "text/plain; charset=utf-8")
+		req.Header.Set("Content-Type", "application/json")
 		req.URL = u.String()
+		b, _ := json.Marshal(metric)
+		req.Body = b
+
 		if _, err := req.Send(); err != nil {
 			errString += fmt.Sprintf("error sending metric %v: %v\n", mm, err)
 		}

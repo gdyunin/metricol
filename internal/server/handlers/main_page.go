@@ -45,6 +45,9 @@ func MainPageHandler(repository storage.Repository) http.HandlerFunc {
 			log.Printf("failure executing template: %v\n", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
+
+		// Response with response code 200 OK.
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
