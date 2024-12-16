@@ -35,7 +35,7 @@ func TestMetricGetHandler(t *testing.T) {
 	}
 
 	// Run test server
-	handler := MetricGetHandler(testRepository)
+	handler := MetricGetFromURIHandler(testRepository)
 	router := chi.NewRouter()
 	router.Get("/value/{metricType}/{metricName}", handler)
 	srv := httptest.NewServer(router)
