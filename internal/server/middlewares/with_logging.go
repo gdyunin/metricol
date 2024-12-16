@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"go.uber.org/zap"
+	"github.com/gdyunin/metricol.git/internal/server/logger"
 )
 
 // responseInfo holds information about the HTTP response status and size.
@@ -35,8 +35,7 @@ func (rw *loggingResponseWriter) WriteHeader(statusCode int) {
 // WithLogging is a middleware that logs HTTP requests and responses.
 func WithLogging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()          // Record the start time of the request.
-		var logger zap.SugaredLogger // Logger for recording log messages. TODO: Initialize logger properly.
+		start := time.Now() // Record the start time of the request.
 
 		lw := loggingResponseWriter{
 			ResponseWriter: w,
@@ -45,7 +44,7 @@ func WithLogging(next http.Handler) http.Handler {
 
 		next.ServeHTTP(&lw, r) // Call the next handler in the chain.
 
-		logger.Infoln(
+		logger.SugarLogger.Infoln(
 			"Received HTTP request:",
 			"method", r.Method,
 			"uri", r.RequestURI,
