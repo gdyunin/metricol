@@ -46,11 +46,11 @@ func WithLogging(next http.Handler) http.Handler {
 
 		logger.SugarLogger.Infoln(
 			"Received HTTP request:",
-			"method", r.Method,
-			"uri", r.RequestURI,
-			"processed time", time.Since(start), // Calculate the processing time.
-			"response code", lw.responseInfo.status,
-			"response size", lw.responseInfo.size,
+			r.Method, r.RequestURI, "|",
+			"Processed:",
+			"time", time.Since(start), // Calculate the processing time.
+			"code", lw.responseInfo.status,
+			"size", lw.responseInfo.size,
 		)
 	})
 }

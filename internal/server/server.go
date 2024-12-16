@@ -7,6 +7,8 @@ import (
 
 	"github.com/gdyunin/metricol.git/internal/config/server"
 	"github.com/gdyunin/metricol.git/internal/server/handlers"
+	"github.com/gdyunin/metricol.git/internal/server/logger"
+	"github.com/gdyunin/metricol.git/internal/server/middlewares"
 	"github.com/gdyunin/metricol.git/internal/server/storage"
 	"github.com/go-chi/chi/v5"
 )
@@ -30,6 +32,7 @@ func NewServer(cfg *server.Config) *Server {
 // DefaultServer initializes a Server with default routes based on the provided configuration.
 func DefaultServer(cfg *server.Config) *Server {
 	s := NewServer(cfg)
+	setDefaultMiddlewares(s.router)
 	setDefaultRoutes(s.router, s.store)
 	return s
 }
@@ -37,6 +40,11 @@ func DefaultServer(cfg *server.Config) *Server {
 // Start begins listening for HTTP requests on the server's address.
 func (s *Server) Start() error {
 	return fmt.Errorf("error server run %w", http.ListenAndServe(s.serverAddress, s.router))
+}
+
+func setDefaultMiddlewares(router chi.Router) {
+	_ = logger.InitializeSugarLogger("INFO")
+	router.Use(middlewares.WithLogging)
 }
 
 // setDefaultRoutes configures the default routes for the server's router.
