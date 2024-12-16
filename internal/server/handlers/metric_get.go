@@ -45,5 +45,8 @@ func MetricGetHandler(repository storage.Repository) http.HandlerFunc {
 		if err != nil {
 			log.Printf("error getting metric %s %s: %v", metricName, metricType, err)
 		}
+
+		// Response with response code 200 OK.
+		w.WriteHeader(http.StatusOK)
 	}
 }

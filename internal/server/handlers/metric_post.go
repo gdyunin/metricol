@@ -41,5 +41,8 @@ func MetricPostHandler(repository storage.Repository) http.HandlerFunc {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
+
+		// Response with response code 200 OK.
+		w.WriteHeader(http.StatusOK)
 	}
 }
