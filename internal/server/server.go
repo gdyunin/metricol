@@ -21,12 +21,18 @@ type Server struct {
 }
 
 // NewServer creates a new Server instance with the given configuration.
-func NewServer(cfg *server.Config) *Server {
-	return &Server{
+func NewServer(cfg *server.Config, options ...func(*Server)) *Server {
+	s := &Server{
 		store:         storage.NewStore(),
 		router:        chi.NewRouter(),
 		serverAddress: cfg.ServerAddress,
 	}
+
+	for _, o := range options {
+		o(s)
+	}
+
+	return s
 }
 
 // DefaultServer initializes a Server with default routes based on the provided configuration.
