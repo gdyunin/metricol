@@ -23,7 +23,7 @@ type loggingResponseWriter struct {
 func (rw *loggingResponseWriter) Write(b []byte) (int, error) {
 	size, err := rw.ResponseWriter.Write(b)
 	rw.responseInfo.size += size // Update the size of the response.
-	return size, err
+	return size, err             //nolint:wrapcheck // err must not be wrapped.
 }
 
 // WriteHeader sends an HTTP response header and updates the response status.

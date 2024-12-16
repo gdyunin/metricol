@@ -107,29 +107,26 @@ func TestServer_Start(t *testing.T) {
 	}
 }
 
-func Test_setDefaultRoutes(t *testing.T) {
+func Test_withDefaultRoutes(t *testing.T) {
 	tests := []struct {
-		name   string
-		router chi.Router
-		store  storage.Repository
+		name string
 	}{
 		{
-			name:   "Set default routes",
-			router: chi.NewRouter(),
-			store:  storage.NewStore(),
+			name: "Set default routes",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			setDefaultRoutes(tt.router, tt.store)
+			s := NewServer(&server.Config{})
+			withDefaultRoutes(s)
 
 			// Check if the default routes are set up correctly.
-			require.True(t, tt.router.Match(chi.NewRouteContext(), http.MethodGet, "/"))
-			require.True(t, tt.router.Match(chi.NewRouteContext(), http.MethodGet, "/value/{metricType}/{metricName}"))
-			require.True(t, tt.router.Match(chi.NewRouteContext(), http.MethodPost, "/update/"))
-			require.True(t, tt.router.Match(chi.NewRouteContext(), http.MethodPost, "/update/{metricType}"))
-			require.True(t, tt.router.Match(chi.NewRouteContext(), http.MethodPost, "/update/{metricType}/{metricName}"))
-			require.True(t, tt.router.Match(
+			require.True(t, s.router.Match(chi.NewRouteContext(), http.MethodGet, "/"))
+			require.True(t, s.router.Match(chi.NewRouteContext(), http.MethodGet, "/value/{metricType}/{metricName}"))
+			require.True(t, s.router.Match(chi.NewRouteContext(), http.MethodPost, "/update/"))
+			require.True(t, s.router.Match(chi.NewRouteContext(), http.MethodPost, "/update/{metricType}"))
+			require.True(t, s.router.Match(chi.NewRouteContext(), http.MethodPost, "/update/{metricType}/{metricName}"))
+			require.True(t, s.router.Match(
 				chi.NewRouteContext(),
 				http.MethodPost,
 				"/update/{metricType}/{metricName}/{metricValue}",

@@ -14,7 +14,7 @@ var SugarLogger *zap.SugaredLogger
 func InitializeSugarLogger(level string) error {
 	lvl, err := zap.ParseAtomicLevel(level)
 	if err != nil {
-		return err
+		return fmt.Errorf("error InitializeSugarLogger on parse level string %s: %w", level, err)
 	}
 
 	// Check if a SugaredLogger already exists and its level matches the specified level.
@@ -27,7 +27,7 @@ func InitializeSugarLogger(level string) error {
 
 	zl, err := cfg.Build()
 	if err != nil {
-		return err
+		return fmt.Errorf("error InitializeSugarLogger on cfg build: %w", err)
 	}
 
 	sugared := zl.Sugar()
