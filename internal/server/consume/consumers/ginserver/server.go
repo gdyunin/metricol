@@ -43,7 +43,6 @@ func NewServer(addr string, repo entity.MetricRepository, logger *zap.SugaredLog
 // If the server fails to start, it returns an error with additional context.
 func (g *GinServer) StartConsume() error {
 	err := g.server.Run(g.serverAddress)
-	g.log.Info(g.serverAddress)
 	if err != nil {
 		return fmt.Errorf("emergency stop: failed to start Gin server on address %s: %w", g.serverAddress, err)
 	}

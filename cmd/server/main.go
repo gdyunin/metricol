@@ -8,6 +8,7 @@ import (
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/ginserver"
 	"github.com/gdyunin/metricol.git/pkg/logger"
 	"github.com/gdyunin/metricol.git/pkg/server/repositories"
+	"github.com/gin-gonic/gin"
 )
 
 // run initializes the in-memory repository and the Gin server consumer, then starts the consumption process.
@@ -28,6 +29,7 @@ func run() error {
 	repo := repositories.NewInMemoryRepository()
 
 	// Initialize the Gin server consumer with a configuration parser and the repository.
+	gin.SetMode(gin.ReleaseMode)
 	consumer := ginserver.NewServer(appCfg.ServerAddress, repo, baseLogger)
 
 	// Start the consumption process, handling any errors that occur during runtime.
