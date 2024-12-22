@@ -179,7 +179,7 @@ func (r *RestyClient) makeRequest() *resty.Request {
 	u := url.URL{
 		Scheme: "http",
 		Host:   r.client.BaseURL,
-		Path:   "/update",
+		Path:   "/update/",
 	}
 
 	req := r.client.R()
