@@ -35,7 +35,6 @@ func NewServer(addr string, repo entity.MetricRepository, logger *zap.SugaredLog
 
 	// Load HTML templates for rendering.
 	s.server.LoadHTMLGlob("web/templates/*")
-
 	return &s
 }
 

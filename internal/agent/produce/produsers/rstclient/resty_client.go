@@ -161,8 +161,7 @@ func (r *RestyClient) send(metric *model.Metric) error {
 	//	req.Header.Set("Content-Encoding", "gzip")
 	//}
 
-	req.Body = body
-	resp, err := req.Send()
+	resp, err := req.SetBody(body).Send()
 	if err != nil {
 		return fmt.Errorf("failed to send metric %v: %w", metric, err)
 	}
