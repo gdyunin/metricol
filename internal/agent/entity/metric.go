@@ -10,9 +10,9 @@ const (
 // Metric represents a metric with a name, type, and associated value.
 // The Value field is an interface, allowing it to store values of any type.
 type Metric struct {
+	Value any    // Value of the metric, which can hold any data type.
 	Name  string // Name of the metric.
 	Type  string // Type of the metric (e.g., "counter" or "gauge").
-	Value any    // Value of the metric, which can hold any data type.
 }
 
 // Equal compares the current Metric instance with another Metric.

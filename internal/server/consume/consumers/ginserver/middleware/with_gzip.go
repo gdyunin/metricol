@@ -2,12 +2,15 @@ package middleware
 
 import (
 	"compress/gzip"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
+
+const gzipEncodingHeader = "gzip"
 
 // gzipWriter is a custom response writer that compresses HTTP responses using gzip.
 // It wraps the original Gin ResponseWriter and an underlying gzip.Writer.
@@ -19,7 +22,8 @@ type gzipWriter struct {
 // Write writes compressed data to the underlying gzip writer.
 // Returns the number of bytes written and any errors encountered.
 func (w *gzipWriter) Write(b []byte) (int, error) {
-	return w.Writer.Write(b)
+	n, err := w.Writer.Write(b)
+	return n, fmt.Errorf("writeing error: %w", err)
 }
 
 // WithGzip applies gzip compression to HTTP responses if the client supports it.
@@ -28,7 +32,7 @@ func (w *gzipWriter) Write(b []byte) (int, error) {
 func WithGzip() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		acceptEncoding := c.GetHeader("Accept-Encoding")
-		if strings.Contains(acceptEncoding, "gzip") {
+		if strings.Contains(acceptEncoding, gzipEncodingHeader) {
 			gz, err := gzip.NewWriterLevel(c.Writer, gzip.BestSpeed)
 			if err != nil {
 				// Log and return a 500 Internal Server Error if gzip writer creation fails.
@@ -39,16 +43,16 @@ func WithGzip() gin.HandlerFunc {
 
 			// Replace the response writer with the gzip writer and set the appropriate header.
 			c.Writer = &gzipWriter{ResponseWriter: c.Writer, Writer: gz}
-			c.Header("Content-Encoding", "gzip")
+			c.Header("Content-Encoding", gzipEncodingHeader)
 		}
 
 		contentEncoding := c.GetHeader("Content-Encoding")
-		if contentEncoding != "" && !strings.Contains(contentEncoding, "gzip") {
+		if contentEncoding != "" && !strings.Contains(contentEncoding, gzipEncodingHeader) {
 			c.String(http.StatusBadRequest, "Unsupported content encoding: %s", contentEncoding)
 			return
 		}
 
-		if strings.Contains(contentEncoding, "gzip") {
+		if strings.Contains(contentEncoding, gzipEncodingHeader) {
 			gz, err := gzip.NewReader(c.Request.Body)
 			if err != nil {
 				// Log and return a 500 Internal Server Error if gzip reader creation fails.

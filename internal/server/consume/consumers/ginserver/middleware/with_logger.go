@@ -34,7 +34,11 @@ func WithLogger(logger *zap.SugaredLogger) gin.HandlerFunc {
 
 		// Log the HTTP request and response details.
 		logger.Infof(
-			"HTTP request: method=%s, uri=%s | duration=%s | status=%d | response_size=%d bytes | content_type=%s | body_encoded=%t",
+			"HTTP request: method=%s, uri=%s | "+
+				"duration=%s | status=%d | "+
+				"response_size=%d bytes | "+
+				"content_type=%s | "+
+				"body_encoded=%t",
 			c.Request.Method,                     // HTTP method (e.g., GET, POST).
 			c.Request.RequestURI,                 // Request URI.
 			duration,                             // Time taken to process the request.

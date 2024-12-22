@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/gin_server"
+	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/ginserver"
 	"github.com/gdyunin/metricol.git/pkg/logger"
 	"github.com/gdyunin/metricol.git/pkg/server/repositories"
 )
@@ -22,7 +22,7 @@ func run() error {
 	repo := repositories.NewInMemoryRepository()
 
 	// Initialize the Gin server consumer with a configuration parser and the repository.
-	consumer, err := gin_server.NewServerWithConfigParser(gin_server.ParseConfig, repo, baseLogger)
+	consumer, err := ginserver.NewServerWithConfigParser(ginserver.ParseConfig, repo, baseLogger)
 	if err != nil {
 		return fmt.Errorf("failed to initialize Gin server consumer: %w", err)
 	}

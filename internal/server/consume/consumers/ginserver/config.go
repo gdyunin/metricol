@@ -1,4 +1,4 @@
-package gin_server
+package ginserver
 
 import (
 	"flag"

@@ -1,9 +1,10 @@
-package resty_client
+package rstclient
 
 import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -14,7 +15,7 @@ import (
 	"github.com/gdyunin/metricol.git/internal/agent/adapter/produce"
 	"github.com/gdyunin/metricol.git/internal/agent/common"
 	"github.com/gdyunin/metricol.git/internal/agent/entity"
-	"github.com/gdyunin/metricol.git/internal/agent/produce/produsers/resty_client/model"
+	"github.com/gdyunin/metricol.git/internal/agent/produce/produsers/rstclient/model"
 
 	"github.com/go-resty/resty/v2"
 	"go.uber.org/zap"
@@ -31,14 +32,20 @@ type RestyClient struct {
 	client      *resty.Client
 	ticker      *time.Ticker
 	interrupter *common.Interrupter
-	interval    time.Duration
-	observers   map[common.Observer]struct{}
 	mu          *sync.RWMutex
 	log         *zap.SugaredLogger
+	observers   map[common.Observer]struct{}
+	interval    time.Duration
 }
 
-// NewRestyClient creates a new RestyClient instance with the specified interval, server address, repository, and logger.
-func NewRestyClient(interval time.Duration, serverAddress string, repo entity.MetricsRepository, logger *zap.SugaredLogger) *RestyClient {
+// NewRestyClient creates a new RestyClient instance with the specified interval,
+// server address, repository, and logger.
+func NewRestyClient(
+	interval time.Duration,
+	serverAddress string,
+	repo entity.MetricsRepository,
+	logger *zap.SugaredLogger,
+) *RestyClient {
 	rc := resty.New()
 	rc.BaseURL = serverAddress
 
@@ -53,7 +60,10 @@ func NewRestyClient(interval time.Duration, serverAddress string, repo entity.Me
 }
 
 // NewRestyClientWithConfigParser creates a RestyClient using a configuration parser.
-func NewRestyClientWithConfigParser(cfgParser func() (*RestyClientConfig, error), repo entity.MetricsRepository, logger *zap.SugaredLogger) (*RestyClient, error) {
+func NewRestyClientWithConfigParser(cfgParser func() (
+	*RestyClientConfig,
+	error,
+), repo entity.MetricsRepository, logger *zap.SugaredLogger) (*RestyClient, error) {
 	cfg, err := cfgParser()
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse Resty client configuration: %w", err)
@@ -63,7 +73,8 @@ func NewRestyClientWithConfigParser(cfgParser func() (*RestyClientConfig, error)
 	return rc, nil
 }
 
-// StartProduce begins the metrics production process. It runs in a loop until an error occurs or the interrupter stops it.
+// StartProduce begins the metrics production process.
+// It runs in a loop until an error occurs or the interrupter stops it.
 func (r *RestyClient) StartProduce() error {
 	r.ticker = time.NewTicker(r.interval)
 	defer r.ticker.Stop()
@@ -83,7 +94,7 @@ func (r *RestyClient) StartProduce() error {
 				return fmt.Errorf("metrics production process failed: %w", err)
 			}
 		case <-r.interrupter.C:
-			return fmt.Errorf("error limit exceeded during metrics production")
+			return errors.New("error limit exceeded during metrics production")
 		}
 	}
 }
@@ -135,7 +146,7 @@ func (r *RestyClient) sendAll() error {
 
 	for _, m := range metrics {
 		if !r.interrupter.InLimit() {
-			return fmt.Errorf("metrics transmission halted: error limit exceeded")
+			return errors.New("metrics transmission halted: error limit exceeded")
 		}
 
 		if err := r.send(m); err != nil {
@@ -158,7 +169,7 @@ func (r *RestyClient) send(metric *model.Metric) error {
 
 	compressedBody, err := compressBody(body)
 	if err != nil {
-		r.log.Warn("Metric compression failed. Sending uncompressed data.")
+		r.log.Info("Metric compression failed. Sending uncompressed data.")
 		req.Body = body
 	} else {
 		req.Body = compressedBody

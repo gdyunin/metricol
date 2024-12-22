@@ -3,18 +3,17 @@ package adapter
 import (
 	"fmt"
 
-	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/gin_server/model"
+	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/ginserver/model"
 	"github.com/gdyunin/metricol.git/internal/server/entity"
-	"github.com/gdyunin/metricol.git/internal/server/entity_interface"
 )
 
 type GinController struct {
-	metricInterface *entity_interface.MetricsInterface
+	metricInterface *entity.MetricsInterface
 }
 
 func NewGinController(repo entity.MetricRepository) *GinController {
 	return &GinController{
-		metricInterface: entity_interface.NewMetricsInterface(repo),
+		metricInterface: entity.NewMetricsInterface(repo),
 	}
 }
 

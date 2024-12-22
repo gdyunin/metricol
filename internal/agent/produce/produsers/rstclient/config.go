@@ -1,4 +1,4 @@
-package resty_client
+package rstclient
 
 import (
 	"flag"
@@ -19,7 +19,8 @@ type RestyClientConfig struct {
 	ReportInterval int    `env:"REPORT_INTERVAL"` // Interval for reporting metrics in seconds.
 }
 
-// ParseConfig initializes the configuration with default values, overrides them with environment variables if available,
+// ParseConfig initializes the configuration with default values,
+// overrides them with environment variables if available,
 // and finally allows command-line flags to further set or override the configuration values.
 func ParseConfig() (*RestyClientConfig, error) {
 	// Initialize configuration with default values.

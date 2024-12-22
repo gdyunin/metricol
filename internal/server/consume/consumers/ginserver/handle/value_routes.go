@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gdyunin/metricol.git/internal/server/adapter"
-	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/gin_server/parse"
+	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/ginserver/parse"
 
 	"github.com/gin-gonic/gin"
 )

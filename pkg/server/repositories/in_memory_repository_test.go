@@ -64,14 +64,23 @@ func TestInMemoryRepository_Create(t *testing.T) {
 
 /*
 TestInMemoryRepository_Read tests the Read method of the InMemoryRepository.
-It validates that metrics can be retrieved correctly and that errors are returned for non-existent or unsupported metric types.
+It validates that metrics can be retrieved correctly and that errors are returned for non-existent
+or unsupported metric types.
 */
 func TestInMemoryRepository_Read(t *testing.T) {
 	repo := NewInMemoryRepository()
 
 	// Prepopulate the repository.
-	require.NoError(t, repo.Create(&entity.Metric{Name: "test_counter", Type: entity.MetricTypeCounter, Value: int64(100)}))
-	require.NoError(t, repo.Create(&entity.Metric{Name: "test_gauge", Type: entity.MetricTypeGauge, Value: 1.23}))
+	require.NoError(t, repo.Create(&entity.Metric{
+		Name:  "test_counter",
+		Type:  entity.MetricTypeCounter,
+		Value: int64(100),
+	}))
+	require.NoError(t, repo.Create(&entity.Metric{
+		Name:  "test_gauge",
+		Type:  entity.MetricTypeGauge,
+		Value: 1.23,
+	}))
 
 	tests := []struct {
 		name        string
@@ -145,7 +154,11 @@ func TestInMemoryRepository_Update(t *testing.T) {
 	repo := NewInMemoryRepository()
 
 	// Prepopulate the repository.
-	require.NoError(t, repo.Create(&entity.Metric{Name: "test_counter", Type: entity.MetricTypeCounter, Value: int64(100)}))
+	require.NoError(t, repo.Create(&entity.Metric{
+		Name:  "test_counter",
+		Type:  entity.MetricTypeCounter,
+		Value: int64(100),
+	}))
 
 	tests := []struct {
 		name        string
@@ -196,7 +209,11 @@ func TestInMemoryRepository_IsExists(t *testing.T) {
 	repo := NewInMemoryRepository()
 
 	// Prepopulate the repository.
-	require.NoError(t, repo.Create(&entity.Metric{Name: "test_counter", Type: entity.MetricTypeCounter, Value: int64(100)}))
+	require.NoError(t, repo.Create(&entity.Metric{
+		Name:  "test_counter",
+		Type:  entity.MetricTypeCounter,
+		Value: int64(100),
+	}))
 
 	tests := []struct {
 		name        string

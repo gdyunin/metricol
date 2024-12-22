@@ -1,11 +1,12 @@
 package parse
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
-	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/gin_server/model"
+	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/ginserver/model"
 	"github.com/gdyunin/metricol.git/internal/server/entity"
 
 	"github.com/gin-gonic/gin"
@@ -31,10 +32,10 @@ func MetricFromURI(c *gin.Context) (*model.Metric, error) {
 
 	// Validate that the required fields (ID and MType) are present.
 	if m.ID == "" {
-		return nil, fmt.Errorf("missing required metric ID in URI")
+		return nil, errors.New("missing required metric ID in URI")
 	}
 	if m.MType == "" {
-		return nil, fmt.Errorf("missing required metric type in URI")
+		return nil, errors.New("missing required metric type in URI")
 	}
 
 	// Parse the metric value from the URI (if provided).

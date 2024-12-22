@@ -1,7 +1,7 @@
 package common
 
 import (
-	"fmt"
+	"errors"
 	"time"
 )
 
@@ -20,7 +20,7 @@ type Interrupter struct {
 // Returns an error if the limit is less than or equal to zero.
 func NewInterrupter(interval time.Duration, limit uint8) (*Interrupter, error) {
 	if limit <= 0 {
-		return nil, fmt.Errorf("the limit for errors must be a positive non-zero value")
+		return nil, errors.New("the limit for errors must be a positive non-zero value")
 	}
 
 	i := &Interrupter{

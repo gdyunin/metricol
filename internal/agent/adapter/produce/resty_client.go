@@ -2,8 +2,7 @@ package produce
 
 import (
 	"github.com/gdyunin/metricol.git/internal/agent/entity"
-	"github.com/gdyunin/metricol.git/internal/agent/entity_interface"
-	"github.com/gdyunin/metricol.git/internal/agent/produce/produsers/resty_client/model"
+	"github.com/gdyunin/metricol.git/internal/agent/produce/produsers/rstclient/model"
 
 	"go.uber.org/zap"
 )
@@ -13,7 +12,7 @@ var logger *zap.SugaredLogger
 // RestyClientAdapter serves as an adapter for interacting with the metrics repository.
 // It converts metrics from the internal entity format to the Resty Client's model format.
 type RestyClientAdapter struct {
-	metricInterface *entity_interface.MetricsInterface
+	metricInterface *entity.MetricsInterface
 }
 
 // NewRestyClientAdapter initializes a new RestyClientAdapter with the provided metrics repository and logger.
@@ -27,7 +26,7 @@ type RestyClientAdapter struct {
 //   - A pointer to an initialized RestyClientAdapter.
 func NewRestyClientAdapter(repo entity.MetricsRepository, log *zap.SugaredLogger) *RestyClientAdapter {
 	logger = log
-	return &RestyClientAdapter{metricInterface: entity_interface.NewMetricsInterface(repo)}
+	return &RestyClientAdapter{metricInterface: entity.NewMetricsInterface(repo)}
 }
 
 // Metrics retrieves all stored metrics from the repository and converts them into

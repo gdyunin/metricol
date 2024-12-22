@@ -5,13 +5,14 @@ import (
 	"log"
 
 	"github.com/gdyunin/metricol.git/internal/agent/agent"
-	"github.com/gdyunin/metricol.git/internal/agent/collect/collectors/mem_stats_collector"
-	"github.com/gdyunin/metricol.git/internal/agent/produce/produsers/resty_client"
+	"github.com/gdyunin/metricol.git/internal/agent/collect/collectors/mscollector"
+	"github.com/gdyunin/metricol.git/internal/agent/produce/produsers/rstclient"
 	"github.com/gdyunin/metricol.git/pkg/agent/repositories"
 	"github.com/gdyunin/metricol.git/pkg/logger"
 )
 
-// run sets up and starts the application by initializing its components: the repository, collector, producer, and agent.
+// run sets up and starts the application by initializing its components:
+// the repository, collector, producer, and agent.
 // It returns detailed errors if any step fails during initialization or execution.
 func run() error {
 	// Initialize the base logger with the INFO level for consistent logging throughout the application.
@@ -24,8 +25,8 @@ func run() error {
 	repo := repositories.NewInMemoryRepository()
 
 	// Initialize the memory statistics collector using the configuration parser and in-memory repository.
-	collector, err := mem_stats_collector.NewMemStatsCollectorWithConfigParser(
-		mem_stats_collector.ParseConfig,
+	collector, err := mscollector.NewMemStatsCollectorWithConfigParser(
+		mscollector.ParseConfig,
 		repo,
 		baseLogger.Named("collector"),
 	)
@@ -34,8 +35,8 @@ func run() error {
 	}
 
 	// Initialize the REST client producer using the configuration parser and in-memory repository.
-	producer, err := resty_client.NewRestyClientWithConfigParser(
-		resty_client.ParseConfig,
+	producer, err := rstclient.NewRestyClientWithConfigParser(
+		rstclient.ParseConfig,
 		repo,
 		baseLogger.Named("producer"),
 	)

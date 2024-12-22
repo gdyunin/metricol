@@ -28,16 +28,8 @@ func NewInMemoryRepository() *InMemoryRepository {
 // Create adds a new metric to the repository based on its type.
 // It returns an error if the metric type is unknown.
 func (r *InMemoryRepository) Create(metric *entity.Metric) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	switch metric.Type {
-	case entity.MetricTypeCounter:
-		r.counters[metric.Name] = metric.Value.(int64)
-	case entity.MetricTypeGauge:
-		r.gauges[metric.Name] = metric.Value.(float64)
-	default:
-		return fmt.Errorf("unsupported metric type: %s", metric.Type)
+	if err := r.Update(metric); err != nil {
+		return fmt.Errorf("error create metric: %w", err)
 	}
 	return nil
 }
@@ -76,19 +68,23 @@ func (r *InMemoryRepository) Read(filter *entity.Filter) (*entity.Metric, error)
 
 // Update modifies an existing metric in the repository based on its type.
 // It returns an error if the metric type is unknown.
-func (r *InMemoryRepository) Update(metric *entity.Metric) error {
+func (r *InMemoryRepository) Update(metric *entity.Metric) (err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	switch metric.Type {
 	case entity.MetricTypeCounter:
-		r.counters[metric.Name] = metric.Value.(int64)
+		err = r.storeCounter(metric)
 	case entity.MetricTypeGauge:
-		r.gauges[metric.Name] = metric.Value.(float64)
+		err = r.storeGauge(metric)
 	default:
-		return fmt.Errorf("unsupported metric type: %s", metric.Type)
+		err = fmt.Errorf("unsupported metric type: %s", metric.Type)
 	}
-	return nil
+
+	if err != nil {
+		err = fmt.Errorf("error update metric: %w", err)
+	}
+	return
 }
 
 // IsExists checks if a metric with the specified filter exists in the repository.
@@ -144,4 +140,22 @@ func (r *InMemoryRepository) metricsCount() int {
 	defer r.mu.RUnlock()
 
 	return len(r.counters) + len(r.gauges)
+}
+
+func (r *InMemoryRepository) storeCounter(metric *entity.Metric) error {
+	value, ok := metric.Value.(int64)
+	if !ok {
+		return fmt.Errorf("counter value must be int64 but got %T", metric.Value)
+	}
+	r.counters[metric.Name] = value
+	return nil
+}
+
+func (r *InMemoryRepository) storeGauge(metric *entity.Metric) error {
+	value, ok := metric.Value.(float64)
+	if !ok {
+		return fmt.Errorf("gauge value must be float64 but got %T", metric.Value)
+	}
+	r.gauges[metric.Name] = value
+	return nil
 }

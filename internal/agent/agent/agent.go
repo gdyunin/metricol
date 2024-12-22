@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
@@ -31,7 +32,12 @@ type Agent struct {
 // Returns:
 //   - A pointer to the initialized Agent instance.
 //   - An error if applying any of the options fails.
-func NewAgent(collector collect.Collector, producer produce.Producer, logger *zap.SugaredLogger, options ...func(*Agent) error) (a *Agent, err error) {
+func NewAgent(
+	collector collect.Collector,
+	producer produce.Producer,
+	logger *zap.SugaredLogger,
+	options ...func(*Agent) error,
+) (a *Agent, err error) {
 	a = &Agent{
 		collector: collector,
 		producer:  producer,
@@ -105,12 +111,12 @@ func (a *Agent) Start() error {
 func WithSubscribeConsumer2Producer(agent *Agent) error {
 	observer, ok := agent.collector.(common.Observer)
 	if !ok {
-		return fmt.Errorf("collector does not implement the Observer interface")
+		return errors.New("collector does not implement the Observer interface")
 	}
 
 	subject, ok := agent.producer.(common.ObserveSubject)
 	if !ok {
-		return fmt.Errorf("producer does not implement the ObserveSubject interface")
+		return errors.New("producer does not implement the ObserveSubject interface")
 	}
 
 	if err := common.Subscribe(observer, subject); err != nil {

@@ -1,10 +1,8 @@
-package entity_interface
+package entity
 
 import (
 	"errors"
 	"fmt"
-
-	"github.com/gdyunin/metricol.git/internal/server/entity"
 )
 
 // Predefined error messages for common metric operations.
@@ -21,23 +19,23 @@ var (
 
 // MetricsInterface provides methods to manage metrics in a repository.
 type MetricsInterface struct {
-	repo entity.MetricRepository // The repository used for storing and managing metrics.
+	repo MetricRepository // The repository used for storing and managing metrics.
 }
 
 // NewMetricsInterface creates a new instance of `MetricsInterface` with the given repository.
 // Returns a pointer to the newly created `MetricsInterface`.
-func NewMetricsInterface(repo entity.MetricRepository) *MetricsInterface {
+func NewMetricsInterface(repo MetricRepository) *MetricsInterface {
 	return &MetricsInterface{repo: repo}
 }
 
 // PushMetric pushes a new metric to the repository or updates an existing one.
 // Returns the updated metric and an error if the operation fails.
-func (mi *MetricsInterface) PushMetric(metric *entity.Metric) (*entity.Metric, error) {
+func (mi *MetricsInterface) PushMetric(metric *Metric) (*Metric, error) {
 	if isValid := validateNewMetric(metric); !isValid {
 		return nil, fmt.Errorf("%w: invalid metric data: %+v", ErrPushMetric, metric)
 	}
 
-	isExists, err := mi.repo.IsExists(&entity.Filter{Name: metric.Name, Type: metric.Type})
+	isExists, err := mi.repo.IsExists(&Filter{Name: metric.Name, Type: metric.Type})
 	if err != nil {
 		return nil, fmt.Errorf("%w: error checking metric existence: %w", ErrPushMetric, err)
 	}
@@ -60,8 +58,8 @@ func (mi *MetricsInterface) PushMetric(metric *entity.Metric) (*entity.Metric, e
 
 // PullMetric retrieves a metric from the repository by its name and type.
 // Returns the metric and an error if the operation fails or if the metric does not exist.
-func (mi *MetricsInterface) PullMetric(metric *entity.Metric) (*entity.Metric, error) {
-	isExists, err := mi.repo.IsExists(&entity.Filter{Name: metric.Name, Type: metric.Type})
+func (mi *MetricsInterface) PullMetric(metric *Metric) (*Metric, error) {
+	isExists, err := mi.repo.IsExists(&Filter{Name: metric.Name, Type: metric.Type})
 	if err != nil {
 		return nil, fmt.Errorf("%w: error checking metric existence: %w", ErrPullMetric, err)
 	}
@@ -70,7 +68,7 @@ func (mi *MetricsInterface) PullMetric(metric *entity.Metric) (*entity.Metric, e
 		return nil, fmt.Errorf("%w: metric not found", ErrPullMetric)
 	}
 
-	m, err := mi.repo.Read(&entity.Filter{Name: metric.Name, Type: metric.Type})
+	m, err := mi.repo.Read(&Filter{Name: metric.Name, Type: metric.Type})
 	if err != nil {
 		return nil, fmt.Errorf("%w: error reading metric from repository: %w", ErrPullMetric, err)
 	}
@@ -79,7 +77,7 @@ func (mi *MetricsInterface) PullMetric(metric *entity.Metric) (*entity.Metric, e
 
 // AllMetricsInRepo retrieves all metrics from the repository.
 // Returns a slice of metrics and an error if the operation fails.
-func (mi *MetricsInterface) AllMetricsInRepo() ([]*entity.Metric, error) {
+func (mi *MetricsInterface) AllMetricsInRepo() ([]*Metric, error) {
 	m, err := mi.repo.All()
 	if err != nil {
 		return nil, fmt.Errorf("%w: error retrieving metrics: %w", ErrAllMetricsInRepo, err)
@@ -92,16 +90,16 @@ func (mi *MetricsInterface) AllMetricsInRepo() ([]*entity.Metric, error) {
 //
 // - MetricTypeCounter requires an `int64` value.
 // - MetricTypeGauge requires a `float64` value.
-func validateNewMetric(metric *entity.Metric) bool {
+func validateNewMetric(metric *Metric) bool {
 	if metric.Name == "" || metric.Type == "" {
 		return false
 	}
 
 	switch metric.Type {
-	case entity.MetricTypeCounter:
+	case MetricTypeCounter:
 		_, ok := metric.Value.(int64) // Counter metrics must have an int64 value.
 		return ok
-	case entity.MetricTypeGauge:
+	case MetricTypeGauge:
 		_, ok := metric.Value.(float64) // Gauge metrics must have a float64 value.
 		return ok
 	default:
@@ -112,10 +110,9 @@ func validateNewMetric(metric *entity.Metric) bool {
 // updateExistsMetric updates an existing metric in the repository based on its type.
 // For Counter metrics, it increments the stored value by the new value.
 // Returns the updated metric and an error if the operation fails.
-func (mi *MetricsInterface) updateExistsMetric(metric *entity.Metric) (*entity.Metric, error) {
-	switch metric.Type {
-	case entity.MetricTypeCounter:
-		m, err := mi.repo.Read(&entity.Filter{Name: metric.Name, Type: metric.Type})
+func (mi *MetricsInterface) updateExistsMetric(metric *Metric) (*Metric, error) {
+	if metric.Type == MetricTypeCounter {
+		m, err := mi.repo.Read(&Filter{Name: metric.Name, Type: metric.Type})
 		if err != nil {
 			return nil, fmt.Errorf("error reading existing metric: %w", err)
 		}

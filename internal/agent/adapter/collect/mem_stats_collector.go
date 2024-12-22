@@ -3,15 +3,14 @@ package collect
 import (
 	"fmt"
 
-	"github.com/gdyunin/metricol.git/internal/agent/collect/collectors/mem_stats_collector/model"
+	"github.com/gdyunin/metricol.git/internal/agent/collect/collectors/mscollector/model"
 	"github.com/gdyunin/metricol.git/internal/agent/entity"
-	"github.com/gdyunin/metricol.git/internal/agent/entity_interface"
 )
 
 // MemStatsCollectorAdapter is an adapter that provides methods to store metrics
 // from the memory statistics collector into a metrics repository.
 type MemStatsCollectorAdapter struct {
-	metricInterface *entity_interface.MetricsInterface
+	metricInterface *entity.MetricsInterface
 }
 
 // NewMemStatsCollectorAdapter creates a new instance of MemStatsCollectorAdapter.
@@ -23,7 +22,7 @@ type MemStatsCollectorAdapter struct {
 // Returns:
 //   - A pointer to an initialized MemStatsCollectorAdapter.
 func NewMemStatsCollectorAdapter(repo entity.MetricsRepository) *MemStatsCollectorAdapter {
-	return &MemStatsCollectorAdapter{metricInterface: entity_interface.NewMetricsInterface(repo)}
+	return &MemStatsCollectorAdapter{metricInterface: entity.NewMetricsInterface(repo)}
 }
 
 // Store saves the provided metric into the repository.

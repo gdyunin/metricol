@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"errors"
 	"fmt"
 
 	"go.uber.org/zap"
@@ -17,7 +18,7 @@ var loggers = make(map[string]*zap.SugaredLogger) // Map to store cached loggers
 // If an error occurs during logger initialization, it returns an error.
 func Logger(level string) (*zap.SugaredLogger, error) {
 	if level == "" {
-		return nil, fmt.Errorf("error: expected non-empty level string but got empty string")
+		return nil, errors.New("error: expected non-empty level string but got empty string")
 	}
 
 	// If the logger for the given level already exists, return it.

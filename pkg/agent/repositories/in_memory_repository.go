@@ -8,8 +8,8 @@ import (
 
 // InMemoryRepository is a thread-safe in-memory storage for metrics.
 type InMemoryRepository struct {
-	metrics []*entity.Metric // Slice to hold metrics.
 	mu      *sync.RWMutex    // Mutex for concurrent access control.
+	metrics []*entity.Metric // Slice to hold metrics.
 }
 
 // NewInMemoryRepository creates and returns a new instance of InMemoryRepository.

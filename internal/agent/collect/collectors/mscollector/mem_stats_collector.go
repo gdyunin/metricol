@@ -1,6 +1,7 @@
-package mem_stats_collector
+package mscollector
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"runtime"
@@ -8,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gdyunin/metricol.git/internal/agent/adapter/collect"
-	"github.com/gdyunin/metricol.git/internal/agent/collect/collectors/mem_stats_collector/model"
+	"github.com/gdyunin/metricol.git/internal/agent/collect/collectors/mscollector/model"
 	"github.com/gdyunin/metricol.git/internal/agent/common"
 	"github.com/gdyunin/metricol.git/internal/agent/entity"
 
@@ -24,17 +25,21 @@ const (
 type MemStatsCollector struct {
 	adp         *collect.MemStatsCollectorAdapter
 	ms          *runtime.MemStats
-	polls       int
-	seed        float64
 	ticker      *time.Ticker
 	interrupter *common.Interrupter
-	interval    time.Duration
 	mu          *sync.RWMutex
 	log         *zap.SugaredLogger
+	polls       int
+	interval    time.Duration
+	seed        float64
 }
 
 // NewMemStatsCollector creates a new instance of MemStatsCollector with a specified collection interval.
-func NewMemStatsCollector(interval time.Duration, repo entity.MetricsRepository, logger *zap.SugaredLogger) *MemStatsCollector {
+func NewMemStatsCollector(
+	interval time.Duration,
+	repo entity.MetricsRepository,
+	logger *zap.SugaredLogger,
+) *MemStatsCollector {
 	return &MemStatsCollector{
 		adp:      collect.NewMemStatsCollectorAdapter(repo),
 		ms:       &runtime.MemStats{},
@@ -45,7 +50,11 @@ func NewMemStatsCollector(interval time.Duration, repo entity.MetricsRepository,
 }
 
 // NewMemStatsCollectorWithConfigParser initializes a MemStatsCollector using a configuration parser.
-func NewMemStatsCollectorWithConfigParser(cfgParser func() (*MemStatsCollectorConfig, error), repo entity.MetricsRepository, logger *zap.SugaredLogger) (*MemStatsCollector, error) {
+func NewMemStatsCollectorWithConfigParser(
+	cfgParser func() (*MemStatsCollectorConfig, error),
+	repo entity.MetricsRepository,
+	logger *zap.SugaredLogger,
+) (*MemStatsCollector, error) {
 	cfg, err := cfgParser()
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse MemStatsCollector configuration: %w", err)
@@ -75,7 +84,7 @@ func (c *MemStatsCollector) StartCollect() error {
 			c.update()
 			c.store()
 		case <-c.interrupter.C:
-			return fmt.Errorf("memory statistics collection interrupted: maximum error limit reached")
+			return errors.New("memory statistics collection interrupted: maximum error limit reached")
 		}
 	}
 }
