@@ -6,8 +6,6 @@ import (
 	"github.com/gdyunin/metricol.git/internal/server/adapter"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/ginserver/model"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/ginserver/parse"
-	"github.com/gdyunin/metricol.git/pkg/logger"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -62,9 +60,6 @@ func UpdateHandlerWithURIParams(ctrl *adapter.GinController) func(*gin.Context) 
 // - Returns an HTTP 200 (OK) along with the updated metric in JSON format if successful.
 func UpdateHandlerWithJSONParams(ctrl *adapter.GinController) func(*gin.Context) {
 	return func(c *gin.Context) {
-		l, _ := logger.Logger("INFO")
-		l.Infof("получили такое: %+v", c)
-
 		// Parse the metric from the JSON body.
 		m, err := parse.MetricFromJSON(c)
 		if err != nil || !isFillValueFields(m) {
