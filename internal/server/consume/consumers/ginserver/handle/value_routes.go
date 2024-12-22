@@ -31,6 +31,7 @@ func ValueHandlerWithURIParams(ctrl *adapter.GinController) func(*gin.Context) {
 			c.String(http.StatusBadRequest, "Failed to parse metric from URI parameters: invalid or incomplete data.")
 			return
 		}
+
 		isExists, err := ctrl.IsExists(m)
 		if err != nil {
 			// Respond with a clear error message if metric retrieval fails.
@@ -83,6 +84,18 @@ func ValueHandlerWithJSONParams(ctrl *adapter.GinController) func(*gin.Context) 
 		if err != nil {
 			// Respond with a clear error message if parsing fails.
 			c.String(http.StatusBadRequest, "Failed to parse metric from JSON body: invalid or incomplete data.")
+			return
+		}
+
+		isExists, err := ctrl.IsExists(m)
+		if err != nil {
+			// Respond with a clear error message if metric retrieval fails.
+			c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+			return
+		}
+		if !isExists {
+			// Respond with a clear error message if metric retrieval fails.
+			c.String(http.StatusNotFound, http.StatusText(http.StatusNotFound))
 			return
 		}
 
