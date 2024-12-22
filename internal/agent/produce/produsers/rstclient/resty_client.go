@@ -162,25 +162,11 @@ func (r *RestyClient) send(metric *model.Metric) error {
 		req.Header.Set("Content-Encoding", "gzip")
 	}
 
-	req.Body = body
-
-	r.log.Infow("Sending request",
-		"url", req.URL,
-		"method", req.Method,
-		"headers", req.Header,
-		"body", fmt.Sprintf("%v", body),
-	)
-
 	resp, err := req.Send()
 	if err != nil {
 		r.log.Infof("err: %#v", err)
 		return fmt.Errorf("failed to send metric %v: %w", metric, err)
 	}
-
-	r.log.Infow("Response received",
-		"status_code", resp.StatusCode(),
-		"body", resp.String(),
-	)
 
 	if resp.StatusCode() != http.StatusOK {
 		return fmt.Errorf("failed to send metric %v: server returned status code %d", metric, resp.StatusCode())
@@ -193,7 +179,7 @@ func (r *RestyClient) send(metric *model.Metric) error {
 func (r *RestyClient) makeRequest() *resty.Request {
 	u := url.URL{
 		Scheme: "http",
-		Path:   path.Join(r.client.BaseURL, "/update"),
+		Path:   path.Join(r.client.BaseURL, "/update/"),
 	}
 
 	req := r.client.R()
