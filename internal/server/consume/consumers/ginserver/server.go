@@ -30,6 +30,8 @@ func NewServer(addr string, repo entity.MetricRepository, logger *zap.SugaredLog
 		log:           logger,
 	}
 
+	s.log.Infof("Server was configured with params: %+v", s)
+
 	// Attempt to set up.
 	s.setupServer()
 
