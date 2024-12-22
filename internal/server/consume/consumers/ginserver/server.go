@@ -25,7 +25,7 @@ type GinServer struct {
 func NewServer(addr string, repo entity.MetricRepository, logger *zap.SugaredLogger) *GinServer {
 	s := GinServer{
 		serverAddress: addr,
-		server:        gin.Default(),
+		server:        gin.New(),
 		adp:           adapter.NewGinController(repo),
 		log:           logger,
 	}
