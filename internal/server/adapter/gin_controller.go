@@ -60,9 +60,17 @@ func m2em(m *model.Metric) (em *entity.Metric) {
 
 	switch m.MType {
 	case entity.MetricTypeCounter:
-		em.Value = any(*m.Delta)
+		if m.Delta != nil {
+			em.Value = any(*m.Delta)
+		} else {
+			em.Value = nil
+		}
 	case entity.MetricTypeGauge:
-		em.Value = any(*m.Value)
+		if m.Value != nil {
+			em.Value = any(*m.Value)
+		} else {
+			em.Value = nil
+		}
 	}
 
 	return
