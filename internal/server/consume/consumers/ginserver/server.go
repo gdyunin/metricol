@@ -75,21 +75,9 @@ func (g *GinServer) setupRouters() {
 	// Main page route.
 	g.server.GET("/", handle.MainPageHandler(g.adp))
 
-	// "/value" routes for retrieving metric values.
-	{
-		value := g.server.Group("/value")
-		// Retrieve metric values using JSON parameters.
-		value.POST("/", handle.ValueHandlerWithJSONParams(g.adp))
-		// Retrieve metric values using URI parameters.
-		value.GET("/:type/:id", handle.ValueHandlerWithURIParams(g.adp))
-	}
+	g.server.POST("/value", handle.ValueHandlerWithJSONParams(g.adp))
+	g.server.GET("/value/:type/:id", handle.ValueHandlerWithURIParams(g.adp))
+	g.server.POST("/update", handle.UpdateHandlerWithJSONParams(g.adp))
+	g.server.POST("/update/:type/:id/*value", handle.ValueHandlerWithURIParams(g.adp))
 
-	// "/update" routes for updating metric values.
-	{
-		update := g.server.Group("/update")
-		// Update metric values using JSON parameters.
-		update.POST("/", handle.UpdateHandlerWithJSONParams(g.adp))
-		// Update metric values using URI parameters.
-		update.POST("/:type/:id/*value", handle.UpdateHandlerWithURIParams(g.adp))
-	}
 }
