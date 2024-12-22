@@ -25,7 +25,7 @@ type GinServer struct {
 func NewServer(addr string, repo entity.MetricRepository, logger *zap.SugaredLogger) *GinServer {
 	s := GinServer{
 		serverAddress: addr,
-		server:        gin.New(),
+		server:        gin.Default(),
 		adp:           adapter.NewGinController(repo),
 		log:           logger,
 	}
@@ -62,7 +62,6 @@ func (g *GinServer) setupServer() {
 // It returns an error if any middleware setup fails.
 func (g *GinServer) setupMiddlewares() {
 	g.server.Use(
-		gin.Recovery(), // Provides recovery middleware to handle panics gracefully.
 		middleware.WithLogger(g.log.Named("request")), // Adds request logging middleware.
 		//middleware.WithGzip(),                         // Adds gzip compression middleware.
 	)
