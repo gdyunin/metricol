@@ -77,7 +77,8 @@ func UpdateHandlerWithJSONParams(ctrl *adapter.GinController) func(*gin.Context)
 		}
 
 		// Respond with the updated metric in JSON format.
-		c.JSON(http.StatusOK, m)
+		//c.JSON(http.StatusOK, m)
+		c.String(200, "OK")
 	}
 }
 
