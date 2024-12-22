@@ -99,7 +99,7 @@ func (g *GinServer) setupRouters() {
 		// Retrieve metric values using JSON parameters.
 		value.POST("", handle.ValueHandlerWithJSONParams(g.adp))
 		// Retrieve metric values using URI parameters.
-		value.GET("/:id/:type", handle.ValueHandlerWithURIParams(g.adp))
+		value.GET("/:type/:id", handle.ValueHandlerWithURIParams(g.adp))
 	}
 
 	// "/update" routes for updating metric values.
