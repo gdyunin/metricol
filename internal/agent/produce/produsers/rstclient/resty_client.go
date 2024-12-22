@@ -59,20 +59,6 @@ func NewRestyClient(
 	}
 }
 
-// NewRestyClientWithConfigParser creates a RestyClient using a configuration parser.
-func NewRestyClientWithConfigParser(cfgParser func() (
-	*RestyClientConfig,
-	error,
-), repo entity.MetricsRepository, logger *zap.SugaredLogger) (*RestyClient, error) {
-	cfg, err := cfgParser()
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse Resty client configuration: %w", err)
-	}
-
-	rc := NewRestyClient(time.Duration(cfg.ReportInterval)*time.Second, cfg.ServerAddress, repo, logger)
-	return rc, nil
-}
-
 // StartProduce begins the metrics production process.
 // It runs in a loop until an error occurs or the interrupter stops it.
 func (r *RestyClient) StartProduce() error {

@@ -39,24 +39,6 @@ func NewServer(addr string, repo entity.MetricRepository, logger *zap.SugaredLog
 	return &s
 }
 
-// NewServerWithConfigParser initializes and returns a new GinServer instance
-// using a configuration parser function and repositories.
-// It sets up the Gin server with the provided configuration and returns an error if setup fails.
-func NewServerWithConfigParser(cfgParser func() (
-	*GinServerConfig,
-	error,
-), repo entity.MetricRepository, logger *zap.SugaredLogger) (*GinServer, error) {
-	// Parse the configuration using the provided parser function.
-	cfg, err := cfgParser()
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse Gin server configuration: %w", err)
-	}
-
-	// Create a new server using the parsed configuration.
-	s := NewServer(cfg.ServerAddress, repo, logger)
-	return s, nil
-}
-
 // StartConsume starts the Gin server and begins consuming requests.
 // If the server fails to start, it returns an error with additional context.
 func (g *GinServer) StartConsume() error {

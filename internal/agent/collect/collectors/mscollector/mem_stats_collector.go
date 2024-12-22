@@ -49,21 +49,6 @@ func NewMemStatsCollector(
 	}
 }
 
-// NewMemStatsCollectorWithConfigParser initializes a MemStatsCollector using a configuration parser.
-func NewMemStatsCollectorWithConfigParser(
-	cfgParser func() (*MemStatsCollectorConfig, error),
-	repo entity.MetricsRepository,
-	logger *zap.SugaredLogger,
-) (*MemStatsCollector, error) {
-	cfg, err := cfgParser()
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse MemStatsCollector configuration: %w", err)
-	}
-
-	collector := NewMemStatsCollector(time.Duration(cfg.PollInterval)*time.Second, repo, logger)
-	return collector, nil
-}
-
 // StartCollect begins periodic memory statistics collection.
 // Returns an error if the collection process is interrupted or initialization fails.
 func (c *MemStatsCollector) StartCollect() error {

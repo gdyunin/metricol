@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/gdyunin/metricol.git/internal/agent/agent"
 	"github.com/gdyunin/metricol.git/internal/agent/collect/collectors/mscollector"
+	"github.com/gdyunin/metricol.git/internal/agent/config"
 	"github.com/gdyunin/metricol.git/internal/agent/produce/produsers/rstclient"
 	"github.com/gdyunin/metricol.git/pkg/agent/repositories"
 	"github.com/gdyunin/metricol.git/pkg/logger"
@@ -15,6 +17,11 @@ import (
 // the repository, collector, producer, and agent.
 // It returns detailed errors if any step fails during initialization or execution.
 func run() error {
+	appCfg, err := config.ParseConfig()
+	if err != nil {
+		log.Fatalf("Get configuration fail: %v", err)
+	}
+
 	// Initialize the base logger with the INFO level for consistent logging throughout the application.
 	baseLogger, err := logger.Logger(logger.LevelINFO)
 	if err != nil {
@@ -25,24 +32,19 @@ func run() error {
 	repo := repositories.NewInMemoryRepository()
 
 	// Initialize the memory statistics collector using the configuration parser and in-memory repository.
-	collector, err := mscollector.NewMemStatsCollectorWithConfigParser(
-		mscollector.ParseConfig,
+	collector := mscollector.NewMemStatsCollector(
+		time.Duration(appCfg.PollInterval)*time.Second,
 		repo,
 		baseLogger.Named("collector"),
 	)
-	if err != nil {
-		return fmt.Errorf("failed to initialize memory statistics collector: %w", err)
-	}
 
 	// Initialize the REST client producer using the configuration parser and in-memory repository.
-	producer, err := rstclient.NewRestyClientWithConfigParser(
-		rstclient.ParseConfig,
+	producer := rstclient.NewRestyClient(
+		time.Duration(appCfg.ReportInterval)*time.Second,
+		appCfg.ServerAddress,
 		repo,
 		baseLogger.Named("producer"),
 	)
-	if err != nil {
-		return fmt.Errorf("failed to initialize REST client producer: %w", err)
-	}
 
 	// Create a new agent instance with the collector, producer, and logging setup.
 	app, err := agent.NewAgent(
