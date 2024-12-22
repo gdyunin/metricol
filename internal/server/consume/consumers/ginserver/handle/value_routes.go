@@ -39,7 +39,7 @@ func ValueHandlerWithURIParams(ctrl *adapter.GinController) func(*gin.Context) {
 		}
 		if !isExists {
 			// Respond with a clear error message if metric retrieval fails.
-			c.String(http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+			c.String(http.StatusNotFound, http.StatusText(http.StatusNotFound))
 			return
 		}
 
