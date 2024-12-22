@@ -74,7 +74,6 @@ func (g *GinServer) setupMiddlewares() {
 func (g *GinServer) setupRouters() {
 	// Main page route.
 	g.server.GET("/", handle.MainPageHandler(g.adp))
-	g.log.Info("main page handler setup")
 
 	// "/value" routes for retrieving metric values.
 	{
@@ -84,7 +83,6 @@ func (g *GinServer) setupRouters() {
 		// Retrieve metric values using URI parameters.
 		value.GET("/:type/:id", handle.ValueHandlerWithURIParams(g.adp))
 	}
-	g.log.Info("value group handler setup")
 
 	// "/update" routes for updating metric values.
 	{
@@ -94,5 +92,4 @@ func (g *GinServer) setupRouters() {
 		// Update metric values using URI parameters.
 		update.POST("/:type/:id/*value", handle.UpdateHandlerWithURIParams(g.adp))
 	}
-	g.log.Info("update group handler setup")
 }
