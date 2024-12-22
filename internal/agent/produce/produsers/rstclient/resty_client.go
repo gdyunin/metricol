@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"path"
 	"sync"
 	"time"
 
@@ -179,7 +178,8 @@ func (r *RestyClient) send(metric *model.Metric) error {
 func (r *RestyClient) makeRequest() *resty.Request {
 	u := url.URL{
 		Scheme: "http",
-		Path:   path.Join(r.client.BaseURL, "/update/"),
+		Host:   r.client.BaseURL,
+		Path:   "/update",
 	}
 
 	req := r.client.R()
