@@ -65,7 +65,7 @@ func (g *GinServer) setupMiddlewares() {
 	g.server.Use(
 		gin.Recovery(), // Provides recovery middleware to handle panics gracefully.
 		middleware.WithLogger(g.log.Named("request")), // Adds request logging middleware.
-		middleware.WithGzip(),                         // Adds gzip compression middleware.
+		//middleware.WithGzip(),                         // Adds gzip compression middleware.
 	)
 }
 

@@ -152,15 +152,16 @@ func (r *RestyClient) send(metric *model.Metric) error {
 
 	body, _ := json.Marshal(metric)
 
-	compressedBody, err := compressBody(body)
-	if err != nil {
-		r.log.Info("Metric compression failed. Sending uncompressed data.")
-		req.Body = body
-	} else {
-		req.Body = compressedBody
-		req.Header.Set("Content-Encoding", "gzip")
-	}
+	//compressedBody, err := compressBody(body)
+	//if err != nil {
+	//	r.log.Info("Metric compression failed. Sending uncompressed data.")
+	//	req.Body = body
+	//} else {
+	//	req.Body = compressedBody
+	//	req.Header.Set("Content-Encoding", "gzip")
+	//}
 
+	req.Body = body
 	resp, err := req.Send()
 	if err != nil {
 		r.log.Infof("err: %#v", err)
@@ -179,7 +180,7 @@ func (r *RestyClient) makeRequest() *resty.Request {
 	u := url.URL{
 		Scheme: "http",
 		Host:   r.client.BaseURL,
-		Path:   "/update/",
+		Path:   "/update",
 	}
 
 	req := r.client.R()
