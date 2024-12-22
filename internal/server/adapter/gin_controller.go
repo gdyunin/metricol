@@ -52,6 +52,17 @@ func (gc *GinController) PullAllMetrics() ([]*model.Metric, error) {
 	return m, nil
 }
 
+func (gc *GinController) IsExists(metric *model.Metric) (bool, error) {
+	em := m2em(metric)
+
+	isExists, err := gc.metricInterface.IsExists(em)
+	if err != nil {
+		return false, fmt.Errorf("error check existing metric %+v from repositories: %w", metric, err)
+	}
+
+	return isExists, nil
+}
+
 func m2em(m *model.Metric) (em *entity.Metric) {
 	em = &entity.Metric{
 		Name: m.ID,

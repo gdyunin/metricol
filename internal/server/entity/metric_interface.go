@@ -59,7 +59,7 @@ func (mi *MetricsInterface) PushMetric(metric *Metric) (*Metric, error) {
 // PullMetric retrieves a metric from the repository by its name and type.
 // Returns the metric and an error if the operation fails or if the metric does not exist.
 func (mi *MetricsInterface) PullMetric(metric *Metric) (*Metric, error) {
-	isExists, err := mi.repo.IsExists(&Filter{Name: metric.Name, Type: metric.Type})
+	isExists, err := mi.IsExists(metric)
 	if err != nil {
 		return nil, fmt.Errorf("%w: error checking metric existence: %w", ErrPullMetric, err)
 	}
@@ -73,6 +73,15 @@ func (mi *MetricsInterface) PullMetric(metric *Metric) (*Metric, error) {
 		return nil, fmt.Errorf("%w: error reading metric from repository: %w", ErrPullMetric, err)
 	}
 	return m, nil
+}
+
+func (mi *MetricsInterface) IsExists(metric *Metric) (bool, error) {
+	isExists, err := mi.repo.IsExists(&Filter{Name: metric.Name, Type: metric.Type})
+	if err != nil {
+		return false, fmt.Errorf("error checking metric existence in repo: %w", err)
+	}
+
+	return isExists, nil
 }
 
 // AllMetricsInRepo retrieves all metrics from the repository.
