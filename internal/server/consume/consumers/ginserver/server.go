@@ -30,8 +30,6 @@ func NewServer(addr string, repo entity.MetricRepository, logger *zap.SugaredLog
 		log:           logger,
 	}
 
-	s.log.Infof("Server was configured with params: %+v", s)
-
 	// Attempt to set up.
 	s.setupServer()
 
@@ -81,7 +79,7 @@ func (g *GinServer) setupRouters() {
 	{
 		value := g.server.Group("/value")
 		// Retrieve metric values using JSON parameters.
-		value.POST("", handle.ValueHandlerWithJSONParams(g.adp))
+		value.POST("/", handle.ValueHandlerWithJSONParams(g.adp))
 		// Retrieve metric values using URI parameters.
 		value.GET("/:type/:id", handle.ValueHandlerWithURIParams(g.adp))
 	}
@@ -90,7 +88,7 @@ func (g *GinServer) setupRouters() {
 	{
 		update := g.server.Group("/update")
 		// Update metric values using JSON parameters.
-		update.POST("", handle.UpdateHandlerWithJSONParams(g.adp))
+		update.POST("/", handle.UpdateHandlerWithJSONParams(g.adp))
 		// Update metric values using URI parameters.
 		update.POST("/:type/:id/*value", handle.UpdateHandlerWithURIParams(g.adp))
 	}
