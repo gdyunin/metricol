@@ -78,6 +78,6 @@ func (g *GinServer) setupRouters() {
 	g.server.POST("/value", handle.ValueHandlerWithJSONParams(g.adp))
 	g.server.GET("/value/:type/:id", handle.ValueHandlerWithURIParams(g.adp))
 	g.server.POST("/update", handle.UpdateHandlerWithJSONParams(g.adp))
-	g.server.POST("/update/:type/:id/*value", handle.ValueHandlerWithURIParams(g.adp))
+	g.server.POST("/update/:type/:id/*value", handle.UpdateHandlerWithURIParams(g.adp))
 
 }
