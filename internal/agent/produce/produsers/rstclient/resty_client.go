@@ -3,7 +3,6 @@ package rstclient
 import (
 	"bytes"
 	"compress/gzip"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -45,8 +44,7 @@ func NewRestyClient(
 	repo entity.MetricsRepository,
 	logger *zap.SugaredLogger,
 ) *RestyClient {
-	rc := resty.New()
-	rc.BaseURL = serverAddress
+	rc := resty.New().SetBaseURL(serverAddress)
 
 	return &RestyClient{
 		adp:       produce.NewRestyClientAdapter(repo, logger.Named("resty client adapter")),
@@ -150,7 +148,7 @@ func (r *RestyClient) send(metric *model.Metric) error {
 	r.log.Infof("Transmitting metric: %v.", metric)
 	req := r.makeRequest()
 
-	body, _ := json.Marshal(metric)
+	//body, _ := json.Marshal(metric)
 
 	//compressedBody, err := compressBody(body)
 	//if err != nil {
@@ -161,7 +159,7 @@ func (r *RestyClient) send(metric *model.Metric) error {
 	//	req.Header.Set("Content-Encoding", "gzip")
 	//}
 
-	resp, err := req.SetBody(body).Send()
+	resp, err := req.SetBody(metric).Send()
 	if err != nil {
 		return fmt.Errorf("failed to send metric %v: %w", metric, err)
 	}
@@ -176,9 +174,8 @@ func (r *RestyClient) send(metric *model.Metric) error {
 // makeRequest prepares a new HTTP request for transmitting metrics.
 func (r *RestyClient) makeRequest() *resty.Request {
 	u := url.URL{
-		Scheme: "http",
-		Host:   r.client.BaseURL,
-		Path:   "/update",
+		Host: r.client.BaseURL,
+		Path: "/update",
 	}
 
 	req := r.client.R()
