@@ -12,7 +12,7 @@ func FromURI(adp *adapter.EchoAdapter) func(echo.Context) error {
 	return func(c echo.Context) error {
 		metric, err := parse.MetricFromURI(c)
 		if err != nil {
-			return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+			return c.String(http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 		}
 
 		if metric.Delta == nil && metric.Value == nil {
