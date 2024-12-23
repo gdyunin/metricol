@@ -44,7 +44,7 @@ func NewRestyClient(
 	repo entity.MetricsRepository,
 	logger *zap.SugaredLogger,
 ) *RestyClient {
-	rc := resty.New()
+	rc := resty.New().SetBaseURL(serverAddress)
 
 	return &RestyClient{
 		adp:       produce.NewRestyClientAdapter(repo, logger.Named("resty client adapter")),
@@ -160,7 +160,7 @@ func (r *RestyClient) send(metric *model.Metric) error {
 	//	req.Header.Set("Content-Encoding", "gzip")
 	//}
 
-	resp, err := req.SetBody(metric).Send()
+	resp, err := req.SetBody(metric).Post("update/")
 	if err != nil {
 		return fmt.Errorf("failed to send metric %v: %w", metric, err)
 	}
@@ -180,11 +180,7 @@ func (r *RestyClient) makeRequest() *resty.Request {
 	//	Path:   "/update",
 	//}
 
-	u := fmt.Sprintf("http://%s/update", r.baseUrl)
-
 	req := r.client.R()
-	req.Method = http.MethodPost
-	req.URL = u //.String()
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept-Encoding", "gzip")
 
