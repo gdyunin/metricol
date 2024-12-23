@@ -44,7 +44,7 @@ func NewRestyClient(
 	repo entity.MetricsRepository,
 	logger *zap.SugaredLogger,
 ) *RestyClient {
-	rc := resty.New().SetBaseURL(serverAddress)
+	rc := resty.New().SetBaseURL("http://" + serverAddress)
 
 	return &RestyClient{
 		adp:       produce.NewRestyClientAdapter(repo, logger.Named("resty client adapter")),
