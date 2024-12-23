@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
 	"sync"
 	"time"
 
@@ -173,14 +172,9 @@ func (r *RestyClient) send(metric *model.Metric) error {
 
 // makeRequest prepares a new HTTP request for transmitting metrics.
 func (r *RestyClient) makeRequest() *resty.Request {
-	u := url.URL{
-		Host: r.client.BaseURL,
-		Path: "/update",
-	}
-
 	req := r.client.R()
 	req.Method = http.MethodPost
-	req.URL = u.String()
+	req.URL = "/update"
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept-Encoding", "gzip")
 
