@@ -33,8 +33,6 @@ func NewServer(addr string, repo entity.MetricRepository, logger *zap.SugaredLog
 	// Attempt to set up.
 	s.setupServer()
 
-	_ = s.server.SetTrustedProxies([]string{"192.168.1.0/24", "10.0.0.1"})
-
 	// Load HTML templates for rendering.
 	s.server.LoadHTMLGlob("web/templates/*")
 	return &s

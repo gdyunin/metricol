@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/gdyunin/metricol.git/internal/server/config"
-	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/ginserver"
+	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver"
 	"github.com/gdyunin/metricol.git/pkg/logger"
 	"github.com/gdyunin/metricol.git/pkg/server/repositories"
 )
@@ -28,7 +28,7 @@ func run() error {
 	repo := repositories.NewInMemoryRepository()
 
 	// Initialize the Gin server consumer with a configuration parser and the repository.
-	consumer := ginserver.NewServer(appCfg.ServerAddress, repo, baseLogger)
+	consumer := echoserver.NewEchoServer(appCfg.ServerAddress, repo, baseLogger)
 
 	// Start the consumption process, handling any errors that occur during runtime.
 	if err := consumer.StartConsume(); err != nil {
