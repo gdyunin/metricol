@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -46,6 +47,8 @@ func NewRestyClient(
 	logger *zap.SugaredLogger,
 ) *RestyClient {
 	rc := resty.New()
+
+	serverAddress = strings.Replace(serverAddress, "localhost", "127.0.0.1", -1)
 
 	return &RestyClient{
 		adp:       produce.NewRestyClientAdapter(repo, logger.Named("resty client adapter")),
