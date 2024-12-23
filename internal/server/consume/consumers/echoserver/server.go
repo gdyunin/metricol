@@ -47,7 +47,7 @@ func (s *EchoServer) setupServer() {
 	// Define the routes for the server.
 	s.setupRouters()
 
-	s.server.Use(middleware.Logger())
+	s.server.Use(middleware.Logger(), middleware.RemoveTrailingSlash())
 }
 
 func (s *EchoServer) setupRouters() {
