@@ -5,11 +5,14 @@ import (
 
 	"github.com/gdyunin/metricol.git/internal/server/adapter"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/parse"
+	"github.com/gdyunin/metricol.git/pkg/logger"
 	"github.com/labstack/echo/v4"
 )
 
 func FromURI(adp *adapter.EchoAdapter) func(echo.Context) error {
 	return func(c echo.Context) error {
+		l, _ := logger.Logger("INFO")
+		l.Info("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 		metric, err := parse.MetricFromURI(c)
 		if err != nil {
 			return c.String(http.StatusBadRequest, http.StatusText(http.StatusBadRequest))

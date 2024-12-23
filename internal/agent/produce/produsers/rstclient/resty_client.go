@@ -160,14 +160,14 @@ func (r *RestyClient) send(metric *model.Metric) error {
 	//	req.Header.Set("Content-Encoding", "gzip")
 	//}
 
-	_, _ = req.SetBody(metric).Send()
-	//if err != nil {
-	//	return fmt.Errorf("failed to send metric %v: %w", metric, err)
-	//}
+	resp, err := req.SetBody(metric).Send()
+	if err != nil {
+		return fmt.Errorf("failed to send metric %v: %w", metric, err)
+	}
 
-	//if resp.StatusCode() != http.StatusOK {
-	//	return fmt.Errorf("failed to send metric %v: server returned status code %d", metric, resp.StatusCode())
-	//}
+	if resp.StatusCode() != http.StatusOK {
+		return fmt.Errorf("failed to send metric %v: server returned status code %d", metric, resp.StatusCode())
+	}
 
 	return nil
 }

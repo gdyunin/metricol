@@ -8,6 +8,7 @@ import (
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/handle/value"
 	"github.com/gdyunin/metricol.git/internal/server/entity"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"go.uber.org/zap"
 )
 
@@ -45,6 +46,8 @@ func (s *EchoServer) setupServer() {
 
 	// Define the routes for the server.
 	s.setupRouters()
+
+	s.server.Use(middleware.Logger())
 }
 
 func (s *EchoServer) setupRouters() {
