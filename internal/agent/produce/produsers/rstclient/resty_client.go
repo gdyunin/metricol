@@ -164,8 +164,9 @@ func (r *RestyClient) send(metric *model.Metric) error {
 
 	reqqq, _ := http.NewRequest(http.MethodPost, "http://"+r.baseUrl+"/update", buf)
 	reqqq.Header.Set("Content-Type", "application/json")
-	_, err := r.client.GetClient().Do(reqqq)
-
+	cl := &http.Client{}
+	resp, err := cl.Do(reqqq)
+	r.log.Info(resp)
 	//resp, err := req.SetBody(body).Post("update")
 	if err != nil {
 		return fmt.Errorf("failed to send metric %v: %w", metric, err)
