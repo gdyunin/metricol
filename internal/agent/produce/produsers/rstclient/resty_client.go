@@ -3,7 +3,6 @@ package rstclient
 import (
 	"bytes"
 	"compress/gzip"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -150,8 +149,8 @@ func (r *RestyClient) send(metric *model.Metric) error {
 	r.log.Infof("Transmitting metric: %v.", metric)
 	//req := r.makeRequest()
 
-	body, _ := json.Marshal(metric)
-	buf := bytes.NewReader(body)
+	//body, _ := json.Marshal(metric)
+	//buf := bytes.NewReader(body)
 
 	//compressedBody, err := compressBody(body)
 	//if err != nil {
@@ -162,7 +161,7 @@ func (r *RestyClient) send(metric *model.Metric) error {
 	//	req.Header.Set("Content-Encoding", "gzip")
 	//}
 
-	reqqq, _ := http.NewRequest(http.MethodPost, "http://"+r.baseUrl+"/update", buf)
+	reqqq, _ := http.NewRequest(http.MethodPost, "http://"+r.baseUrl+"/update", nil)
 	reqqq.Header.Set("Content-Type", "application/json")
 	reqqq.Header.Set("Accept", "*/*")
 	cl := &http.Client{
