@@ -6,8 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strings"
 	"sync"
 	"time"
 
@@ -47,8 +45,6 @@ func NewRestyClient(
 	logger *zap.SugaredLogger,
 ) *RestyClient {
 	rc := resty.New()
-
-	serverAddress = strings.Replace(serverAddress, "localhost", "127.0.0.1", -1)
 
 	return &RestyClient{
 		adp:       produce.NewRestyClientAdapter(repo, logger.Named("resty client adapter")),
@@ -178,15 +174,17 @@ func (r *RestyClient) send(metric *model.Metric) error {
 
 // makeRequest prepares a new HTTP request for transmitting metrics.
 func (r *RestyClient) makeRequest() *resty.Request {
-	u := url.URL{
-		Scheme: "http",
-		Host:   r.baseUrl,
-		Path:   "/update",
-	}
+	//u := url.URL{
+	//	Scheme: "http",
+	//	Host:   r.baseUrl,
+	//	Path:   "/update",
+	//}
+
+	u := fmt.Sprintf("http://%s/update", r.baseUrl)
 
 	req := r.client.R()
 	req.Method = http.MethodPost
-	req.URL = u.String()
+	req.URL = u //.String()
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept-Encoding", "gzip")
 
