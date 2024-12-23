@@ -148,7 +148,7 @@ func (r *RestyClient) sendAll() error {
 // send transmits a single metric to the server.
 func (r *RestyClient) send(metric *model.Metric) error {
 	r.log.Infof("Transmitting metric: %v.", metric)
-	//req := r.makeRequest()
+	req := r.makeRequest()
 
 	//body, _ := json.Marshal(metric)
 
@@ -161,16 +161,14 @@ func (r *RestyClient) send(metric *model.Metric) error {
 	//	req.Header.Set("Content-Encoding", "gzip")
 	//}
 
-	//resp, err := req.Send()
-
-	_, err := http.Post("http://"+r.baseUrl+"/update", "application/json", nil)
+	resp, err := req.SetBody(metric).Send()
 	if err != nil {
 		return fmt.Errorf("failed to send metric %v: %w", metric, err)
 	}
 
-	//if resp.StatusCode() != http.StatusOK {
-	//	return fmt.Errorf("failed to send metric %v: server returned status code %d", metric, resp.StatusCode())
-	//}
+	if resp.StatusCode() != http.StatusOK {
+		return fmt.Errorf("failed to send metric %v: server returned status code %d", metric, resp.StatusCode())
+	}
 
 	return nil
 }
@@ -180,7 +178,7 @@ func (r *RestyClient) makeRequest() *resty.Request {
 	u := url.URL{
 		Scheme: "http",
 		Host:   r.baseUrl,
-		Path:   "/update",
+		Path:   "/update/counter/test_counter/42",
 	}
 
 	req := r.client.R()
