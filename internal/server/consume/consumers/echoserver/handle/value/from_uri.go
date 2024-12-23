@@ -14,13 +14,18 @@ func FromURI(adp *adapter.EchoAdapter) func(echo.Context) error {
 	return func(c echo.Context) error {
 		metric, err := parse.MetricFromURI(c)
 		if err != nil {
-			return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+			return c.String(http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 		}
 
 		stored, err := adp.PullMetric(metric)
 		if errors.Is(err, entity.ErrMetricNotFound) {
 			return c.String(http.StatusNotFound, http.StatusText(http.StatusNotFound))
 		}
-		return c.JSON(http.StatusOK, stored)
+
+		stringVal, err := stored.StringValue()
+		if err != nil {
+			return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		}
+		return c.String(http.StatusOK, stringVal)
 	}
 }
