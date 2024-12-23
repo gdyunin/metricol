@@ -7,10 +7,10 @@ import (
 
 // Metric represents a metric with its associated ID, type, and value fields.
 type Metric struct {
-	Delta *int64   `json:"delta,omitempty"`              // Delta represents the change in the metric (used for counters).
-	Value *float64 `json:"value,omitempty"`              // Value represents the current value of the metric (used for gauges).
-	ID    string   `json:"id" uri:"id" query:"id"`       // ID uniquely name of the metric.
-	MType string   `json:"type" uri:"type" query:"type"` // MType specifies the type of the metric (e.g., "counter" or "gauge").
+	Delta *int64   `json:"delta,omitempty"`   // Delta represents the change in the metric (used for counters).
+	Value *float64 `json:"value,omitempty"`   // Value represents the current value of the metric (used for gauges).
+	ID    string   `param:"id" json:"id"`     // ID uniquely name of the metric.
+	MType string   `param:"type" json:"type"` // MType specifies the type of the metric (e.g., "counter" or "gauge").
 }
 
 // StringValue returns the string representation of the metric's value.
