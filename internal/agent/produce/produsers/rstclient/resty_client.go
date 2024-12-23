@@ -34,6 +34,7 @@ type RestyClient struct {
 	log         *zap.SugaredLogger
 	observers   map[common.Observer]struct{}
 	interval    time.Duration
+	baseUrl     string
 }
 
 // NewRestyClient creates a new RestyClient instance with the specified interval,
@@ -44,7 +45,7 @@ func NewRestyClient(
 	repo entity.MetricsRepository,
 	logger *zap.SugaredLogger,
 ) *RestyClient {
-	rc := resty.New().SetBaseURL(serverAddress)
+	rc := resty.New()
 
 	return &RestyClient{
 		adp:       produce.NewRestyClientAdapter(repo, logger.Named("resty client adapter")),
@@ -53,6 +54,7 @@ func NewRestyClient(
 		observers: make(map[common.Observer]struct{}),
 		mu:        &sync.RWMutex{},
 		log:       logger,
+		baseUrl:   serverAddress,
 	}
 }
 
@@ -175,7 +177,7 @@ func (r *RestyClient) send(metric *model.Metric) error {
 func (r *RestyClient) makeRequest() *resty.Request {
 	u := url.URL{
 		Scheme: "http",
-		Host:   r.client.BaseURL,
+		Host:   r.baseUrl,
 		Path:   "/update",
 	}
 
@@ -183,7 +185,7 @@ func (r *RestyClient) makeRequest() *resty.Request {
 	req.Method = http.MethodPost
 	req.URL = u.String()
 	req.Header.Set("Content-Type", "application/json")
-	//req.Header.Set("Accept-Encoding", "gzip")
+	req.Header.Set("Accept-Encoding", "gzip")
 
 	return req
 }
