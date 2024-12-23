@@ -15,6 +15,8 @@ var (
 
 	// ErrAllMetricsInRepo indicates an error when retrieving all metrics from the repository.
 	ErrAllMetricsInRepo = errors.New("failed to retrieve all metrics")
+
+	ErrMetricNotFound = errors.New("metric not found in repository")
 )
 
 // MetricsInterface provides methods to manage metrics in a repository.
@@ -65,7 +67,7 @@ func (mi *MetricsInterface) PullMetric(metric *Metric) (*Metric, error) {
 	}
 
 	if !isExists {
-		return nil, fmt.Errorf("%w: metric not found", ErrPullMetric)
+		return nil, fmt.Errorf("%w: %w", ErrPullMetric, ErrMetricNotFound)
 	}
 
 	m, err := mi.repo.Read(&Filter{Name: metric.Name, Type: metric.Type})
