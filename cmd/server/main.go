@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/gdyunin/metricol.git/internal/server/config"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver"
@@ -31,6 +32,7 @@ func run() error {
 	consumer := echoserver.NewEchoServer(appCfg.ServerAddress, repo, baseLogger)
 
 	// Start the consumption process, handling any errors that occur during runtime.
+	fmt.Printf("server start at %s", time.Now())
 	if err := consumer.StartConsume(); err != nil {
 		return fmt.Errorf("failed to start the consumption process: %w", err)
 	}
