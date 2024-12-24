@@ -65,7 +65,7 @@ func (s *EchoServer) setupMiddlewares() {
 	s.server.Pre(middleware.RemoveTrailingSlash())
 	s.server.Use(
 		middleware2.WithLogger(s.log.Named("request")),
-		//middleware2.WithGzip(),
+		middleware2.WithGzip(),
 	)
 }
 
@@ -76,7 +76,7 @@ func (s *EchoServer) setupRenderer() {
 }
 
 func (s *EchoServer) setupRouters() {
-	updateGroup := s.server.Group("/update", middleware2.WithGzip())
+	updateGroup := s.server.Group("/update")
 	updateGroup.POST("", update.FromJSON(s.adp))
 	updateGroup.POST("/:type/:id/:value", update.FromURI(s.adp))
 
@@ -84,6 +84,6 @@ func (s *EchoServer) setupRouters() {
 	valueGroup.POST("", value.FromJSON(s.adp))
 	valueGroup.GET("/:type/:id", value.FromURI(s.adp))
 
-	s.server.GET("/", general.MainPage(s.adp), middleware2.WithGzip())
+	s.server.GET("/", general.MainPage(s.adp))
 	s.server.GET("/ping", general.Ping())
 }
