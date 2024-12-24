@@ -80,7 +80,6 @@ func setCompressor(c echo.Context) (echo.Context, error) {
 		ResponseWriter: c.Response().Writer,
 		Writer:         gz,
 	}
-	c.Request().Header.Set("Content-Encoding", gzipEncodingHeader)
 	return c, nil
 }
 
