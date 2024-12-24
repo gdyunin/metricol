@@ -172,7 +172,8 @@ func (r *RestyClient) send(metric *model.Metric) error {
 	r.log.Infof("%+v", req.Result)
 
 	if err != nil {
-		return fmt.Errorf("failed to send metric %v: %w", metric, err)
+		panic(err)
+		//return fmt.Errorf("failed to send metric %v: %w", metric, err)
 	}
 
 	if resp.StatusCode() != http.StatusOK {
