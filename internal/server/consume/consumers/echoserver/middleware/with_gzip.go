@@ -17,6 +17,11 @@ type gzipWriter struct {
 
 const gzipEncodingHeader = "gzip"
 
+var contentTypesForCompress = []string{
+	"application/json",
+	"text/html",
+}
+
 func WithGzip() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
@@ -59,32 +64,47 @@ func withDecompressReq(c echo.Context) (echo.Context, error) {
 func withCompressResp(c echo.Context) (echo.Context, error) {
 	var err error
 
-	acceptEncoding := c.Request().Header.Get("Accept-Encoding")
-	if strings.Contains(acceptEncoding, gzipEncodingHeader) {
-		c.Response().After(func() {
-			err = setCompressor(c)
-		})
-	}
+	//acceptEncoding := c.Request().Header.Get("Accept-Encoding")
+	//if strings.Contains(acceptEncoding, gzipEncodingHeader) {
+	//	c.Response().Before(func() {
+	//		contentType := c.Response().Header().Get("Content-Type")
+	//		for _, ct := range contentTypesForCompress {
+	//			if strings.HasPrefix(contentType, ct) {
+	//				gz, _ := gzip.NewWriterLevel(c.Response().Writer, gzip.BestCompression)
+	//
+	//				c.Response().Writer = &gzipWriter{
+	//					ResponseWriter: c.Response().Writer,
+	//					Writer:         gz,
+	//				}
+	//				c.Response().Header().Set("Content-Encoding", gzipEncodingHeader)
+	//				break
+	//			}
+	//		}
+	//	})
+	//}
+	c.Response().Before(func() {
+		fmt.Println(c.Response().Header())
+		wr, _ := gzip.NewWriterLevel(c.Response().Writer, gzip.BestCompression)
+		c.Response().Writer = &gzipWriter{
+			ResponseWriter: c.Response().Writer,
+			Writer:         wr,
+		}
+		c.Response().Header().Set("Content-Encoding", "gzip")
+	})
 	return c, err
 }
 
-func setCompressor(c echo.Context) error {
-	contentType := c.Response().Header().Get("Content-Type")
-	if strings.Contains(contentType, "application/json") || strings.Contains(contentType, "text/html") {
-		originalWriter := c.Response().Writer
-
-		gz, err := gzip.NewWriterLevel(originalWriter, gzip.BestCompression)
-		if err != nil {
-			c.Logger().Errorf("Failed to create gzip writer: %v", err)
-			return err
-		}
-
-		c.Response().Writer = &gzipWriter{
-			ResponseWriter: originalWriter,
-			Writer:         gz,
-		}
-		c.Response().Header().Set("Content-Encoding", gzipEncodingHeader)
+func setCompressor(rw http.ResponseWriter) error {
+	gz, err := gzip.NewWriterLevel(rw, gzip.BestCompression)
+	if err != nil {
+		return err
 	}
+
+	rw = &gzipWriter{
+		ResponseWriter: rw,
+		Writer:         gz,
+	}
+
 	return nil
 }
 

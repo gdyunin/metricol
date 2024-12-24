@@ -26,7 +26,7 @@ func WithLogger(logger *zap.SugaredLogger) echo.MiddlewareFunc {
 				c.Response().Status,
 				c.Response().Size,
 				c.Response().Header().Get("Content-Type"),
-				c.Response().Header().Get("Accept-Encoding") != "",
+				c.Response().Header().Get("Content-Encoding") != "",
 			)
 			return
 		}
