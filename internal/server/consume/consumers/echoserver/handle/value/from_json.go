@@ -26,6 +26,8 @@ func FromJSON(adp *adapter.EchoAdapter) echo.HandlerFunc {
 		if errors.Is(err, entity.ErrMetricNotFound) {
 			return c.String(http.StatusNotFound, http.StatusText(http.StatusNotFound))
 		}
+
+		c.Response().Header().Set("Content-Type", "application/json")
 		return c.JSON(http.StatusOK, stored)
 	}
 }

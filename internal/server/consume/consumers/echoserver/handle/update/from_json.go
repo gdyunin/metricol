@@ -26,6 +26,8 @@ func FromJSON(adp *adapter.EchoAdapter) echo.HandlerFunc {
 		if err != nil {
 			return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		}
+
+		c.Response().Header().Set("Content-Type", "application/json")
 		return c.JSON(http.StatusOK, updated)
 	}
 }

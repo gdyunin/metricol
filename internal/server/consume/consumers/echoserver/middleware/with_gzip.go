@@ -65,6 +65,7 @@ func withCompressResp(c echo.Context) (echo.Context, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed set compressor: %w", err)
 		}
+		c.Response().Header().Set("Content-Encoding", "gzip")
 	}
 
 	return c, nil

@@ -26,6 +26,8 @@ func FromURI(adp *adapter.EchoAdapter) echo.HandlerFunc {
 		if err != nil {
 			return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		}
+
+		c.Response().Header().Set("Content-Type", "text/plain")
 		return c.String(http.StatusOK, "Metric update successful")
 	}
 }
