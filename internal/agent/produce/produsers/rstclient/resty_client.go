@@ -162,6 +162,7 @@ func (r *RestyClient) send(metric *model.Metric) error {
 	//	req.Body = compressedBody
 	//	req.Header.Set("Content-Encoding", "gzip")
 	//}
+	r.log.Infof("try start req at %s", time.Now())
 	re, err := resty.New().R().Get("http://" + r.baseUrl + "/ping")
 	if err != nil {
 		panic(err)
