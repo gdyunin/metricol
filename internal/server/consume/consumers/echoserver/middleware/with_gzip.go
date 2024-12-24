@@ -20,31 +20,54 @@ const gzipEncodingHeader = "gzip"
 func WithGzip() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
-			acceptEncoding := c.Request().Header.Get("Accept-Encoding")
-			if strings.Contains(acceptEncoding, gzipEncodingHeader) {
-				c, err = setCompressor(c)
-				if err != nil {
-					return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
-				}
+			c, err = withDecompressReq(c)
+			if err != nil {
+				return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 			}
 
-			if c.Request().Body == http.NoBody {
-				return next(c)
+			c, err = withCompressResp(c)
+			if err != nil {
+				return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 			}
 
-			contentEncoding := c.Request().Header.Get("Content-Encoding")
-			if contentEncoding != "" && !strings.Contains(contentEncoding, gzipEncodingHeader) {
-				return c.String(http.StatusBadRequest, fmt.Sprintf("Unsupported content encoding: %s", contentEncoding))
-			}
-			if strings.Contains(contentEncoding, gzipEncodingHeader) {
-				c, err = setDecompressor(c)
-				if err != nil {
-					return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
-				}
-			}
 			return next(c)
 		}
 	}
+}
+
+func withDecompressReq(c echo.Context) (echo.Context, error) {
+	var err error
+
+	if c.Request().Body == http.NoBody {
+		return c, nil
+	}
+
+	contentEncoding := c.Request().Header.Get("Content-Encoding")
+	if contentEncoding != "" && !strings.Contains(contentEncoding, gzipEncodingHeader) {
+		return nil, fmt.Errorf("unsupported content encoding: %s", contentEncoding)
+	}
+
+	if strings.Contains(contentEncoding, gzipEncodingHeader) {
+		c, err = setDecompressor(c)
+		if err != nil {
+			return nil, fmt.Errorf("failed set decompressor: %w", err)
+		}
+	}
+	return c, nil
+}
+
+func withCompressResp(c echo.Context) (echo.Context, error) {
+	var err error
+
+	acceptEncoding := c.Request().Header.Get("Accept-Encoding")
+	if strings.Contains(acceptEncoding, gzipEncodingHeader) {
+		c, err = setCompressor(c)
+		if err != nil {
+			return nil, fmt.Errorf("failed set compressor: %w", err)
+		}
+	}
+
+	return c, nil
 }
 
 func setCompressor(c echo.Context) (echo.Context, error) {
