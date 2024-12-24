@@ -60,12 +60,13 @@ func withCompressResp(c echo.Context) (echo.Context, error) {
 	var err error
 
 	acceptEncoding := c.Request().Header.Get("Accept-Encoding")
+	fmt.Println(acceptEncoding)
 	if strings.Contains(acceptEncoding, gzipEncodingHeader) {
 		c, err = setCompressor(c)
 		if err != nil {
 			return nil, fmt.Errorf("failed set compressor: %w", err)
 		}
-		c.Response().Header().Set("Content-Encoding", "gzip")
+		c.Response().Header().Set("Content-Encoding", gzipEncodingHeader)
 	}
 
 	return c, nil
