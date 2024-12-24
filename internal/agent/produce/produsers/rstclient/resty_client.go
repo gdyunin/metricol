@@ -162,7 +162,7 @@ func (r *RestyClient) send(metric *model.Metric) error {
 	//	req.Body = compressedBody
 	//	req.Header.Set("Content-Encoding", "gzip")
 	//}
-	re, err := r.client.R().Get("http://" + r.baseUrl + "/ping")
+	re, err := resty.New().R().Get("http://" + r.baseUrl + "/ping")
 	if err != nil {
 		panic(err)
 	}
@@ -197,7 +197,7 @@ func (r *RestyClient) makeRequest() *resty.Request {
 		Path:   "/update",
 	}
 
-	req := r.client.R()
+	req := resty.New().R()
 	req.Header.Set("Content-Type", "text/plain")
 	req.Header.Set("Host", u.Host)
 	req.Method = http.MethodPost
