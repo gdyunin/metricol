@@ -228,7 +228,7 @@ func (r *RestyClient) makeRequest() *resty.Request {
 func compressBody(data []byte) ([]byte, error) {
 	var buf bytes.Buffer
 
-	w, err := gzip.NewWriterLevel(&buf, gzip.BestCompression)
+	w, err := gzip.NewWriterLevel(&buf, gzip.DefaultCompression)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize GZIP writer: %w", err)
 	}
