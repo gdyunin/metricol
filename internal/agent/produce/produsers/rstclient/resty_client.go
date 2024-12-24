@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"sync"
 	"time"
 
@@ -163,7 +164,8 @@ func (r *RestyClient) send(metric *model.Metric) error {
 	//	req.Header.Set("Content-Encoding", "gzip")
 	//}
 
-	req.SetBody(body).RawRequest.Close = true
+	req.SetBody(body)
+	req.SetHeader("Content-Length", strconv.Itoa(len(body)))
 	resp, err := req.Send()
 	r.log.Infof("%+v", req)
 	r.log.Infof("%+v", req.Header)
