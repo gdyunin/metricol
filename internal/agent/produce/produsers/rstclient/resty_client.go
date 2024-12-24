@@ -184,7 +184,7 @@ func (r *RestyClient) makeRequest() *resty.Request {
 	}
 
 	req := r.client.R()
-	req.Header.Set("Content-Type", "plain/text")
+	req.Header.Set("Content-Type", "text/plain")
 	req.URL = u.String()
 	//req.Header.Set("Accept-Encoding", "gzip")
 
