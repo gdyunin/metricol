@@ -192,6 +192,7 @@ func (r *RestyClient) makeRequest() *resty.Request {
 
 	req := r.client.R()
 	req.Header.Set("Content-Type", "text/plain")
+	req.Header.Set("Host", u.Host)
 	req.Method = http.MethodPost
 	req.URL = u.String()
 	//req.Header.Set("Accept-Encoding", "gzip")
