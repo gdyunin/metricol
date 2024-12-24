@@ -163,7 +163,8 @@ func (r *RestyClient) send(metric *model.Metric) error {
 	//	req.Header.Set("Content-Encoding", "gzip")
 	//}
 
-	resp, err := req.SetBody(body).Send()
+	req.SetBody(body).RawRequest.Close = true
+	resp, err := req.Send()
 	r.log.Infof("%+v", req)
 	r.log.Infof("%+v", req.Header)
 	r.log.Infof("%+v", req.URL)
