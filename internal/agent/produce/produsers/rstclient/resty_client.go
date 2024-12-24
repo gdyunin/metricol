@@ -3,9 +3,11 @@ package rstclient
 import (
 	"bytes"
 	"compress/gzip"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
@@ -44,7 +46,7 @@ func NewRestyClient(
 	repo entity.MetricsRepository,
 	logger *zap.SugaredLogger,
 ) *RestyClient {
-	rc := resty.New().SetBaseURL("http://" + serverAddress)
+	rc := resty.New()
 
 	return &RestyClient{
 		adp:       produce.NewRestyClientAdapter(repo, logger.Named("resty client adapter")),
@@ -147,9 +149,9 @@ func (r *RestyClient) sendAll() error {
 // send transmits a single metric to the server.
 func (r *RestyClient) send(metric *model.Metric) error {
 	r.log.Infof("Transmitting metric: %v.", metric)
-	//req := r.makeRequest()
+	req := r.makeRequest()
 
-	//body, _ := json.Marshal(metric)
+	body, _ := json.Marshal(metric)
 	//buf := bytes.NewReader(body)
 
 	//compressedBody, err := compressBody(body)
@@ -161,36 +163,29 @@ func (r *RestyClient) send(metric *model.Metric) error {
 	//	req.Header.Set("Content-Encoding", "gzip")
 	//}
 
-	reqqq, _ := http.NewRequest(http.MethodPost, "http://"+r.baseUrl+"/update", nil)
-	reqqq.Header.Set("Content-Type", "application/json")
-	reqqq.Header.Set("Accept", "*/*")
-	cl := &http.Client{
-		Transport: &http.Transport{},
-	}
-	resp, err := cl.Do(reqqq)
-	r.log.Info(resp)
-	//resp, err := req.SetBody(body).Post("update")
+	resp, err := req.SetBody(body).Post("update")
 	if err != nil {
 		return fmt.Errorf("failed to send metric %v: %w", metric, err)
 	}
 
-	//if resp.StatusCode() != http.StatusOK {
-	//	return fmt.Errorf("failed to send metric %v: server returned status code %d", metric, resp.StatusCode())
-	//}
+	if resp.StatusCode() != http.StatusOK {
+		return fmt.Errorf("failed to send metric %v: server returned status code %d", metric, resp.StatusCode())
+	}
 
 	return nil
 }
 
 // makeRequest prepares a new HTTP request for transmitting metrics.
 func (r *RestyClient) makeRequest() *resty.Request {
-	//u := url.URL{
-	//	Scheme: "http",
-	//	Host:   r.baseUrl,
-	//	Path:   "/update",
-	//}
+	u := url.URL{
+		Scheme: "http",
+		Host:   r.baseUrl,
+		Path:   "/update",
+	}
 
 	req := r.client.R()
-	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Content-Type", "plain/text")
+	req.URL = u.String()
 	//req.Header.Set("Accept-Encoding", "gzip")
 
 	return req
