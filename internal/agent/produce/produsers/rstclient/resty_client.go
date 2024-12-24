@@ -163,7 +163,14 @@ func (r *RestyClient) send(metric *model.Metric) error {
 	//	req.Header.Set("Content-Encoding", "gzip")
 	//}
 
-	resp, err := req.SetBody(body).Post("update")
+	resp, err := req.SetBody(body).Send()
+	r.log.Infof("%+v", req)
+	r.log.Infof("%+v", req.Header)
+	r.log.Infof("%+v", req.URL)
+	r.log.Infof("%+v", req.Body)
+	r.log.Infof("%+v", req.QueryParam)
+	r.log.Infof("%+v", req.Result)
+
 	if err != nil {
 		return fmt.Errorf("failed to send metric %v: %w", metric, err)
 	}
@@ -185,6 +192,7 @@ func (r *RestyClient) makeRequest() *resty.Request {
 
 	req := r.client.R()
 	req.Header.Set("Content-Type", "text/plain")
+	req.Method = http.MethodPost
 	req.URL = u.String()
 	//req.Header.Set("Accept-Encoding", "gzip")
 
