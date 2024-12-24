@@ -15,18 +15,12 @@ func WithLogger(logger *zap.SugaredLogger) echo.MiddlewareFunc {
 			duration := time.Since(start)
 
 			logger.Infof(
-				"HTTP request: method=%s, uri=%s | "+
-					"duration=%s | status=%d | "+
-					"response_size=%d bytes | "+
-					"response_content_type=%s | "+
-					"response_body_encoded=%t",
-				c.Request().Method,
-				c.Request().RequestURI,
+				"HTTP request: method=%s uri=%s headers=%v | "+
+					"Process: duration=%s | "+
+					"Response: status=%d response_size=%d headers=%v",
+				c.Request().Method, c.Request().RequestURI, c.Request().Header,
 				duration,
-				c.Response().Status,
-				c.Response().Size,
-				c.Response().Header().Get("Content-Type"),
-				c.Response().Header().Get("Content-Encoding") != "",
+				c.Response().Status, c.Response().Size, c.Response().Header(),
 			)
 			return
 		}
