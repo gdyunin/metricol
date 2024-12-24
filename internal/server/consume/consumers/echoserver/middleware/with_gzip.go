@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gdyunin/metricol.git/pkg/logger"
 	"github.com/labstack/echo/v4"
 )
 
@@ -19,6 +20,9 @@ var encodingContentTypes = []string{
 func WithGzip() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			lg, _ := logger.Logger("INFO")
+			lg.Infof("DDDDDDDDDDDDDDDDDDDDDebug!!!!!!! WithGzip start with req headers = %v", c.Request().Header)
+
 			if strings.Contains(c.Request().Header.Get(echo.HeaderContentEncoding), gzipScheme) {
 				err := decompressReq(c.Request())
 				if err != nil {
