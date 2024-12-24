@@ -47,7 +47,9 @@ func (s *EchoServer) setupServer() {
 	// Define the routes for the server.
 	s.setupRouters()
 
-	s.server.Use(middleware.Logger(), middleware.RemoveTrailingSlash())
+	s.server.Pre(middleware.RemoveTrailingSlash())
+
+	s.server.Use(middleware.Logger())
 }
 
 func (s *EchoServer) setupRouters() {
@@ -55,9 +57,6 @@ func (s *EchoServer) setupRouters() {
 	//s.server.GET("/", handle.MainPageHandler(s.adp))
 
 	s.server.GET("/ping", func(c echo.Context) error {
-		return c.String(200, "pong")
-	})
-	s.server.GET("/ping/", func(c echo.Context) error {
 		return c.String(200, "pong")
 	})
 
