@@ -59,11 +59,36 @@ func NewRestyClient(
 	}
 }
 
+func (r *RestyClient) waitServer() error {
+	const maxRetries = 10                 // Максимальное количество попыток
+	const retryInterval = 2 * time.Second // Интервал между попытками
+
+	for i := 0; i < maxRetries; i++ {
+		r.log.Infof("Checking server availability... Attempt %d/%d", i+1, maxRetries)
+
+		// Отправить запрос /ping для проверки доступности сервера
+		resp, err := r.client.R().Get(fmt.Sprintf("http://%s/ping", r.baseUrl))
+		if err == nil && resp.StatusCode() == http.StatusOK {
+			r.log.Info("Server is available.")
+			return nil
+		}
+
+		r.log.Warnf("Server not available: %v. Retrying in %s...", err, retryInterval)
+		time.Sleep(retryInterval)
+	}
+
+	return errors.New("server did not become available within the retry limit")
+}
+
 // StartProduce begins the metrics production process.
 // It runs in a loop until an error occurs or the interrupter stops it.
 func (r *RestyClient) StartProduce() error {
 	r.ticker = time.NewTicker(r.interval)
 	defer r.ticker.Stop()
+
+	if err := r.waitServer(); err != nil {
+		return fmt.Errorf("server is not available: %w", err)
+	}
 
 	interrupter, err := common.NewInterrupter(r.interval*resetErrorCountersIntervals, maxErrorsToInterrupt)
 	if err != nil {

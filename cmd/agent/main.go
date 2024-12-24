@@ -57,8 +57,6 @@ func run() error {
 		return fmt.Errorf("failed to initialize agent: %w", err)
 	}
 
-	time.Sleep(3 * time.Second)
-
 	// Start the agent and return any error encountered during its execution.
 	if err := app.Start(); err != nil {
 		return fmt.Errorf("failed to start agent: %w", err)
