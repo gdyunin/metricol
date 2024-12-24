@@ -20,6 +20,7 @@ const gzipEncodingHeader = "gzip"
 func WithGzip() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
+			fmt.Println(c.Request().Header)
 			c, err = withDecompressReq(c)
 			if err != nil {
 				return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
@@ -36,6 +37,7 @@ func WithGzip() echo.MiddlewareFunc {
 }
 
 func withDecompressReq(c echo.Context) (echo.Context, error) {
+	fmt.Println(c.Request().Header)
 	var err error
 
 	if c.Request().Body == http.NoBody {
@@ -57,10 +59,10 @@ func withDecompressReq(c echo.Context) (echo.Context, error) {
 }
 
 func withCompressResp(c echo.Context) (echo.Context, error) {
+	fmt.Println(c.Request().Header)
 	var err error
 
 	acceptEncoding := c.Request().Header.Get("Accept-Encoding")
-	fmt.Println(acceptEncoding)
 	if strings.Contains(acceptEncoding, gzipEncodingHeader) {
 		c, err = setCompressor(c)
 		if err != nil {
