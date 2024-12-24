@@ -2,7 +2,6 @@ package echoserver
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/gdyunin/metricol.git/internal/server/adapter"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/handle/update"
@@ -34,7 +33,7 @@ func NewEchoServer(addr string, repo entity.MetricRepository, logger *zap.Sugare
 }
 
 func (s *EchoServer) StartConsume() error {
-	s.server.Server.ErrorLog = log.Default()
+	s.server.Pre(middleware.Logger())
 	err := s.server.Start(s.serverAddress)
 	if err != nil {
 		return fmt.Errorf("emergency stop: failed to start Gin server on address %s: %w", s.serverAddress, err)
