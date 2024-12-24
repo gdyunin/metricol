@@ -36,19 +36,5 @@ func isValidModel(metric *model.Metric) bool {
 	if metric.ID == "" || metric.MType == "" {
 		return false
 	}
-
-	switch metric.MType {
-	case entity.MetricTypeCounter:
-		if metric.Delta == nil {
-			return false
-		}
-	case entity.MetricTypeGauge:
-		if metric.Value == nil {
-			return false
-		}
-	default:
-		return false
-	}
-
 	return true
 }
