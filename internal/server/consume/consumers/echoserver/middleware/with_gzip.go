@@ -84,12 +84,14 @@ func withCompressResp(c echo.Context) (echo.Context, error) {
 	//}
 	c.Response().Before(func() {
 		fmt.Println(c.Response().Header())
-		wr, _ := gzip.NewWriterLevel(c.Response().Writer, gzip.BestCompression)
-		c.Response().Writer = &gzipWriter{
-			ResponseWriter: c.Response().Writer,
-			Writer:         wr,
+		if strings.Contains(c.Response().Header().Get("Content-Type"), "json") {
+			wr, _ := gzip.NewWriterLevel(c.Response().Writer, gzip.BestCompression)
+			c.Response().Writer = &gzipWriter{
+				ResponseWriter: c.Response().Writer,
+				Writer:         wr,
+			}
+			c.Response().Header().Set("Content-Encoding", "gzip")
 		}
-		c.Response().Header().Set("Content-Encoding", "gzip")
 	})
 	return c, err
 }
