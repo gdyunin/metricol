@@ -218,6 +218,7 @@ func (r *RestyClient) makeRequest() *resty.Request {
 	req := resty.New().R()
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept-Encoding", "gzip")
+	req.Header.Set("User-Agent", "metricol_agent")
 	req.Method = http.MethodPost
 	req.URL = u.String()
 
