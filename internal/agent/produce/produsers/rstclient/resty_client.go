@@ -216,7 +216,7 @@ func (r *RestyClient) makeRequest() *resty.Request {
 	}
 
 	req := resty.New().R()
-	req.Header.Set("Content-Type", "text/plain")
+	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Host", u.Host)
 	req.Method = http.MethodPost
 	req.URL = u.String()

@@ -46,8 +46,8 @@ func (ea *EchoAdapter) PullAllMetrics() ([]*model.Metric, error) {
 	}
 
 	m := make([]*model.Metric, 0, len(ems))
-	for i, em := range ems {
-		m[i] = emtom(em)
+	for _, em := range ems {
+		m = append(m, emtom(em))
 	}
 
 	return m, nil

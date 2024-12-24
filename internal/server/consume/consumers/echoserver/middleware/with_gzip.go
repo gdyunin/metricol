@@ -61,26 +61,31 @@ func withCompressResp(c echo.Context) (echo.Context, error) {
 
 	acceptEncoding := c.Request().Header.Get("Accept-Encoding")
 	if strings.Contains(acceptEncoding, gzipEncodingHeader) {
-		c, err = setCompressor(c)
+		c.Response().After(func() {
+			err = setCompressor(c)
+		})
+	}
+	return c, err
+}
+
+func setCompressor(c echo.Context) error {
+	contentType := c.Response().Header().Get("Content-Type")
+	if strings.Contains(contentType, "application/json") || strings.Contains(contentType, "text/html") {
+		originalWriter := c.Response().Writer
+
+		gz, err := gzip.NewWriterLevel(originalWriter, gzip.BestCompression)
 		if err != nil {
-			return nil, fmt.Errorf("failed set compressor: %w", err)
+			c.Logger().Errorf("Failed to create gzip writer: %v", err)
+			return err
+		}
+
+		c.Response().Writer = &gzipWriter{
+			ResponseWriter: originalWriter,
+			Writer:         gz,
 		}
 		c.Response().Header().Set("Content-Encoding", gzipEncodingHeader)
 	}
-
-	return c, nil
-}
-
-func setCompressor(c echo.Context) (echo.Context, error) {
-	gz, err := gzip.NewWriterLevel(c.Response().Writer, gzip.BestSpeed)
-	if err != nil {
-		return nil, err
-	}
-	c.Response().Writer = &gzipWriter{
-		ResponseWriter: c.Response().Writer,
-		Writer:         gz,
-	}
-	return c, nil
+	return nil
 }
 
 func setDecompressor(c echo.Context) (echo.Context, error) {
