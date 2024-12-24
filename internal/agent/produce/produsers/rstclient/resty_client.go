@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 	"sync"
 	"time"
 
@@ -163,7 +162,7 @@ func (r *RestyClient) send(metric *model.Metric) error {
 	//	req.Body = compressedBody
 	//	req.Header.Set("Content-Encoding", "gzip")
 	//}
-	re, err := resty.New().R().Get("http://" + strings.Replace(r.baseUrl, "localhost", "127.0.0.1", -1) + "/ping")
+	re, err := resty.New().R().Get("http://" + r.baseUrl + "/ping")
 	if err != nil {
 		panic(err)
 	}

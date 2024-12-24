@@ -57,6 +57,9 @@ func (s *EchoServer) setupRouters() {
 	s.server.GET("/ping", func(c echo.Context) error {
 		return c.String(200, "pong")
 	})
+	s.server.GET("/ping/", func(c echo.Context) error {
+		return c.String(200, "pong")
+	})
 
 	s.server.POST("/update", update.FromJSON(s.adp))
 	// Update metric values using URI parameters.
