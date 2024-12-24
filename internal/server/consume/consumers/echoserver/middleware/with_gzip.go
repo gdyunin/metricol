@@ -2,37 +2,35 @@ package middleware
 
 import (
 	"compress/gzip"
-	"fmt"
-	"io"
+	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/labstack/echo/v4"
 )
 
-type gzipWriter struct {
-	http.ResponseWriter           // Original Gin response writer.
-	Writer              io.Writer // Gzip writer for compressing the response data.
-}
+const gzipScheme = "gzip"
 
-const gzipEncodingHeader = "gzip"
-
-var contentTypesForCompress = []string{
+var encodingContentTypes = []string{
 	"application/json",
 	"text/html",
 }
 
 func WithGzip() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) (err error) {
-			c, err = withDecompressReq(c)
-			if err != nil {
-				return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return func(c echo.Context) error {
+			if strings.Contains(c.Request().Header.Get(echo.HeaderContentEncoding), gzipScheme) {
+				err := decompressReq(c.Request())
+				if err != nil {
+					return c.String(500, "")
+				}
 			}
 
-			c, err = withCompressResp(c)
-			if err != nil {
-				return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+			if strings.Contains(c.Request().Header.Get(echo.HeaderAcceptEncoding), gzipScheme) {
+				err := compressResp(c.Response())
+				if err != nil {
+					return c.String(500, "")
+				}
 			}
 
 			return next(c)
@@ -40,82 +38,66 @@ func WithGzip() echo.MiddlewareFunc {
 	}
 }
 
-func withDecompressReq(c echo.Context) (echo.Context, error) {
-	var err error
+func decompressReq(r *http.Request) error {
+	encHeader := r.Header.Get(echo.HeaderContentEncoding)
 
-	if c.Request().Body == http.NoBody {
-		return c, nil
+	if r.Body == http.NoBody || encHeader == "" {
+		return nil
 	}
 
-	contentEncoding := c.Request().Header.Get("Content-Encoding")
-	if contentEncoding != "" && !strings.Contains(contentEncoding, gzipEncodingHeader) {
-		return nil, fmt.Errorf("unsupported content encoding: %s", contentEncoding)
+	if !strings.Contains(encHeader, gzipScheme) {
+		return errors.New("")
 	}
 
-	if strings.Contains(contentEncoding, gzipEncodingHeader) {
-		c, err = setDecompressor(c)
-		if err != nil {
-			return nil, fmt.Errorf("failed set decompressor: %w", err)
-		}
-	}
-	return c, nil
-}
-
-func withCompressResp(c echo.Context) (echo.Context, error) {
-	var err error
-
-	//acceptEncoding := c.Request().Header.Get("Accept-Encoding")
-	//if strings.Contains(acceptEncoding, gzipEncodingHeader) {
-	//	c.Response().Before(func() {
-	//		contentType := c.Response().Header().Get("Content-Type")
-	//		for _, ct := range contentTypesForCompress {
-	//			if strings.HasPrefix(contentType, ct) {
-	//				gz, _ := gzip.NewWriterLevel(c.Response().Writer, gzip.BestCompression)
-	//
-	//				c.Response().Writer = &gzipWriter{
-	//					ResponseWriter: c.Response().Writer,
-	//					Writer:         gz,
-	//				}
-	//				c.Response().Header().Set("Content-Encoding", gzipEncodingHeader)
-	//				break
-	//			}
-	//		}
-	//	})
-	//}
-	c.Response().Before(func() {
-		fmt.Println(c.Response().Header())
-		if strings.Contains(c.Response().Header().Get("Content-Type"), "json") {
-			wr, _ := gzip.NewWriterLevel(c.Response().Writer, gzip.BestCompression)
-			c.Response().Writer = &gzipWriter{
-				ResponseWriter: c.Response().Writer,
-				Writer:         wr,
-			}
-			c.Response().Header().Set("Content-Encoding", "gzip")
-		}
-	})
-	return c, err
-}
-
-func setCompressor(rw http.ResponseWriter) error {
-	gz, err := gzip.NewWriterLevel(rw, gzip.BestCompression)
+	gz, err := gzip.NewReader(r.Body)
 	if err != nil {
 		return err
 	}
-
-	rw = &gzipWriter{
-		ResponseWriter: rw,
-		Writer:         gz,
-	}
+	r.Body = gz
 
 	return nil
 }
 
-func setDecompressor(c echo.Context) (echo.Context, error) {
-	gz, err := gzip.NewReader(c.Request().Body)
+func compressResp(r *echo.Response) error {
+	gz, err := gzip.NewWriterLevel(r.Writer, gzip.BestCompression)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	r.Writer = &gzipResponseWriter{
+		rw:         r.Writer,
+		gzip:       gz,
+		compressed: false,
+	}
+	return nil
+}
 
-	c.Request().Body = gz
-	return c, nil
+type gzipResponseWriter struct {
+	rw         http.ResponseWriter
+	gzip       *gzip.Writer
+	compressed bool
+}
+
+func (g *gzipResponseWriter) Header() http.Header {
+	return g.rw.Header()
+}
+
+func (g *gzipResponseWriter) Write(p []byte) (int, error) {
+	cth := g.Header().Get(echo.HeaderContentType)
+	for _, ct := range encodingContentTypes {
+		if strings.Contains(cth, ct) {
+			g.compressed = true
+			g.Header().Set(echo.HeaderContentEncoding, gzipScheme)
+			return g.gzip.Write(p)
+		}
+	}
+	return g.rw.Write(p)
+}
+
+func (g *gzipResponseWriter) WriteHeader(statusCode int) {
+	if g.compressed {
+		g.rw.Header().Set(echo.HeaderContentEncoding, gzipScheme)
+	} else {
+		g.rw.Header().Del(echo.HeaderContentEncoding)
+	}
+	g.rw.WriteHeader(statusCode)
 }
