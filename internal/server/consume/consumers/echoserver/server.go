@@ -54,6 +54,10 @@ func (s *EchoServer) setupRouters() {
 	// Main page route.
 	//s.server.GET("/", handle.MainPageHandler(s.adp))
 
+	s.server.GET("/ping", func(c echo.Context) error {
+		return c.String(200, "pong")
+	})
+
 	s.server.POST("/update", update.FromJSON(s.adp))
 	// Update metric values using URI parameters.
 	s.server.POST("/update/:type/:id/:value", update.FromURI(s.adp))
