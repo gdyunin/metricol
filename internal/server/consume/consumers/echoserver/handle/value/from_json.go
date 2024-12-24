@@ -10,7 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func FromJSON(adp *adapter.EchoAdapter) func(echo.Context) error {
+func FromJSON(adp *adapter.EchoAdapter) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		metric, err := parse.MetricFromJSON(c)
 		if err != nil {

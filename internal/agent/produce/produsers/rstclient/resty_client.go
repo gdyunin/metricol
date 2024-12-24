@@ -60,8 +60,11 @@ func NewRestyClient(
 }
 
 func (r *RestyClient) waitServer() error {
-	const maxRetries = 10                 // Максимальное количество попыток
-	const retryInterval = 2 * time.Second // Интервал между попытками
+	const (
+		maxRetries  = 10              // Максимальное количество попыток
+		minInterval = 1 * time.Second // Минимальный интервал между попытками
+		maxInterval = 5 * time.Second // Максимальный интервал между попытками
+	)
 
 	for i := 0; i < maxRetries; i++ {
 		r.log.Infof("Checking server availability... Attempt %d/%d", i+1, maxRetries)
@@ -73,8 +76,13 @@ func (r *RestyClient) waitServer() error {
 			return nil
 		}
 
-		r.log.Warnf("Server not available: %v. Retrying in %s...", err, retryInterval)
-		time.Sleep(retryInterval)
+		interval := time.Duration(i+1) * minInterval
+		if interval > maxInterval {
+			interval = maxInterval
+		}
+
+		r.log.Warnf("Server not available: %v. Retrying in %s...", err, interval)
+		time.Sleep(interval)
 	}
 
 	return errors.New("server did not become available within the retry limit")
@@ -177,32 +185,16 @@ func (r *RestyClient) send(metric *model.Metric) error {
 	req := r.makeRequest()
 
 	body, _ := json.Marshal(metric)
-	//buf := bytes.NewReader(body)
-
-	//compressedBody, err := compressBody(body)
-	//if err != nil {
-	//	r.log.Info("Metric compression failed. Sending uncompressed data.")
-	//	req.Body = body
-	//} else {
-	//	req.Body = compressedBody
-	//	req.Header.Set("Content-Encoding", "gzip")
-	//}
-	r.log.Infof("try start req at %s", time.Now())
-	re, err := resty.New().R().Get("http://" + r.baseUrl + "/ping")
+	compressedBody, err := compressBody(body)
 	if err != nil {
-		panic(err)
+		r.log.Info("Metric compression failed. Sending uncompressed data.")
+		req.SetBody(body)
+	} else {
+		req.SetBody(compressedBody)
+		req.Header.Set("Content-Encoding", "gzip")
 	}
-	r.log.Infof("%+v", re)
 
-	req.SetBody(body)
 	resp, err := req.Send()
-	r.log.Infof("%+v", req)
-	r.log.Infof("%+v", req.Header)
-	r.log.Infof("%+v", req.URL)
-	r.log.Infof("%+v", req.Body)
-	r.log.Infof("%+v", req.QueryParam)
-	r.log.Infof("%+v", req.Result)
-
 	if err != nil {
 		panic(err)
 		//return fmt.Errorf("failed to send metric %v: %w", metric, err)

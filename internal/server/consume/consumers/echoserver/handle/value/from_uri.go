@@ -10,7 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func FromURI(adp *adapter.EchoAdapter) func(echo.Context) error {
+func FromURI(adp *adapter.EchoAdapter) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		metric, err := parse.MetricFromURI(c)
 		if err != nil {

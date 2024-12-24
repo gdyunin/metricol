@@ -2,10 +2,14 @@ package echoserver
 
 import (
 	"fmt"
+	"html/template"
+	"io"
 
 	"github.com/gdyunin/metricol.git/internal/server/adapter"
+	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/handle/general"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/handle/update"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/handle/value"
+	middleware2 "github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/middleware"
 	"github.com/gdyunin/metricol.git/internal/server/entity"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -19,6 +23,14 @@ type EchoServer struct {
 	serverAddress string
 }
 
+type TemplateRenderer struct {
+	templates *template.Template
+}
+
+func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+	return t.templates.ExecuteTemplate(w, name, data)
+}
+
 func NewEchoServer(addr string, repo entity.MetricRepository, logger *zap.SugaredLogger) *EchoServer {
 	s := EchoServer{
 		server:        echo.New(),
@@ -26,6 +38,9 @@ func NewEchoServer(addr string, repo entity.MetricRepository, logger *zap.Sugare
 		log:           logger,
 		serverAddress: addr,
 	}
+
+	s.server.HideBanner = true
+	s.server.HidePort = true
 
 	s.setupServer()
 
@@ -41,31 +56,34 @@ func (s *EchoServer) StartConsume() error {
 }
 
 func (s *EchoServer) setupServer() {
-	// Set up middlewares.
-	//g.setupMiddlewares()
-
-	// Define the routes for the server.
+	s.setupMiddlewares()
+	s.setupRenderer()
 	s.setupRouters()
+}
 
+func (s *EchoServer) setupMiddlewares() {
 	s.server.Pre(middleware.RemoveTrailingSlash())
+	s.server.Use(
+		middleware2.WithLogger(s.log.Named("request")),
+		middleware2.WithGzip(),
+	)
+}
 
-	s.server.Use(middleware.Logger())
+func (s *EchoServer) setupRenderer() {
+	s.server.Renderer = &TemplateRenderer{
+		templates: template.Must(template.ParseGlob("web/templates/*.html")),
+	}
 }
 
 func (s *EchoServer) setupRouters() {
-	// Main page route.
-	//s.server.GET("/", handle.MainPageHandler(s.adp))
+	updateGroup := s.server.Group("/update")
+	updateGroup.POST("", update.FromJSON(s.adp))
+	updateGroup.POST("/update/:type/:id/:value", update.FromURI(s.adp))
 
-	s.server.GET("/ping", func(c echo.Context) error {
-		return c.String(200, "pong")
-	})
+	valueGroup := s.server.Group("/value")
+	valueGroup.POST("", value.FromJSON(s.adp))
+	valueGroup.GET("value/:type/:id", value.FromURI(s.adp))
 
-	s.server.POST("/update", update.FromJSON(s.adp))
-	// Update metric values using URI parameters.
-	s.server.POST("/update/:type/:id/:value", update.FromURI(s.adp))
-
-	// Retrieve metric values using JSON parameters.
-	s.server.POST("/value", value.FromJSON(s.adp))
-	// Retrieve metric values using URI parameters.
-	s.server.GET("value/:type/:id", value.FromURI(s.adp))
+	s.server.GET("/", general.MainPage(s.adp))
+	s.server.GET("/ping", general.Ping())
 }
