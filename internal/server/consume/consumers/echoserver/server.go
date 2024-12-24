@@ -78,11 +78,11 @@ func (s *EchoServer) setupRenderer() {
 func (s *EchoServer) setupRouters() {
 	updateGroup := s.server.Group("/update")
 	updateGroup.POST("", update.FromJSON(s.adp))
-	updateGroup.POST("/update/:type/:id/:value", update.FromURI(s.adp))
+	updateGroup.POST("/:type/:id/:value", update.FromURI(s.adp))
 
 	valueGroup := s.server.Group("/value")
 	valueGroup.POST("", value.FromJSON(s.adp))
-	valueGroup.GET("value/:type/:id", value.FromURI(s.adp))
+	valueGroup.GET("/:type/:id", value.FromURI(s.adp))
 
 	s.server.GET("/", general.MainPage(s.adp))
 	s.server.GET("/ping", general.Ping())
