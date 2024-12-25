@@ -91,7 +91,7 @@ func (b *BaseBackupper) backup() {
 		return
 	}
 
-	file, err := os.OpenFile(b.path, os.O_WRONLY|os.O_CREATE, 0666)
+	file, err := os.OpenFile(b.path, os.O_WRONLY|os.O_CREATE, 644)
 	if err != nil {
 		return
 	}
