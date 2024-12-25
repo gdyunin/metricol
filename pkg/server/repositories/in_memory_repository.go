@@ -72,7 +72,12 @@ func (r *InMemoryRepository) Read(filter *entity.Filter) (*entity.Metric, error)
 // It returns an error if the metric type is unknown.
 func (r *InMemoryRepository) Update(metric *entity.Metric) (err error) {
 	r.mu.Lock()
-	defer r.mu.Unlock()
+	defer func() {
+		r.mu.Unlock()
+		if err == nil {
+			r.NotifyObservers()
+		}
+	}()
 
 	switch metric.Type {
 	case entity.MetricTypeCounter:
@@ -86,6 +91,7 @@ func (r *InMemoryRepository) Update(metric *entity.Metric) (err error) {
 	if err != nil {
 		err = fmt.Errorf("error update metric: %w", err)
 	}
+
 	return
 }
 

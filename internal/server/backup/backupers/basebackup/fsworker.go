@@ -31,7 +31,6 @@ func NewBaseBackupper(path string, filename string, interval time.Duration, rest
 }
 
 func (b *BaseBackupper) StartBackup() {
-	defer b.backup()
 	if b.needRestore {
 		b.restore()
 		b.needRestore = false
@@ -44,7 +43,18 @@ func (b *BaseBackupper) StartBackup() {
 	}
 }
 
+func (b *BaseBackupper) StopBackup() {
+	if b.followChan != nil {
+		close(b.followChan)
+	}
+	b.ticker.Stop()
+	b.backup()
+}
+
 func (b *BaseBackupper) OnNotify() {
+	if b.followChan == nil {
+		b.followChan = make(chan bool, 1)
+	}
 	b.followChan <- true
 }
 
@@ -131,9 +141,12 @@ func (b *BaseBackupper) restore() {
 			continue
 		}
 
+		if err := metric.AfterJSONUnmarshalling(); err != nil {
+			continue
+		}
+
 		if err = b.repo.Update(&metric); err != nil {
 			continue
 		}
 	}
-
 }

@@ -1,5 +1,9 @@
 package entity
 
+import (
+	"errors"
+)
+
 const (
 	// MetricTypeCounter represents a metric type that counts occurrences over time.
 	// Counters typically store integer values and only increase, except when explicitly reset.
@@ -31,4 +35,20 @@ type Metric struct {
 	// Type specifies the type of the metric.
 	// Valid types are defined as constants in this package, such as "counter" and "gauge".
 	Type string
+}
+
+func (m *Metric) AfterJSONUnmarshalling() error {
+	if m.Type == MetricTypeCounter {
+		switch v := m.Value.(type) {
+		case int64:
+			m.Value = v
+		case int:
+			m.Value = int64(v)
+		case float64:
+			m.Value = int64(v) // Явное преобразование float64 -> int64
+		default:
+			return errors.New("invalid value type for counter")
+		}
+	}
+	return nil
 }

@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/gdyunin/metricol.git/internal/server/backup/backupers/basebackup"
@@ -10,6 +13,18 @@ import (
 	"github.com/gdyunin/metricol.git/pkg/logger"
 	"github.com/gdyunin/metricol.git/pkg/server/repositories"
 )
+
+type stopper func()
+
+type shutdown struct {
+	fn []stopper
+}
+
+func (s *shutdown) executeAll() {
+	for _, f := range s.fn {
+		f()
+	}
+}
 
 func run() error {
 	baseInfoLogger, err := logger.Logger(logger.LevelINFO)
@@ -34,8 +49,24 @@ func run() error {
 	)
 	go backupper.StartBackup()
 
+	setupGracefulShutdown(&shutdown{fn: []stopper{
+		backupper.StopBackup,
+	}})
+
 	if err = consumer.StartConsume(); err != nil {
 		return fmt.Errorf("failed to start the consumption process: %w", err)
 	}
+
 	return nil
+}
+
+func setupGracefulShutdown(s *shutdown) {
+	stopChan := make(chan os.Signal, 1)
+	signal.Notify(stopChan, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		<-stopChan
+		s.executeAll()
+		os.Exit(0)
+	}()
 }
