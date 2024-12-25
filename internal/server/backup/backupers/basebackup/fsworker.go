@@ -113,6 +113,7 @@ func (b *BaseBackupper) backup() {
 	if err != nil {
 		return
 	}
+	fmt.Printf("Забэкаппили вот это: %s", buf.String())
 
 	if err := writer.Flush(); err != nil {
 		return
