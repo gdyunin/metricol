@@ -47,6 +47,7 @@ func (b *BaseBackupper) StartBackup() {
 }
 
 func (b *BaseBackupper) StopBackup() {
+	fmt.Printf("Ой нет, нас останавливают, вот такой репо есть: %v\n", b.repo)
 	if b.followChan != nil {
 		close(b.followChan)
 	}
