@@ -3,32 +3,29 @@ package echoserver
 import (
 	"fmt"
 	"html/template"
-	"io"
+	"strings"
 
 	"github.com/gdyunin/metricol.git/internal/server/adapter"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/handle/general"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/handle/update"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/handle/value"
-	middleware2 "github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/middleware"
+	mw "github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/middleware"
 	"github.com/gdyunin/metricol.git/internal/server/entity"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"go.uber.org/zap"
 )
 
+var compressedContentTypes = [2]string{
+	"application/json",
+	"text/html",
+}
+
 type EchoServer struct {
 	server        *echo.Echo
 	adp           *adapter.EchoAdapter
 	log           *zap.SugaredLogger
 	serverAddress string
-}
-
-type TemplateRenderer struct {
-	templates *template.Template
-}
-
-func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-	return t.templates.ExecuteTemplate(w, name, data)
 }
 
 func NewEchoServer(addr string, repo entity.MetricRepository, logger *zap.SugaredLogger) *EchoServer {
@@ -56,18 +53,31 @@ func (s *EchoServer) StartConsume() error {
 }
 
 func (s *EchoServer) setupServer() {
+	s.setupPreMiddlewares()
 	s.setupMiddlewares()
 	s.setupRenderer()
 	s.setupRouters()
 }
 
-func (s *EchoServer) setupMiddlewares() {
+func (s *EchoServer) setupPreMiddlewares() {
 	s.server.Pre(middleware.RemoveTrailingSlash())
+}
+
+func (s *EchoServer) setupMiddlewares() {
 	s.server.Use(
-		middleware2.WithLogger(s.log.Named("request")),
-		//middleware2.WithGzip(),
+		mw.WithLogger(s.log.Named("request")),
 		middleware.Decompress(),
-		middleware.Gzip(),
+		middleware.GzipWithConfig(middleware.GzipConfig{
+			Skipper: func(c echo.Context) bool {
+				contentType := c.Response().Header().Get("Content-Type")
+				for _, ict := range compressedContentTypes {
+					if strings.HasPrefix(contentType, ict) {
+						return true
+					}
+				}
+				return false
+			},
+		}),
 	)
 }
 

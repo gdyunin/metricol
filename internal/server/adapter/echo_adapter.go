@@ -53,17 +53,6 @@ func (ea *EchoAdapter) PullAllMetrics() ([]*model.Metric, error) {
 	return m, nil
 }
 
-//func (ea *EchoAdapter) IsExists(metric *model.Metric) (bool, error) {
-//	entityMetric := mtoem(metric)
-//
-//	isExists, err := ea.mi.IsExists(entityMetric)
-//	if err != nil {
-//		return false, fmt.Errorf("error check existing metric %+v from repositories: %w", metric, err)
-//	}
-//
-//	return isExists, nil
-//}
-
 func mtoem(m *model.Metric) *entity.Metric {
 	return &entity.Metric{
 		Name:  m.ID,
