@@ -48,6 +48,7 @@ func run() error {
 		repo,
 	)
 
+	fmt.Printf("Конфиг: %v", appCfg)
 	fmt.Printf("Конфиг бэкапа: %v", backupper)
 
 	backupper.Restore()
