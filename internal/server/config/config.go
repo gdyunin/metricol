@@ -13,7 +13,7 @@ import (
 const (
 	defaultServerAddress   = "localhost:8080"
 	defaultStoreInterval   = 300
-	defaultFileStoragePath = "/tmp/VRvjJ/"
+	defaultFileStoragePath = ""
 	defaultRestoreFlag     = true
 )
 
