@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -32,7 +33,9 @@ func NewBaseBackupper(path string, filename string, interval time.Duration, rest
 
 func (b *BaseBackupper) StartBackup() {
 	if b.needRestore {
+		fmt.Printf("Метрики будут ресторены, репо до рестора %v\n", b.repo)
 		b.restore()
+		fmt.Printf("Метрики  ресторены, репо после рестора %v\n", b.repo)
 		b.needRestore = false
 	}
 
