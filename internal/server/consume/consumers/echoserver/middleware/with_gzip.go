@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"bytes"
 	"compress/gzip"
 	"errors"
 	"net/http"
@@ -87,9 +86,6 @@ func (g *gzipResponseWriter) Header() http.Header {
 }
 
 func (g *gzipResponseWriter) Write(p []byte) (int, error) {
-	lg, _ := logger.Logger("INFO")
-	lg.Info(p)
-	lg.Info(bytes.NewBuffer(p).String())
 	cth := g.Header().Get(echo.HeaderContentType)
 	for _, ct := range encodingContentTypes {
 		if strings.Contains(cth, ct) {

@@ -65,7 +65,8 @@ func (s *EchoServer) setupMiddlewares() {
 	s.server.Pre(middleware.RemoveTrailingSlash())
 	s.server.Use(
 		middleware2.WithLogger(s.log.Named("request")),
-		middleware2.WithGzip(),
+		//middleware2.WithGzip(),
+		middleware.Gzip(),
 	)
 }
 
