@@ -47,6 +47,12 @@ func NewEchoServer(addr string, repo entity.MetricRepository, logger *zap.Sugare
 }
 
 func (s *EchoServer) StartConsume() error {
+	fmt.Println("Ну посмотрим")
+	a, _ := s.adp.PullAllMetrics()
+	fmt.Print("репо на момент старта")
+	for _, d := range a {
+		fmt.Printf("%#v\n", d)
+	}
 	err := s.server.Start(s.serverAddress)
 	if err != nil {
 		return fmt.Errorf("emergency stop: failed to start Gin server on address %s: %w", s.serverAddress, err)
