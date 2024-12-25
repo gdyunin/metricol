@@ -94,10 +94,13 @@ func (b *BaseBackupper) backup() {
 	}
 
 	fmt.Printf("Будем бэкапить %+v", metrics)
+	for _, d := range metrics {
+		fmt.Println(d)
+	}
 
 	file, err := os.OpenFile(b.path, os.O_WRONLY|os.O_CREATE, 644)
 	if err != nil {
-		fmt.Println("Че то не то с файлом")
+		fmt.Printf("Че то не то с файлом %v", err)
 		return
 	}
 	defer func() { _ = file.Close() }()
