@@ -31,6 +31,7 @@ func NewBaseBackupper(path string, filename string, interval time.Duration, rest
 }
 
 func (b *BaseBackupper) StartBackup() {
+	defer b.backup()
 	if b.needRestore {
 		b.restore()
 		b.needRestore = false
