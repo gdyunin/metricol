@@ -86,13 +86,18 @@ func (b *BaseBackupper) regularBackup() {
 }
 
 func (b *BaseBackupper) backup() {
+	fmt.Printf("Будем бэкапить")
 	metrics, err := b.repo.All()
 	if err != nil {
+		fmt.Println("Не получили метрики")
 		return
 	}
 
+	fmt.Printf("Будем бэкапить %+v", metrics)
+
 	file, err := os.OpenFile(b.path, os.O_WRONLY|os.O_CREATE, 644)
 	if err != nil {
+		fmt.Println("Че то не то с файлом")
 		return
 	}
 	defer func() { _ = file.Close() }()
@@ -101,6 +106,7 @@ func (b *BaseBackupper) backup() {
 	for _, m := range metrics {
 		data, err := json.Marshal(&m)
 		if err != nil {
+			fmt.Println("Напортачили с маршаллингом")
 			continue
 		}
 		data = append(data, '\n')
@@ -111,11 +117,13 @@ func (b *BaseBackupper) backup() {
 	writer := bufio.NewWriter(file)
 	_, err = writer.Write(buf.Bytes())
 	if err != nil {
+		fmt.Println("Не смогли заврайтить")
 		return
 	}
-	fmt.Printf("Забэкаппили вот это: %s", buf.String())
+	fmt.Printf("Забэкаппим вот это: %s", buf.String())
 
 	if err := writer.Flush(); err != nil {
+		fmt.Println("Не смогли зафлушить")
 		return
 	}
 }
