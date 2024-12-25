@@ -11,12 +11,18 @@ import (
 
 // All default settings.
 const (
-	defaultServerAddress = "localhost:8080"
+	defaultServerAddress   = "localhost:8080"
+	defaultStoreInterval   = 300
+	defaultFileStoragePath = ""
+	defaultRestoreFlag     = true
 )
 
 // Config holds the configuration for the server, including the server address.
 type Config struct {
-	ServerAddress string `env:"ADDRESS"` // Server address to connect to
+	ServerAddress   string `env:"ADDRESS"` // Server address to connect to
+	StoreInterval   int    `env:"STORE_INTERVAL"`
+	FileStoragePath string `env:"FILE_STORAGE_PATH"`
+	Restore         bool   `env:"RESTORE"`
 }
 
 // ParseConfig initializes the Config with default values,
@@ -25,7 +31,10 @@ type Config struct {
 func ParseConfig() (*Config, error) {
 	// Default settings for the server configuration.
 	cfg := Config{
-		ServerAddress: defaultServerAddress,
+		ServerAddress:   defaultServerAddress,
+		StoreInterval:   defaultStoreInterval,
+		FileStoragePath: defaultFileStoragePath,
+		Restore:         defaultRestoreFlag,
 	}
 
 	// Parse command-line arguments or set default settings if no args are provided.
@@ -42,5 +51,8 @@ func ParseConfig() (*Config, error) {
 // or retains the default values set in the configuration.
 func parseFlagsOrSetDefault(cfg *Config) {
 	flag.StringVar(&cfg.ServerAddress, "a", cfg.ServerAddress, "Address of the server")
+	flag.IntVar(&cfg.StoreInterval, "i", cfg.StoreInterval, "Interval for store to fs in sec, if = 0 sync store")
+	flag.StringVar(&cfg.FileStoragePath, "f", cfg.FileStoragePath, "file storage path")
+	flag.BoolVar(&cfg.Restore, "r", cfg.Restore, "is restore need")
 	flag.Parse()
 }

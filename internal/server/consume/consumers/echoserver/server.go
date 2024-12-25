@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/gdyunin/metricol.git/internal/server/adapter"
+	"github.com/gdyunin/metricol.git/internal/server/backup"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/handle/general"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/handle/update"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/handle/value"
@@ -25,6 +26,7 @@ type EchoServer struct {
 	server        *echo.Echo
 	adp           *adapter.EchoAdapter
 	log           *zap.SugaredLogger
+	backupper     backup.Backupper
 	serverAddress string
 }
 

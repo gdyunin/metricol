@@ -4,15 +4,17 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/gdyunin/metricol.git/internal/common"
 	"github.com/gdyunin/metricol.git/internal/server/entity"
 )
 
 // InMemoryRepository is an in-memory implementation of the MetricRepository interface.
 // It stores counter and gauge metrics in maps.
 type InMemoryRepository struct {
-	counters map[string]int64   // Stores counter metrics.
-	gauges   map[string]float64 // Stores gauge metrics.
-	mu       *sync.RWMutex      // Provides thread-safe access to the metrics.
+	counters  map[string]int64   // Stores counter metrics.
+	gauges    map[string]float64 // Stores gauge metrics.
+	mu        *sync.RWMutex      // Provides thread-safe access to the metrics.
+	observers map[common.Observer]struct{}
 }
 
 // NewInMemoryRepository creates and returns a new instance of InMemoryRepository.
@@ -140,6 +142,39 @@ func (r *InMemoryRepository) metricsCount() int {
 	defer r.mu.RUnlock()
 
 	return len(r.counters) + len(r.gauges)
+}
+
+func (r *InMemoryRepository) RegisterObserver(observer common.Observer) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, exists := r.observers[observer]; exists {
+		return fmt.Errorf("observer %v is already registered", observer)
+	}
+
+	r.observers[observer] = struct{}{}
+	return nil
+}
+
+func (r *InMemoryRepository) RemoveObserver(observer common.Observer) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, exists := r.observers[observer]; exists {
+		delete(r.observers, observer)
+		return nil
+	}
+
+	return fmt.Errorf("observer %v is not registered", observer)
+}
+
+func (r *InMemoryRepository) NotifyObservers() {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	for o := range r.observers {
+		o.OnNotify()
+	}
 }
 
 func (r *InMemoryRepository) storeCounter(metric *entity.Metric) error {

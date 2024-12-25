@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"time"
 
+	"github.com/gdyunin/metricol.git/internal/server/backup/backupers/basebackup"
 	"github.com/gdyunin/metricol.git/internal/server/config"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver"
 	"github.com/gdyunin/metricol.git/pkg/logger"
@@ -21,8 +23,16 @@ func run() error {
 	}
 
 	repo := repositories.NewInMemoryRepository()
-
 	consumer := echoserver.NewEchoServer(appCfg.ServerAddress, repo, baseInfoLogger)
+
+	backupper := basebackup.NewBaseBackupper(
+		appCfg.FileStoragePath,
+		"backup.txt",
+		time.Duration(appCfg.StoreInterval)*time.Second,
+		appCfg.Restore,
+		repo,
+	)
+	go backupper.StartBackup()
 
 	if err = consumer.StartConsume(); err != nil {
 		return fmt.Errorf("failed to start the consumption process: %w", err)

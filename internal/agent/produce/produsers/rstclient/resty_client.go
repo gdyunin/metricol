@@ -15,6 +15,7 @@ import (
 	"github.com/gdyunin/metricol.git/internal/agent/common"
 	"github.com/gdyunin/metricol.git/internal/agent/entity"
 	"github.com/gdyunin/metricol.git/internal/agent/produce/produsers/rstclient/model"
+	common2 "github.com/gdyunin/metricol.git/internal/common"
 
 	"github.com/go-resty/resty/v2"
 	"go.uber.org/zap"
@@ -33,7 +34,7 @@ type RestyClient struct {
 	interrupter *common.Interrupter
 	mu          *sync.RWMutex
 	log         *zap.SugaredLogger
-	observers   map[common.Observer]struct{}
+	observers   map[common2.Observer]struct{}
 	interval    time.Duration
 	baseUrl     string
 }
@@ -52,7 +53,7 @@ func NewRestyClient(
 		adp:       produce.NewRestyClientAdapter(repo, logger.Named("resty client adapter")),
 		client:    rc,
 		interval:  interval,
-		observers: make(map[common.Observer]struct{}),
+		observers: make(map[common2.Observer]struct{}),
 		mu:        &sync.RWMutex{},
 		log:       logger,
 		baseUrl:   serverAddress,
@@ -119,7 +120,7 @@ func (r *RestyClient) StartProduce() error {
 }
 
 // RegisterObserver adds a new observer to be notified of events.
-func (r *RestyClient) RegisterObserver(observer common.Observer) error {
+func (r *RestyClient) RegisterObserver(observer common2.Observer) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -133,7 +134,7 @@ func (r *RestyClient) RegisterObserver(observer common.Observer) error {
 }
 
 // RemoveObserver removes an existing observer from the notification list.
-func (r *RestyClient) RemoveObserver(observer common.Observer) error {
+func (r *RestyClient) RemoveObserver(observer common2.Observer) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

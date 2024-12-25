@@ -6,8 +6,8 @@ import (
 	"sync"
 
 	"github.com/gdyunin/metricol.git/internal/agent/collect"
-	"github.com/gdyunin/metricol.git/internal/agent/common"
 	"github.com/gdyunin/metricol.git/internal/agent/produce"
+	"github.com/gdyunin/metricol.git/internal/common"
 
 	"go.uber.org/zap"
 )
