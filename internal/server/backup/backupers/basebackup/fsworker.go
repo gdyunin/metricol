@@ -98,6 +98,12 @@ func (b *BaseBackupper) backup() {
 		fmt.Println(d)
 	}
 
+	err = os.MkdirAll(filepath.Dir(b.path), 0755) // Создаём все промежуточные директории
+	if err != nil {
+		fmt.Printf("Не удалось создать директории: %v\n", err)
+		return
+	}
+
 	file, err := os.OpenFile(b.path, os.O_WRONLY|os.O_CREATE, 644)
 	if err != nil {
 		fmt.Printf("Че то не то с файлом %v", err)
