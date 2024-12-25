@@ -66,6 +66,7 @@ func (s *EchoServer) setupMiddlewares() {
 	s.server.Use(
 		middleware2.WithLogger(s.log.Named("request")),
 		//middleware2.WithGzip(),
+		middleware.Decompress(),
 		middleware.Gzip(),
 	)
 }
