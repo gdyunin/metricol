@@ -47,6 +47,7 @@ func run() error {
 		appCfg.Restore,
 		repo,
 	)
+	backupper.Restore()
 	go backupper.StartBackup()
 
 	setupGracefulShutdown(&shutdown{fn: []stopper{
