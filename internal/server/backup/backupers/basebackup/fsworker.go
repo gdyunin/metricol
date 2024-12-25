@@ -121,7 +121,9 @@ func (b *BaseBackupper) backup() {
 
 func (b *BaseBackupper) Restore() {
 	if b.needRestore {
+		fmt.Println("Будем ресторить")
 		b.mustRestore()
+		fmt.Printf("После рестора %v", b.repo)
 	}
 }
 
