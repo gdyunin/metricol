@@ -32,13 +32,6 @@ func NewBaseBackupper(path string, filename string, interval time.Duration, rest
 }
 
 func (b *BaseBackupper) StartBackup() {
-	if b.needRestore {
-		fmt.Printf("Метрики будут ресторены, репо до рестора %v\n", b.repo)
-		b.restore()
-		fmt.Printf("Метрики  ресторены, репо после рестора %v\n", b.repo)
-		b.needRestore = false
-	}
-
 	if b.interval == 0 {
 		b.syncBackup()
 	} else {
@@ -126,7 +119,13 @@ func (b *BaseBackupper) backup() {
 	}
 }
 
-func (b *BaseBackupper) restore() {
+func (b *BaseBackupper) Restore() {
+	if b.needRestore {
+		b.mustRestore()
+	}
+}
+
+func (b *BaseBackupper) mustRestore() {
 	file, err := os.Open(b.path)
 	if err != nil {
 		return
