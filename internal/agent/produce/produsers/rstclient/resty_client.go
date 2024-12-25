@@ -46,11 +46,7 @@ func NewRestyClient(
 	repo entity.MetricsRepository,
 	logger *zap.SugaredLogger,
 ) *RestyClient {
-	rc := resty.
-		New().
-		SetRetryCount(5).
-		SetRetryWaitTime(time.Second).
-		SetRetryMaxWaitTime(5 * time.Second)
+	rc := resty.New()
 
 	return &RestyClient{
 		adp:       produce.NewRestyClientAdapter(repo, logger.Named("resty client adapter")),
@@ -63,9 +59,42 @@ func NewRestyClient(
 	}
 }
 
+func (r *RestyClient) waitServer() error {
+	const (
+		maxRetries  = 10               // Максимальное количество попыток
+		minInterval = 1 * time.Second  // Минимальный интервал между попытками
+		maxInterval = 10 * time.Second // Максимальный интервал между попытками
+	)
+
+	for i := 0; i < maxRetries; i++ {
+		r.log.Infof("Checking server availability... Attempt %d/%d", i+1, maxRetries)
+
+		// Отправить запрос /ping для проверки доступности сервера
+		resp, err := r.client.R().Get(fmt.Sprintf("http://%s/ping", r.baseUrl))
+		if err == nil && resp.StatusCode() == http.StatusOK {
+			r.log.Info("Server is available.")
+			return nil
+		}
+
+		interval := time.Duration(i+1) * minInterval
+		if interval > maxInterval {
+			interval = maxInterval
+		}
+
+		r.log.Warnf("Server not available: %v. Retrying in %s...", err, interval)
+		time.Sleep(interval)
+	}
+
+	return errors.New("server did not become available within the retry limit")
+}
+
 // StartProduce begins the metrics production process.
 // It runs in a loop until an error occurs or the interrupter stops it.
 func (r *RestyClient) StartProduce() error {
+	if err := r.waitServer(); err != nil {
+		return fmt.Errorf("server is not available: %w", err)
+	}
+
 	r.ticker = time.NewTicker(r.interval)
 	defer r.ticker.Stop()
 
@@ -167,7 +196,8 @@ func (r *RestyClient) send(metric *model.Metric) error {
 
 	resp, err := req.Send()
 	if err != nil {
-		return fmt.Errorf("failed to send metric %v: %w", metric, err)
+		panic(err)
+		//return fmt.Errorf("failed to send metric %v: %w", metric, err)
 	}
 
 	if resp.StatusCode() != http.StatusOK {
