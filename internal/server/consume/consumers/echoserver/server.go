@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/gdyunin/metricol.git/internal/server/adapter"
-	"github.com/gdyunin/metricol.git/internal/server/backup"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/handle/general"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/handle/update"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/handle/value"
@@ -26,7 +25,6 @@ type EchoServer struct {
 	server        *echo.Echo
 	adp           *adapter.EchoAdapter
 	log           *zap.SugaredLogger
-	backupper     backup.Backupper
 	serverAddress string
 }
 
@@ -47,9 +45,7 @@ func NewEchoServer(addr string, repo entity.MetricRepository, logger *zap.Sugare
 }
 
 func (s *EchoServer) StartConsume() error {
-	fmt.Println("Ну посмотрим")
 	a, _ := s.adp.PullAllMetrics()
-	fmt.Print("репо на момент старта")
 	for _, d := range a {
 		fmt.Printf("%#v\n", d)
 	}

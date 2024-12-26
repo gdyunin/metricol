@@ -35,8 +35,8 @@ type RestyClient struct {
 	mu          *sync.RWMutex
 	log         *zap.SugaredLogger
 	observers   map[common2.Observer]struct{}
+	baseURL     string
 	interval    time.Duration
-	baseUrl     string
 }
 
 // NewRestyClient creates a new RestyClient instance with the specified interval,
@@ -56,22 +56,24 @@ func NewRestyClient(
 		observers: make(map[common2.Observer]struct{}),
 		mu:        &sync.RWMutex{},
 		log:       logger,
-		baseUrl:   serverAddress,
+		baseURL:   serverAddress,
 	}
 }
 
+// waitServer checks if the server is available by sending a ping request.
+// It retries up to a maximum number of attempts with increasing intervals.
 func (r *RestyClient) waitServer() error {
 	const (
-		maxRetries  = 10               // Максимальное количество попыток
-		minInterval = 1 * time.Second  // Минимальный интервал между попытками
-		maxInterval = 10 * time.Second // Максимальный интервал между попытками
+		maxRetries  = 10               // Maximum number of retry attempts.
+		minInterval = 1 * time.Second  // Minimum interval between attempts.
+		maxInterval = 10 * time.Second // Maximum interval between attempts.
 	)
 
-	for i := 0; i < maxRetries; i++ {
+	for i := range make([]struct{}, maxRetries) {
 		r.log.Infof("Checking server availability... Attempt %d/%d", i+1, maxRetries)
 
-		// Отправить запрос /ping для проверки доступности сервера
-		resp, err := r.client.R().Get(fmt.Sprintf("http://%s/ping", r.baseUrl))
+		// Send a ping request to check server availability.
+		resp, err := r.client.R().Get(fmt.Sprintf("http://%s/ping", r.baseURL))
 		if err == nil && resp.StatusCode() == http.StatusOK {
 			r.log.Info("Server is available.")
 			return nil
@@ -89,7 +91,7 @@ func (r *RestyClient) waitServer() error {
 	return errors.New("server did not become available within the retry limit")
 }
 
-// StartProduce begins the metrics production process.
+// StartProduce starts the metrics production process.
 // It runs in a loop until an error occurs or the interrupter stops it.
 func (r *RestyClient) StartProduce() error {
 	if err := r.waitServer(); err != nil {
@@ -159,7 +161,7 @@ func (r *RestyClient) NotifyObservers() {
 	r.log.Info("All registered observers have been notified.")
 }
 
-// sendAll transmits all metrics to the server and notifies observers.
+// sendAll sends all metrics to the server and notifies observers.
 func (r *RestyClient) sendAll() error {
 	r.log.Info("Initiating metrics transmission.")
 	metrics := r.adp.Metrics()
@@ -180,7 +182,7 @@ func (r *RestyClient) sendAll() error {
 	return nil
 }
 
-// send transmits a single metric to the server.
+// send sends a single metric to the server.
 func (r *RestyClient) send(metric *model.Metric) error {
 	r.log.Infof("Transmitting metric: %v.", metric)
 	req := r.makeRequest()
@@ -197,8 +199,7 @@ func (r *RestyClient) send(metric *model.Metric) error {
 
 	resp, err := req.Send()
 	if err != nil {
-		panic(err)
-		//return fmt.Errorf("failed to send metric %v: %w", metric, err)
+		return fmt.Errorf("failed to send metric %v: %w", metric, err)
 	}
 
 	if resp.StatusCode() != http.StatusOK {
@@ -212,7 +213,7 @@ func (r *RestyClient) send(metric *model.Metric) error {
 func (r *RestyClient) makeRequest() *resty.Request {
 	u := url.URL{
 		Scheme: "http",
-		Host:   r.baseUrl,
+		Host:   r.baseURL,
 		Path:   "/update",
 	}
 

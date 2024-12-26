@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -13,16 +12,27 @@ import (
 	"github.com/gdyunin/metricol.git/internal/server/entity"
 )
 
+const (
+	FileDefaultPerm = 0o600
+	DirDefaultPerm  = 0o750
+)
+
 type BaseBackupper struct {
-	path        string
-	interval    time.Duration
 	repo        entity.MetricRepository
-	needRestore bool
 	ticker      *time.Ticker
 	followChan  chan bool
+	path        string
+	interval    time.Duration
+	needRestore bool
 }
 
-func NewBaseBackupper(path string, filename string, interval time.Duration, restore bool, repo entity.MetricRepository) *BaseBackupper {
+func NewBaseBackupper(
+	path string,
+	filename string,
+	interval time.Duration,
+	restore bool,
+	repo entity.MetricRepository,
+) *BaseBackupper {
 	return &BaseBackupper{
 		path:        filepath.Join(path, filename),
 		interval:    interval,
@@ -40,7 +50,6 @@ func (b *BaseBackupper) StartBackup() {
 }
 
 func (b *BaseBackupper) StopBackup() {
-	fmt.Printf("Ой нет, нас останавливают, вот такой репо есть: %v\n", b.repo)
 	if b.followChan != nil {
 		close(b.followChan)
 	}
@@ -65,11 +74,8 @@ func (b *BaseBackupper) syncBackup() {
 		return
 	}
 
-	for {
-		select {
-		case <-b.followChan:
-			b.backup()
-		}
+	for range b.followChan {
+		b.backup()
 	}
 }
 
@@ -77,36 +83,24 @@ func (b *BaseBackupper) regularBackup() {
 	b.ticker = time.NewTicker(b.interval)
 	defer b.ticker.Stop()
 
-	for {
-		select {
-		case <-b.ticker.C:
-			b.backup()
-		}
+	for range b.ticker.C {
+		b.backup()
 	}
 }
 
 func (b *BaseBackupper) backup() {
-	fmt.Printf("Будем бэкапить")
 	metrics, err := b.repo.All()
 	if err != nil {
-		fmt.Println("Не получили метрики")
 		return
 	}
 
-	fmt.Printf("Будем бэкапить %+v", metrics)
-	for _, d := range metrics {
-		fmt.Println(d)
-	}
-
-	err = os.MkdirAll(filepath.Dir(b.path), 0755) // Создаём все промежуточные директории
+	err = os.MkdirAll(filepath.Dir(b.path), DirDefaultPerm)
 	if err != nil {
-		fmt.Printf("Не удалось создать директории: %v\n", err)
 		return
 	}
 
-	file, err := os.OpenFile(b.path, os.O_WRONLY|os.O_CREATE, 644)
+	file, err := os.OpenFile(b.path, os.O_WRONLY|os.O_CREATE, FileDefaultPerm)
 	if err != nil {
-		fmt.Printf("Че то не то с файлом %v", err)
 		return
 	}
 	defer func() { _ = file.Close() }()
@@ -115,7 +109,6 @@ func (b *BaseBackupper) backup() {
 	for _, m := range metrics {
 		data, err := json.Marshal(&m)
 		if err != nil {
-			fmt.Println("Напортачили с маршаллингом")
 			continue
 		}
 		data = append(data, '\n')
@@ -126,22 +119,17 @@ func (b *BaseBackupper) backup() {
 	writer := bufio.NewWriter(file)
 	_, err = writer.Write(buf.Bytes())
 	if err != nil {
-		fmt.Println("Не смогли заврайтить")
 		return
 	}
-	fmt.Printf("Забэкаппим вот это: %s", buf.String())
 
 	if err := writer.Flush(); err != nil {
-		fmt.Println("Не смогли зафлушить")
 		return
 	}
 }
 
 func (b *BaseBackupper) Restore() {
 	if b.needRestore {
-		fmt.Println("Будем ресторить")
 		b.mustRestore()
-		fmt.Printf("После рестора %v", b.repo)
 	}
 }
 

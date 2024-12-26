@@ -1,6 +1,7 @@
 package parse
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/model"
@@ -11,7 +12,7 @@ import (
 func MetricFromURI(c echo.Context) (*model.Metric, error) {
 	m := model.Metric{}
 	if err := c.Bind(&m); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error when parse metric from URI: %w", err)
 	}
 
 	valueStr := c.Param("value")
@@ -20,13 +21,13 @@ func MetricFromURI(c echo.Context) (*model.Metric, error) {
 		case entity.MetricTypeCounter:
 			delta, err := strconv.ParseInt(valueStr, 10, 64)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("error when cast %s to int64: %w", valueStr, err)
 			}
 			m.Delta = &delta
 		case entity.MetricTypeGauge:
 			value, err := strconv.ParseFloat(valueStr, 64)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("error when cast %s to float64: %w", valueStr, err)
 			}
 			m.Value = &value
 		}

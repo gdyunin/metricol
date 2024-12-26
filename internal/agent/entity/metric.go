@@ -16,7 +16,7 @@ type Metric struct {
 }
 
 // Equal compares the current Metric instance with another Metric.
-// It returns true if both metrics have the same name and type, otherwise false.
+// It returns true if both metrics have the same name and type; otherwise, it returns false.
 func (m *Metric) Equal(compare *Metric) bool {
 	return m.Name == compare.Name && m.Type == compare.Type
 }

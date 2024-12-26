@@ -26,15 +26,15 @@ type Metric struct {
 	// The data type depends on the metric's type:
 	// - Counters typically use integers.
 	// - Gauges often use floating-point numbers.
-	Value any
+	Value any `json:"value"`
 
 	// Name is the name for the metric.
 	// It should be a descriptive and unique string that clearly defines the metric's purpose.
-	Name string
+	Name string `json:"name"`
 
 	// Type specifies the type of the metric.
 	// Valid types are defined as constants in this package, such as "counter" and "gauge".
-	Type string
+	Type string `json:"type"`
 }
 
 func (m *Metric) AfterJSONUnmarshalling() error {

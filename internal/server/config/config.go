@@ -20,8 +20,8 @@ const (
 // Config holds the configuration for the server, including the server address.
 type Config struct {
 	ServerAddress   string `env:"ADDRESS"` // Server address to connect to
-	StoreInterval   int    `env:"STORE_INTERVAL"`
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
+	StoreInterval   int    `env:"STORE_INTERVAL"`
 	Restore         bool   `env:"RESTORE"`
 }
 

@@ -1,6 +1,7 @@
 package echoserver
 
 import (
+	"fmt"
 	"html/template"
 	"io"
 
@@ -12,5 +13,8 @@ type TemplateRenderer struct {
 }
 
 func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, _ echo.Context) error {
-	return t.templates.ExecuteTemplate(w, name, data)
+	if err := t.templates.ExecuteTemplate(w, name, data); err != nil {
+		return fmt.Errorf("error execute template %s: %w", name, err)
+	}
+	return nil
 }

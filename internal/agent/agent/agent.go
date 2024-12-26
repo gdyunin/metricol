@@ -15,9 +15,9 @@ import (
 // Agent is the main struct responsible for managing data collection and production.
 // It coordinates the Collector and Producer and ensures proper execution flow.
 type Agent struct {
-	collector collect.Collector
-	producer  produce.Producer
-	log       *zap.SugaredLogger
+	collector collect.Collector  // Component responsible for collecting data.
+	producer  produce.Producer   // Component responsible for producing data.
+	log       *zap.SugaredLogger // Logger for capturing runtime information and errors.
 }
 
 // NewAgent initializes a new Agent instance with the provided Collector, Producer, and logger.
@@ -38,12 +38,14 @@ func NewAgent(
 	logger *zap.SugaredLogger,
 	options ...func(*Agent) error,
 ) (a *Agent, err error) {
+	// Initialize the Agent with provided components.
 	a = &Agent{
 		collector: collector,
 		producer:  producer,
 		log:       logger,
 	}
 
+	// Apply each provided functional option to configure the Agent.
 	for _, o := range options {
 		if err = o(a); err != nil {
 			return nil, fmt.Errorf("failed to apply option function of type %T: %w", o, err)
@@ -59,38 +61,35 @@ func NewAgent(
 //   - An error indicating which executor (collector or producer) stopped the agent.
 func (a *Agent) Start() error {
 	var workGroup sync.WaitGroup
-	workGroup.Add(1)
+	workGroup.Add(1) // If one of the task (producer or consumer) was done, the apllication will be stopped.
 
-	var interruptedExecutor string
-	var err error
+	var interruptedExecutor string // Tracks which executor caused an interruption.
+	var err error                  // Holds the error encountered by an executor.
 
 	// Start the data collection process.
 	go func() {
 		defer func() {
-			interruptedExecutor = "collector"
-			workGroup.Done()
+			interruptedExecutor = "collector" // Mark the collector as the interrupted executor if it fails.
+			workGroup.Done()                  // Signal the WaitGroup that this task is complete.
 		}()
 
 		if collectorErr := a.collector.StartCollect(); collectorErr != nil {
-			a.log.Errorf("Collector encountered an error: %v", collectorErr)
-			err = collectorErr
+			err = collectorErr // Capture the error encountered by the collector.
 		}
 	}()
 
 	// Start the data production process.
 	go func() {
 		defer func() {
-			interruptedExecutor = "producer"
-			workGroup.Done()
+			interruptedExecutor = "producer" // Mark the producer as the interrupted executor if it fails.
+			workGroup.Done()                 // Signal the WaitGroup that this task is complete.
 		}()
 
 		if producerErr := a.producer.StartProduce(); producerErr != nil {
-			a.log.Errorf("Producer encountered an error: %v", producerErr)
-			err = producerErr
+			err = producerErr // Capture the error encountered by the producer.
 		}
 	}()
 
-	// Wait for both processes to complete.
 	workGroup.Wait()
 
 	// Return an error if either executor failed.
@@ -109,16 +108,19 @@ func (a *Agent) Start() error {
 // Returns:
 //   - An error if the subscription process fails.
 func WithSubscribeConsumer2Producer(agent *Agent) error {
+	// Verify the collector implements the Observer interface.
 	observer, ok := agent.collector.(common.Observer)
 	if !ok {
 		return errors.New("collector does not implement the Observer interface")
 	}
 
+	// Verify the producer implements the ObserveSubject interface.
 	subject, ok := agent.producer.(common.ObserveSubject)
 	if !ok {
 		return errors.New("producer does not implement the ObserveSubject interface")
 	}
 
+	// Subscribe the collector to the producer's events.
 	if err := common.Subscribe(observer, subject); err != nil {
 		return fmt.Errorf("failed to subscribe collector to producer: %w", err)
 	}

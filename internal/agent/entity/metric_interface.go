@@ -27,7 +27,7 @@ func NewMetricsInterface(repo MetricsRepository) *MetricsInterface {
 //   - metric: A pointer to the Metric instance to be stored.
 //
 // Returns:
-//   - An error if storing the metric fails (currently always returns nil).
+//   - An error if storing the metric fails; otherwise, it returns nil.
 func (mi *MetricsInterface) Store(metric *Metric) error {
 	mi.repo.Add(metric)
 	return nil

@@ -7,12 +7,11 @@ import (
 	"go.uber.org/zap"
 )
 
-var logger *zap.SugaredLogger
-
 // RestyClientAdapter serves as an adapter for interacting with the metrics repository.
 // It converts metrics from the internal entity format to the Resty Client's model format.
 type RestyClientAdapter struct {
-	metricInterface *entity.MetricsInterface
+	metricInterface *entity.MetricsInterface // Interface for interacting with the metrics repository.
+	logger          *zap.SugaredLogger       // Logger for capturing runtime information and errors.
 }
 
 // NewRestyClientAdapter initializes a new RestyClientAdapter with the provided metrics repository and logger.
@@ -25,8 +24,7 @@ type RestyClientAdapter struct {
 // Returns:
 //   - A pointer to an initialized RestyClientAdapter.
 func NewRestyClientAdapter(repo entity.MetricsRepository, log *zap.SugaredLogger) *RestyClientAdapter {
-	logger = log
-	return &RestyClientAdapter{metricInterface: entity.NewMetricsInterface(repo)}
+	return &RestyClientAdapter{metricInterface: entity.NewMetricsInterface(repo), logger: log}
 }
 
 // Metrics retrieves all stored metrics from the repository and converts them into
@@ -38,10 +36,12 @@ func (r *RestyClientAdapter) Metrics() []*model.Metric {
 	// Retrieve all entity metrics from the repository.
 	emAll := r.metricInterface.Metrics()
 
-	// Convert each entity metric into a Resty Client metric.
+	// Prepare a slice to hold the converted metrics.
 	mAll := make([]*model.Metric, 0, len(emAll))
+
+	// Iterate over the entity metrics and convert each one.
 	for _, em := range emAll {
-		mAll = append(mAll, em2m(em))
+		mAll = append(mAll, r.em2m(em))
 	}
 
 	return mAll
@@ -55,29 +55,40 @@ func (r *RestyClientAdapter) Metrics() []*model.Metric {
 //
 // Returns:
 //   - A pointer to a Resty Client Metric instance.
-func em2m(em *entity.Metric) *model.Metric {
+func (r *RestyClientAdapter) em2m(em *entity.Metric) *model.Metric {
+	// Initialize a new Resty Client metric with basic fields.
 	m := &model.Metric{
-		ID:    em.Name,
-		MType: em.Type,
+		ID:    em.Name, // Set the metric ID to the entity metric's name.
+		MType: em.Type, // Set the metric type (e.g., counter, gauge).
 	}
 
-	// Map values based on metric type.
+	// Map metric values based on the metric type.
 	switch em.Type {
 	case entity.MetricTypeCounter:
+		// Attempt to convert and set the value for counter metrics.
 		if v, ok := em.Value.(int64); ok {
-			m.Delta = &v
+			m.Delta = &v // Set Delta field for counter metrics.
 		} else {
-			logger.Errorf("metric skipped: failed to convert counter metric '%s': expected int64 but got %T", em.Name, em.Value)
+			// Log an error if the value type is incorrect.
+			r.logger.Errorf(
+				"metric skipped: failed to convert counter metric '%s':"+
+					" expected int64 but got %T", em.Name, em.Value,
+			)
 		}
 	case entity.MetricTypeGauge:
+		// Attempt to convert and set the value for gauge metrics.
 		if v, ok := em.Value.(float64); ok {
-			m.Value = &v
+			m.Value = &v // Set Value field for gauge metrics.
 		} else {
-			logger.Errorf("metric skipped: failed to convert gauge metric '%s': expected float64 but got %T", em.Name, em.Value)
+			// Log an error if the value type is incorrect.
+			r.logger.Errorf("metric skipped: failed to convert gauge metric '%s':"+
+				" expected float64 but got %T", em.Name, em.Value,
+			)
 		}
 	default:
-		logger.Warnf("metric skipped: unknown metric type for metric '%s': %s", em.Name, em.Type)
+		// Log a warning for unknown metric types.
+		r.logger.Warnf("metric skipped: unknown metric type for metric '%s': %s", em.Name, em.Type)
 	}
 
-	return m
+	return m // Return the converted metric.
 }
