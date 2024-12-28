@@ -11,9 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gdyunin/metricol.git/internal/agent/adapter/produce"
-	"github.com/gdyunin/metricol.git/internal/agent/common"
-	"github.com/gdyunin/metricol.git/internal/agent/entity"
+	"github.com/gdyunin/metricol.git/internal/agent/adapters/producers"
+	"github.com/gdyunin/metricol.git/internal/agent/entities"
 	"github.com/gdyunin/metricol.git/internal/agent/produce/produsers/rstclient/model"
 	common2 "github.com/gdyunin/metricol.git/internal/common"
 
@@ -28,10 +27,10 @@ const (
 
 // RestyClient is a producer that sends metrics to a server using the Resty library.
 type RestyClient struct {
-	adp         *produce.RestyClientAdapter
+	adp         *producers.RestyClientAdapter
 	client      *resty.Client
 	ticker      *time.Ticker
-	interrupter *common.Interrupter
+	interrupter *common2.Interrupter
 	mu          *sync.RWMutex
 	log         *zap.SugaredLogger
 	observers   map[common2.Observer]struct{}
@@ -44,13 +43,13 @@ type RestyClient struct {
 func NewRestyClient(
 	interval time.Duration,
 	serverAddress string,
-	repo entity.MetricsRepository,
+	repo entities.MetricsRepository,
 	logger *zap.SugaredLogger,
 ) *RestyClient {
 	rc := resty.New()
 
 	return &RestyClient{
-		adp:       produce.NewRestyClientAdapter(repo, logger.Named("resty client adapter")),
+		adp:       producers.NewRestyClientAdapter(repo, logger.Named("resty client adapters")),
 		client:    rc,
 		interval:  interval,
 		observers: make(map[common2.Observer]struct{}),
@@ -101,7 +100,7 @@ func (r *RestyClient) StartProduce() error {
 	r.ticker = time.NewTicker(r.interval)
 	defer r.ticker.Stop()
 
-	interrupter, err := common.NewInterrupter(r.interval*resetErrorCountersIntervals, maxErrorsToInterrupt)
+	interrupter, err := common2.NewInterrupter(r.interval*resetErrorCountersIntervals, maxErrorsToInterrupt)
 	if err != nil {
 		return fmt.Errorf("failed to initialize interrupter: %w", err)
 	}

@@ -7,11 +7,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/gdyunin/metricol.git/internal/server/backup/backupers/basebackup"
+	"github.com/gdyunin/metricol.git/internal/server/backup/managers/basic"
 	"github.com/gdyunin/metricol.git/internal/server/config"
+	"github.com/gdyunin/metricol.git/internal/server/consume"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver"
+	"github.com/gdyunin/metricol.git/internal/server/repositories"
 	"github.com/gdyunin/metricol.git/pkg/logger"
-	"github.com/gdyunin/metricol.git/pkg/server/repositories"
 )
 
 // stopper is a function type used for managing cleanup tasks during shutdown.
@@ -50,7 +51,7 @@ func run() error {
 	consumer := echoserver.NewEchoServer(appCfg.ServerAddress, repo, baseInfoLogger)
 
 	// Set up the backup system to save server data to a file.
-	backupper := basebackup.NewBaseBackupper(
+	backupper := basic.NewBackupManager(
 		appCfg.FileStoragePath, // Path to the backup file.
 		"backup.txt",           // Backup file name.
 		time.Duration(appCfg.StoreInterval)*time.Second, // Interval for saving backups.
@@ -61,7 +62,7 @@ func run() error {
 	// Restore data from the backup file, if enabled in the configuration.
 	backupper.Restore()
 
-	// Start the backup process in a separate goroutine.
+	// StartAll the backup process in a separate goroutine.
 	go backupper.StartBackup()
 
 	// Set up graceful shutdown to ensure cleanup on termination.
@@ -69,8 +70,8 @@ func run() error {
 		backupper.StopBackup, // Add the StopBackup function to the shutdown tasks.
 	}})
 
-	// Start the consumer to process incoming data.
-	if err = consumer.StartConsume(); err != nil {
+	// StartAll the consumer to process incoming data.
+	if err = consume.Consumer(consumer).StartConsume(); err != nil {
 		return fmt.Errorf("failed to start the consumption process: %w", err)
 	}
 

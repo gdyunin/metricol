@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gdyunin/metricol.git/internal/agent/agent"
 	"github.com/gdyunin/metricol.git/internal/agent/collect/collectors/mscollector"
 	"github.com/gdyunin/metricol.git/internal/agent/config"
+	"github.com/gdyunin/metricol.git/internal/agent/orchestrate/orchestrators/basic"
 	"github.com/gdyunin/metricol.git/internal/agent/produce/produsers/rstclient"
-	"github.com/gdyunin/metricol.git/pkg/agent/repositories"
+	"github.com/gdyunin/metricol.git/internal/agent/repositories"
 	"github.com/gdyunin/metricol.git/pkg/logger"
 )
 
@@ -32,11 +32,11 @@ func run() error {
 	// Create an in-memory repository for storing metrics.
 	repo := repositories.NewInMemoryRepository()
 
-	// Initialize a memory statistics collector with the configured polling interval.
+	// Initialize a memory statistics collectors with the configured polling interval.
 	collector := mscollector.NewMemStatsCollector(
 		time.Duration(appCfg.PollInterval)*time.Second, // Convert poll interval to time.Duration.
-		repo,                          // Repository to store collected metrics.
-		baseLogger.Named("collector"), // Logger with a named scope for the collector.
+		repo,                           // Repository to store collected metrics.
+		baseLogger.Named("collectors"), // Logger with a named scope for the collectors.
 	)
 
 	// Initialize a REST client producer to send metrics to the server at the configured report interval.
@@ -47,22 +47,22 @@ func run() error {
 		baseLogger.Named("producer"), // Logger with a named scope for the producer.
 	)
 
-	// Create a new agent to manage the collector and producer.
-	app, err := agent.NewAgent(
-		collector,                            // The metrics collector component.
+	// Create a new orchestrate to manage the collectors and producer.
+	app, err := basic.NewOrchestrator(
+		collector,                            // The metrics collectors component.
 		producer,                             // The metrics producer component.
-		baseLogger.Named("agent"),            // Logger with a named scope for the agent.
-		agent.WithSubscribeConsumer2Producer, // Additional configuration option for the agent.
+		baseLogger.Named("orchestrate"),      // Logger with a named scope for the orchestrate.
+		basic.WithSubscribeConsumer2Producer, // Additional configuration option for the orchestrate.
 	)
 	if err != nil {
-		// Return an error if the agent initialization fails.
-		return fmt.Errorf("failed to initialize agent: %w", err)
+		// Return an error if the orchestrate initialization fails.
+		return fmt.Errorf("failed to initialize orchestrate: %w", err)
 	}
 
-	// Start the agent, which begins collecting and producing metrics.
-	if err = app.Start(); err != nil {
-		// Return an error if the agent fails to start.
-		return fmt.Errorf("failed to start agent: %w", err)
+	// StartAll the orchestrate, which begins collecting and producing metrics.
+	if err = app.StartAll(); err != nil {
+		// Return an error if the orchestrate fails to start.
+		return fmt.Errorf("failed to start orchestrate: %w", err)
 	}
 
 	// Return nil to indicate successful execution.

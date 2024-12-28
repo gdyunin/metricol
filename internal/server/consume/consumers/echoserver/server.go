@@ -5,12 +5,12 @@ import (
 	"html/template"
 	"strings"
 
-	"github.com/gdyunin/metricol.git/internal/server/adapter"
+	"github.com/gdyunin/metricol.git/internal/server/adapters/consumers"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/handle/general"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/handle/update"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/handle/value"
 	mw "github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/middleware"
-	"github.com/gdyunin/metricol.git/internal/server/entity"
+	"github.com/gdyunin/metricol.git/internal/server/entities"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"go.uber.org/zap"
@@ -23,15 +23,15 @@ var compressedContentTypes = [2]string{
 
 type EchoServer struct {
 	server        *echo.Echo
-	adp           *adapter.EchoAdapter
+	adp           *consumers.EchoAdapter
 	log           *zap.SugaredLogger
 	serverAddress string
 }
 
-func NewEchoServer(addr string, repo entity.MetricRepository, logger *zap.SugaredLogger) *EchoServer {
+func NewEchoServer(addr string, repo entities.MetricRepository, logger *zap.SugaredLogger) *EchoServer {
 	s := EchoServer{
 		server:        echo.New(),
-		adp:           adapter.NewEchoAdapter(repo),
+		adp:           consumers.NewEchoAdapter(repo),
 		log:           logger,
 		serverAddress: addr,
 	}

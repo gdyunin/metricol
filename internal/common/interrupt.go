@@ -31,7 +31,7 @@ func NewInterrupter(interval time.Duration, limit uint8) (*Interrupter, error) {
 		limit: limit,
 	}
 
-	// Start a goroutine to reset the error counter periodically.
+	// StartAll a goroutine to reset the error counter periodically.
 	i.startResetter()
 
 	return i, nil

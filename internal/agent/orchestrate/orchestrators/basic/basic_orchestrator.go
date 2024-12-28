@@ -1,4 +1,4 @@
-package agent
+package basic
 
 import (
 	"errors"
@@ -12,40 +12,40 @@ import (
 	"go.uber.org/zap"
 )
 
-// Agent is the main struct responsible for managing data collection and production.
+// Orchestrator is the main struct responsible for managing data collection and production.
 // It coordinates the Collector and Producer and ensures proper execution flow.
-type Agent struct {
+type Orchestrator struct {
 	collector collect.Collector  // Component responsible for collecting data.
 	producer  produce.Producer   // Component responsible for producing data.
 	log       *zap.SugaredLogger // Logger for capturing runtime information and errors.
 }
 
-// NewAgent initializes a new Agent instance with the provided Collector, Producer, and logger.
+// NewOrchestrator initializes a new Orchestrator instance with the provided Collector, Producer, and logger.
 // Optionally, it applies additional configurations through functional options.
 //
 // Parameters:
-//   - collector: An implementation of the Collector interface.
+//   - collectors: An implementation of the Collector interface.
 //   - producer: An implementation of the Producer interface.
 //   - logger: An instance of zap.SugaredLogger for logging purposes.
-//   - options: Optional functional configurations for the Agent.
+//   - options: Optional functional configurations for the Orchestrator.
 //
 // Returns:
-//   - A pointer to the initialized Agent instance.
+//   - A pointer to the initialized Orchestrator instance.
 //   - An error if applying any of the options fails.
-func NewAgent(
+func NewOrchestrator(
 	collector collect.Collector,
 	producer produce.Producer,
 	logger *zap.SugaredLogger,
-	options ...func(*Agent) error,
-) (a *Agent, err error) {
-	// Initialize the Agent with provided components.
-	a = &Agent{
+	options ...func(*Orchestrator) error,
+) (a *Orchestrator, err error) {
+	// Initialize the Orchestrator with provided components.
+	a = &Orchestrator{
 		collector: collector,
 		producer:  producer,
 		log:       logger,
 	}
 
-	// Apply each provided functional option to configure the Agent.
+	// Apply each provided functional option to configure the Orchestrator.
 	for _, o := range options {
 		if err = o(a); err != nil {
 			return nil, fmt.Errorf("failed to apply option function of type %T: %w", o, err)
@@ -54,31 +54,31 @@ func NewAgent(
 	return
 }
 
-// Start begins the data collection and production processes in parallel.
-// If either process encounters an error, it stops the agent and returns the error.
+// StartAll begins the data collection and production processes in parallel.
+// If either process encounters an error, it stops the orchestrate and returns the error.
 //
 // Returns:
-//   - An error indicating which executor (collector or producer) stopped the agent.
-func (a *Agent) Start() error {
+//   - An error indicating which executor (collectors or producer) stopped the orchestrate.
+func (a *Orchestrator) StartAll() error {
 	var workGroup sync.WaitGroup
 	workGroup.Add(1) // If one of the task (producer or consumer) was done, the apllication will be stopped.
 
 	var interruptedExecutor string // Tracks which executor caused an interruption.
 	var err error                  // Holds the error encountered by an executor.
 
-	// Start the data collection process.
+	// StartAll the data collection process.
 	go func() {
 		defer func() {
-			interruptedExecutor = "collector" // Mark the collector as the interrupted executor if it fails.
-			workGroup.Done()                  // Signal the WaitGroup that this task is complete.
+			interruptedExecutor = "collectors" // Mark the collectors as the interrupted executor if it fails.
+			workGroup.Done()                   // Signal the WaitGroup that this task is complete.
 		}()
 
 		if collectorErr := a.collector.StartCollect(); collectorErr != nil {
-			err = collectorErr // Capture the error encountered by the collector.
+			err = collectorErr // Capture the error encountered by the collectors.
 		}
 	}()
 
-	// Start the data production process.
+	// StartAll the data production process.
 	go func() {
 		defer func() {
 			interruptedExecutor = "producer" // Mark the producer as the interrupted executor if it fails.
@@ -94,7 +94,7 @@ func (a *Agent) Start() error {
 
 	// Return an error if either executor failed.
 	if err != nil {
-		return fmt.Errorf("agent was stopped: %s process encountered an error: %w", interruptedExecutor, err)
+		return fmt.Errorf("orchestrate was stopped: %s process encountered an error: %w", interruptedExecutor, err)
 	}
 	return nil
 }
@@ -103,15 +103,15 @@ func (a *Agent) Start() error {
 // It ensures the Collector implements the Observer interface and the Producer implements the ObserveSubject interface.
 //
 // Parameters:
-//   - agent: A pointer to the Agent instance.
+//   - orchestrate: A pointer to the Orchestrator instance.
 //
 // Returns:
 //   - An error if the subscription process fails.
-func WithSubscribeConsumer2Producer(agent *Agent) error {
-	// Verify the collector implements the Observer interface.
+func WithSubscribeConsumer2Producer(agent *Orchestrator) error {
+	// Verify the collectors implements the Observer interface.
 	observer, ok := agent.collector.(common.Observer)
 	if !ok {
-		return errors.New("collector does not implement the Observer interface")
+		return errors.New("collectors does not implement the Observer interface")
 	}
 
 	// Verify the producer implements the ObserveSubject interface.
@@ -120,9 +120,9 @@ func WithSubscribeConsumer2Producer(agent *Agent) error {
 		return errors.New("producer does not implement the ObserveSubject interface")
 	}
 
-	// Subscribe the collector to the producer's events.
+	// Subscribe the collectors to the producer's events.
 	if err := common.Subscribe(observer, subject); err != nil {
-		return fmt.Errorf("failed to subscribe collector to producer: %w", err)
+		return fmt.Errorf("failed to subscribe collectors to producer: %w", err)
 	}
 
 	return nil

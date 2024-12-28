@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gdyunin/metricol.git/internal/agent/adapter/collect"
+	"github.com/gdyunin/metricol.git/internal/agent/adapters/collectors"
 	"github.com/gdyunin/metricol.git/internal/agent/collect/collectors/mscollector/model"
-	"github.com/gdyunin/metricol.git/internal/agent/common"
-	"github.com/gdyunin/metricol.git/internal/agent/entity"
+	"github.com/gdyunin/metricol.git/internal/agent/entities"
+	"github.com/gdyunin/metricol.git/internal/common"
 
 	"go.uber.org/zap"
 )
@@ -25,15 +25,15 @@ const (
 
 // MemStatsCollector collects memory statistics periodically and stores them as metrics.
 type MemStatsCollector struct {
-	adp         *collect.MemStatsCollectorAdapter // Adapter to interface with the metrics repository.
-	ms          *runtime.MemStats                 // Stores memory statistics collected from the runtime.
-	ticker      *time.Ticker                      // Ticker to trigger periodic data collection.
-	interrupter *common.Interrupter               // Handles error limits and interrupt signals.
-	mu          *sync.RWMutex                     // Synchronizes access to shared resources.
-	log         *zap.SugaredLogger                // Logger for recording process information.
-	polls       int                               // Tracks the number of polls performed.
-	interval    time.Duration                     // Interval between data collection cycles.
-	seed        float64                           // Random value of current metric poll.
+	adp         *collectors.MemStatsCollectorAdapter // Adapter to interface with the metrics repository.
+	ms          *runtime.MemStats                    // Stores memory statistics collected from the runtime.
+	ticker      *time.Ticker                         // Ticker to trigger periodic data collection.
+	interrupter *common.Interrupter                  // Handles error limits and interrupt signals.
+	mu          *sync.RWMutex                        // Synchronizes access to shared resources.
+	log         *zap.SugaredLogger                   // Logger for recording process information.
+	polls       int                                  // Tracks the number of polls performed.
+	interval    time.Duration                        // Interval between data collection cycles.
+	seed        float64                              // Random value of current metric poll.
 }
 
 // NewMemStatsCollector creates a new instance of MemStatsCollector with a specified collection interval.
@@ -46,11 +46,11 @@ type MemStatsCollector struct {
 //   - A pointer to a MemStatsCollector instance.
 func NewMemStatsCollector(
 	interval time.Duration,
-	repo entity.MetricsRepository,
+	repo entities.MetricsRepository,
 	logger *zap.SugaredLogger,
 ) *MemStatsCollector {
 	return &MemStatsCollector{
-		adp:      collect.NewMemStatsCollectorAdapter(repo),
+		adp:      collectors.NewMemStatsCollectorAdapter(repo),
 		ms:       &runtime.MemStats{},
 		interval: interval,
 		mu:       &sync.RWMutex{},
@@ -141,34 +141,34 @@ func (c *MemStatsCollector) metrics() []*model.Metric {
 
 	// Construct and return a slice of Metric objects based on memory statistics.
 	return []*model.Metric{
-		{Name: "Alloc", Type: entity.MetricTypeGauge, Value: float64(c.ms.Alloc)},
-		{Name: "BuckHashSys", Type: entity.MetricTypeGauge, Value: float64(c.ms.BuckHashSys)},
-		{Name: "Frees", Type: entity.MetricTypeGauge, Value: float64(c.ms.Frees)},
-		{Name: "GCCPUFraction", Type: entity.MetricTypeGauge, Value: c.ms.GCCPUFraction},
-		{Name: "GCSys", Type: entity.MetricTypeGauge, Value: float64(c.ms.GCSys)},
-		{Name: "HeapAlloc", Type: entity.MetricTypeGauge, Value: float64(c.ms.HeapAlloc)},
-		{Name: "HeapIdle", Type: entity.MetricTypeGauge, Value: float64(c.ms.HeapIdle)},
-		{Name: "HeapInuse", Type: entity.MetricTypeGauge, Value: float64(c.ms.HeapInuse)},
-		{Name: "HeapObjects", Type: entity.MetricTypeGauge, Value: float64(c.ms.HeapObjects)},
-		{Name: "HeapReleased", Type: entity.MetricTypeGauge, Value: float64(c.ms.HeapReleased)},
-		{Name: "HeapSys", Type: entity.MetricTypeGauge, Value: float64(c.ms.HeapSys)},
-		{Name: "LastGC", Type: entity.MetricTypeGauge, Value: float64(c.ms.LastGC)},
-		{Name: "Lookups", Type: entity.MetricTypeGauge, Value: float64(c.ms.Lookups)},
-		{Name: "MCacheInuse", Type: entity.MetricTypeGauge, Value: float64(c.ms.MCacheInuse)},
-		{Name: "MCacheSys", Type: entity.MetricTypeGauge, Value: float64(c.ms.MCacheSys)},
-		{Name: "MSpanInuse", Type: entity.MetricTypeGauge, Value: float64(c.ms.MSpanInuse)},
-		{Name: "MSpanSys", Type: entity.MetricTypeGauge, Value: float64(c.ms.MSpanSys)},
-		{Name: "Mallocs", Type: entity.MetricTypeGauge, Value: float64(c.ms.Mallocs)},
-		{Name: "NextGC", Type: entity.MetricTypeGauge, Value: float64(c.ms.NextGC)},
-		{Name: "NumForcedGC", Type: entity.MetricTypeGauge, Value: float64(c.ms.NumForcedGC)},
-		{Name: "NumGC", Type: entity.MetricTypeGauge, Value: float64(c.ms.NumGC)},
-		{Name: "OtherSys", Type: entity.MetricTypeGauge, Value: float64(c.ms.OtherSys)},
-		{Name: "PauseTotalNs", Type: entity.MetricTypeGauge, Value: float64(c.ms.PauseTotalNs)},
-		{Name: "StackInuse", Type: entity.MetricTypeGauge, Value: float64(c.ms.StackInuse)},
-		{Name: "StackSys", Type: entity.MetricTypeGauge, Value: float64(c.ms.StackSys)},
-		{Name: "Sys", Type: entity.MetricTypeGauge, Value: float64(c.ms.Sys)},
-		{Name: "TotalAlloc", Type: entity.MetricTypeGauge, Value: float64(c.ms.TotalAlloc)},
-		{Name: "RandomValue", Type: entity.MetricTypeGauge, Value: c.seed},
-		{Name: "PollCount", Type: entity.MetricTypeCounter, Value: int64(c.polls)},
+		{Name: "Alloc", Type: entities.MetricTypeGauge, Value: float64(c.ms.Alloc)},
+		{Name: "BuckHashSys", Type: entities.MetricTypeGauge, Value: float64(c.ms.BuckHashSys)},
+		{Name: "Frees", Type: entities.MetricTypeGauge, Value: float64(c.ms.Frees)},
+		{Name: "GCCPUFraction", Type: entities.MetricTypeGauge, Value: c.ms.GCCPUFraction},
+		{Name: "GCSys", Type: entities.MetricTypeGauge, Value: float64(c.ms.GCSys)},
+		{Name: "HeapAlloc", Type: entities.MetricTypeGauge, Value: float64(c.ms.HeapAlloc)},
+		{Name: "HeapIdle", Type: entities.MetricTypeGauge, Value: float64(c.ms.HeapIdle)},
+		{Name: "HeapInuse", Type: entities.MetricTypeGauge, Value: float64(c.ms.HeapInuse)},
+		{Name: "HeapObjects", Type: entities.MetricTypeGauge, Value: float64(c.ms.HeapObjects)},
+		{Name: "HeapReleased", Type: entities.MetricTypeGauge, Value: float64(c.ms.HeapReleased)},
+		{Name: "HeapSys", Type: entities.MetricTypeGauge, Value: float64(c.ms.HeapSys)},
+		{Name: "LastGC", Type: entities.MetricTypeGauge, Value: float64(c.ms.LastGC)},
+		{Name: "Lookups", Type: entities.MetricTypeGauge, Value: float64(c.ms.Lookups)},
+		{Name: "MCacheInuse", Type: entities.MetricTypeGauge, Value: float64(c.ms.MCacheInuse)},
+		{Name: "MCacheSys", Type: entities.MetricTypeGauge, Value: float64(c.ms.MCacheSys)},
+		{Name: "MSpanInuse", Type: entities.MetricTypeGauge, Value: float64(c.ms.MSpanInuse)},
+		{Name: "MSpanSys", Type: entities.MetricTypeGauge, Value: float64(c.ms.MSpanSys)},
+		{Name: "Mallocs", Type: entities.MetricTypeGauge, Value: float64(c.ms.Mallocs)},
+		{Name: "NextGC", Type: entities.MetricTypeGauge, Value: float64(c.ms.NextGC)},
+		{Name: "NumForcedGC", Type: entities.MetricTypeGauge, Value: float64(c.ms.NumForcedGC)},
+		{Name: "NumGC", Type: entities.MetricTypeGauge, Value: float64(c.ms.NumGC)},
+		{Name: "OtherSys", Type: entities.MetricTypeGauge, Value: float64(c.ms.OtherSys)},
+		{Name: "PauseTotalNs", Type: entities.MetricTypeGauge, Value: float64(c.ms.PauseTotalNs)},
+		{Name: "StackInuse", Type: entities.MetricTypeGauge, Value: float64(c.ms.StackInuse)},
+		{Name: "StackSys", Type: entities.MetricTypeGauge, Value: float64(c.ms.StackSys)},
+		{Name: "Sys", Type: entities.MetricTypeGauge, Value: float64(c.ms.Sys)},
+		{Name: "TotalAlloc", Type: entities.MetricTypeGauge, Value: float64(c.ms.TotalAlloc)},
+		{Name: "RandomValue", Type: entities.MetricTypeGauge, Value: c.seed},
+		{Name: "PollCount", Type: entities.MetricTypeCounter, Value: int64(c.polls)},
 	}
 }

@@ -1,25 +1,25 @@
-package adapter
+package consumers
 
 import (
 	"fmt"
 
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/model"
-	"github.com/gdyunin/metricol.git/internal/server/entity"
+	"github.com/gdyunin/metricol.git/internal/server/entities"
 )
 
 // EchoAdapter is responsible for converting and handling metrics between
-// the server model and the internal entity format, pushing and pulling them from the repository.
+// the server model and the internal entities format, pushing and pulling them from the repository.
 type EchoAdapter struct {
-	mi *entity.MetricsInterface
+	mi *entities.MetricsInterface
 }
 
 // NewEchoAdapter creates and returns a new EchoAdapter instance using the provided repository.
-func NewEchoAdapter(repository entity.MetricRepository) *EchoAdapter {
-	ea := &EchoAdapter{mi: entity.NewMetricsInterface(repository)}
+func NewEchoAdapter(repository entities.MetricRepository) *EchoAdapter {
+	ea := &EchoAdapter{mi: entities.NewMetricsInterface(repository)}
 	return ea
 }
 
-// PushMetric converts the model metric to an entity metric and pushes it to the repository.
+// PushMetric converts the model metric to an entities metric and pushes it to the repository.
 // If an error occurs during the push, it returns a formatted error with the metric details.
 func (ea *EchoAdapter) PushMetric(metric *model.Metric) (*model.Metric, error) {
 	entityMetric := mtoem(metric)
@@ -32,7 +32,7 @@ func (ea *EchoAdapter) PushMetric(metric *model.Metric) (*model.Metric, error) {
 	return emtom(newEntityMetric), nil
 }
 
-// PullMetric converts the model metric to an entity metric and pulls it from the repository.
+// PullMetric converts the model metric to an entities metric and pulls it from the repository.
 // If an error occurs during the pull, it returns a formatted error with the metric details.
 func (ea *EchoAdapter) PullMetric(metric *model.Metric) (*model.Metric, error) {
 	entityMetric := mtoem(metric)
@@ -61,9 +61,9 @@ func (ea *EchoAdapter) PullAllMetrics() ([]*model.Metric, error) {
 	return m, nil
 }
 
-// mtoem converts a model metric to an entity metric.
-func mtoem(m *model.Metric) *entity.Metric {
-	return &entity.Metric{
+// mtoem converts a model metric to an entities metric.
+func mtoem(m *model.Metric) *entities.Metric {
+	return &entities.Metric{
 		Name:  m.ID,
 		Type:  m.MType,
 		Value: parseMValue(m),
@@ -73,11 +73,11 @@ func mtoem(m *model.Metric) *entity.Metric {
 // parseMValue converts the metric value based on its type.
 func parseMValue(m *model.Metric) (value any) {
 	switch m.MType {
-	case entity.MetricTypeCounter:
+	case entities.MetricTypeCounter:
 		if m.Delta != nil {
 			value = any(*m.Delta)
 		}
-	case entity.MetricTypeGauge:
+	case entities.MetricTypeGauge:
 		if m.Value != nil {
 			value = any(*m.Value)
 		}
@@ -85,8 +85,8 @@ func parseMValue(m *model.Metric) (value any) {
 	return
 }
 
-// emtom converts an entity metric to a model metric.
-func emtom(em *entity.Metric) *model.Metric {
+// emtom converts an entities metric to a model metric.
+func emtom(em *entities.Metric) *model.Metric {
 	m := &model.Metric{
 		ID:    em.Name,
 		MType: em.Type,
@@ -95,14 +95,14 @@ func emtom(em *entity.Metric) *model.Metric {
 	return m
 }
 
-// fillValueFields populates the value fields of a model metric based on the corresponding entity metric.
-func fillValueFields(to *model.Metric, from *entity.Metric) {
+// fillValueFields populates the value fields of a model metric based on the corresponding entities metric.
+func fillValueFields(to *model.Metric, from *entities.Metric) {
 	switch from.Type {
-	case entity.MetricTypeCounter:
+	case entities.MetricTypeCounter:
 		if v, ok := from.Value.(int64); ok {
 			to.Delta = &v
 		}
-	case entity.MetricTypeGauge:
+	case entities.MetricTypeGauge:
 		if v, ok := from.Value.(float64); ok {
 			to.Value = &v
 		}

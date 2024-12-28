@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/gdyunin/metricol.git/internal/common"
-	"github.com/gdyunin/metricol.git/internal/server/entity"
+	"github.com/gdyunin/metricol.git/internal/server/entities"
 )
 
 // InMemoryRepository is an in-memory implementation of the MetricRepository interface.
@@ -29,7 +29,7 @@ func NewInMemoryRepository() *InMemoryRepository {
 
 // Create adds a new metric to the repository based on its type.
 // It returns an error if the metric type is unknown.
-func (r *InMemoryRepository) Create(metric *entity.Metric) error {
+func (r *InMemoryRepository) Create(metric *entities.Metric) error {
 	if err := r.Update(metric); err != nil {
 		return fmt.Errorf("error create metric: %w", err)
 	}
@@ -38,27 +38,27 @@ func (r *InMemoryRepository) Create(metric *entity.Metric) error {
 
 // Read retrieves a metric from the repository based on the provided filter.
 // It returns an error if the metric type is unknown or if the metric is not found.
-func (r *InMemoryRepository) Read(filter *entity.Filter) (*entity.Metric, error) {
+func (r *InMemoryRepository) Read(filter *entities.Filter) (*entities.Metric, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	switch filter.Type {
-	case entity.MetricTypeCounter:
+	case entities.MetricTypeCounter:
 		value, exists := r.counters[filter.Name]
 		if !exists {
 			return nil, fmt.Errorf("counter metric '%s' not found", filter.Name)
 		}
-		return &entity.Metric{
+		return &entities.Metric{
 			Name:  filter.Name,
 			Type:  filter.Type,
 			Value: value,
 		}, nil
-	case entity.MetricTypeGauge:
+	case entities.MetricTypeGauge:
 		value, exists := r.gauges[filter.Name]
 		if !exists {
 			return nil, fmt.Errorf("gauge metric '%s' not found", filter.Name)
 		}
-		return &entity.Metric{
+		return &entities.Metric{
 			Name:  filter.Name,
 			Type:  filter.Type,
 			Value: value,
@@ -70,7 +70,7 @@ func (r *InMemoryRepository) Read(filter *entity.Filter) (*entity.Metric, error)
 
 // Update modifies an existing metric in the repository based on its type.
 // It returns an error if the metric type is unknown.
-func (r *InMemoryRepository) Update(metric *entity.Metric) (err error) {
+func (r *InMemoryRepository) Update(metric *entities.Metric) (err error) {
 	r.mu.Lock()
 	defer func() {
 		r.mu.Unlock()
@@ -80,9 +80,9 @@ func (r *InMemoryRepository) Update(metric *entity.Metric) (err error) {
 	}()
 
 	switch metric.Type {
-	case entity.MetricTypeCounter:
+	case entities.MetricTypeCounter:
 		err = r.storeCounter(metric)
-	case entity.MetricTypeGauge:
+	case entities.MetricTypeGauge:
 		err = r.storeGauge(metric)
 	default:
 		err = fmt.Errorf("unsupported metric type: %s", metric.Type)
@@ -97,15 +97,15 @@ func (r *InMemoryRepository) Update(metric *entity.Metric) (err error) {
 
 // IsExists checks if a metric with the specified filter exists in the repository.
 // It returns true if the metric exists, otherwise false. It also returns an error if the filter type is unknown.
-func (r *InMemoryRepository) IsExists(filter *entity.Filter) (bool, error) {
+func (r *InMemoryRepository) IsExists(filter *entities.Filter) (bool, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	switch filter.Type {
-	case entity.MetricTypeCounter:
+	case entities.MetricTypeCounter:
 		_, exists := r.counters[filter.Name]
 		return exists, nil
-	case entity.MetricTypeGauge:
+	case entities.MetricTypeGauge:
 		_, exists := r.gauges[filter.Name]
 		return exists, nil
 	default:
@@ -115,26 +115,26 @@ func (r *InMemoryRepository) IsExists(filter *entity.Filter) (bool, error) {
 
 // All retrieves all metrics from the repository.
 // It returns a slice of metrics and any error that may occur during the process.
-func (r *InMemoryRepository) All() ([]*entity.Metric, error) {
-	metrics := make([]*entity.Metric, 0, r.metricsCount())
+func (r *InMemoryRepository) All() ([]*entities.Metric, error) {
+	metrics := make([]*entities.Metric, 0, r.metricsCount())
 
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	// Add counter metrics.
 	for name, value := range r.counters {
-		metrics = append(metrics, &entity.Metric{
+		metrics = append(metrics, &entities.Metric{
 			Name:  name,
-			Type:  entity.MetricTypeCounter,
+			Type:  entities.MetricTypeCounter,
 			Value: value,
 		})
 	}
 
 	// Add gauge metrics.
 	for name, value := range r.gauges {
-		metrics = append(metrics, &entity.Metric{
+		metrics = append(metrics, &entities.Metric{
 			Name:  name,
-			Type:  entity.MetricTypeGauge,
+			Type:  entities.MetricTypeGauge,
 			Value: value,
 		})
 	}
@@ -183,7 +183,7 @@ func (r *InMemoryRepository) NotifyObservers() {
 	}
 }
 
-func (r *InMemoryRepository) storeCounter(metric *entity.Metric) error {
+func (r *InMemoryRepository) storeCounter(metric *entities.Metric) error {
 	value, ok := metric.Value.(int64)
 	if !ok {
 		return fmt.Errorf("counter value must be int64 but got %T", metric.Value)
@@ -192,7 +192,7 @@ func (r *InMemoryRepository) storeCounter(metric *entity.Metric) error {
 	return nil
 }
 
-func (r *InMemoryRepository) storeGauge(metric *entity.Metric) error {
+func (r *InMemoryRepository) storeGauge(metric *entities.Metric) error {
 	value, ok := metric.Value.(float64)
 	if !ok {
 		return fmt.Errorf("gauge value must be float64 but got %T", metric.Value)

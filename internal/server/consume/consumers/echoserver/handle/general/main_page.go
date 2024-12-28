@@ -3,7 +3,7 @@ package general
 import (
 	"net/http"
 
-	"github.com/gdyunin/metricol.git/internal/server/adapter"
+	"github.com/gdyunin/metricol.git/internal/server/adapters/consumers"
 	"github.com/labstack/echo/v4"
 )
 
@@ -12,7 +12,7 @@ type tr struct {
 	Value string // The string representation of the metric's value.
 }
 
-func MainPage(adp *adapter.EchoAdapter) echo.HandlerFunc {
+func MainPage(adp *consumers.EchoAdapter) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		allMetrics, err := adp.PullAllMetrics()
 		if err != nil {

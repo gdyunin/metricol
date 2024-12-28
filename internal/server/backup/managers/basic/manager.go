@@ -1,4 +1,4 @@
-package basebackup
+package basic
 
 import (
 	"bufio"
@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gdyunin/metricol.git/internal/common"
-	"github.com/gdyunin/metricol.git/internal/server/entity"
+	"github.com/gdyunin/metricol.git/internal/server/entities"
 )
 
 const (
@@ -17,8 +17,8 @@ const (
 	DirDefaultPerm  = 0o750
 )
 
-type BaseBackupper struct {
-	repo        entity.MetricRepository
+type BackupManager struct {
+	repo        entities.MetricRepository
 	ticker      *time.Ticker
 	followChan  chan bool
 	path        string
@@ -26,14 +26,14 @@ type BaseBackupper struct {
 	needRestore bool
 }
 
-func NewBaseBackupper(
+func NewBackupManager(
 	path string,
 	filename string,
 	interval time.Duration,
 	restore bool,
-	repo entity.MetricRepository,
-) *BaseBackupper {
-	return &BaseBackupper{
+	repo entities.MetricRepository,
+) *BackupManager {
+	return &BackupManager{
 		path:        filepath.Join(path, filename),
 		interval:    interval,
 		repo:        repo,
@@ -41,7 +41,7 @@ func NewBaseBackupper(
 	}
 }
 
-func (b *BaseBackupper) StartBackup() {
+func (b *BackupManager) StartBackup() {
 	if b.interval == 0 {
 		b.syncBackup()
 	} else {
@@ -49,7 +49,7 @@ func (b *BaseBackupper) StartBackup() {
 	}
 }
 
-func (b *BaseBackupper) StopBackup() {
+func (b *BackupManager) StopBackup() {
 	if b.followChan != nil {
 		close(b.followChan)
 	}
@@ -57,14 +57,14 @@ func (b *BaseBackupper) StopBackup() {
 	b.backup()
 }
 
-func (b *BaseBackupper) OnNotify() {
+func (b *BackupManager) OnNotify() {
 	if b.followChan == nil {
 		b.followChan = make(chan bool, 1)
 	}
 	b.followChan <- true
 }
 
-func (b *BaseBackupper) syncBackup() {
+func (b *BackupManager) syncBackup() {
 	sbj, ok := b.repo.(common.ObserveSubject)
 	if !ok {
 		return
@@ -79,7 +79,7 @@ func (b *BaseBackupper) syncBackup() {
 	}
 }
 
-func (b *BaseBackupper) regularBackup() {
+func (b *BackupManager) regularBackup() {
 	b.ticker = time.NewTicker(b.interval)
 	defer b.ticker.Stop()
 
@@ -88,7 +88,7 @@ func (b *BaseBackupper) regularBackup() {
 	}
 }
 
-func (b *BaseBackupper) backup() {
+func (b *BackupManager) backup() {
 	metrics, err := b.repo.All()
 	if err != nil {
 		return
@@ -127,13 +127,13 @@ func (b *BaseBackupper) backup() {
 	}
 }
 
-func (b *BaseBackupper) Restore() {
+func (b *BackupManager) Restore() {
 	if b.needRestore {
 		b.mustRestore()
 	}
 }
 
-func (b *BaseBackupper) mustRestore() {
+func (b *BackupManager) mustRestore() {
 	file, err := os.Open(b.path)
 	if err != nil {
 		return
@@ -147,7 +147,7 @@ func (b *BaseBackupper) mustRestore() {
 		}
 		data := reader.Bytes()
 
-		metric := entity.Metric{}
+		metric := entities.Metric{}
 		if err = json.Unmarshal(data, &metric); err != nil {
 			continue
 		}
