@@ -69,7 +69,7 @@ func setupOrchestrator(collector collect.Collector, producer produce.Producer, l
 		basic.WithSubscribeConsumer2Producer,
 	)
 	if err != nil {
-		log.Fatalf("failed to initialize orchestrate: %w", err)
+		log.Fatalf("failed to initialize orchestrate: %v", err)
 	}
 	return o
 }
@@ -77,7 +77,7 @@ func setupOrchestrator(collector collect.Collector, producer produce.Producer, l
 func setupConfig(logger *zap.SugaredLogger) *config.Config {
 	appCfg, err := config.ParseConfig(logger)
 	if err != nil {
-		log.Fatalf("failed to parse config: %w", err)
+		log.Fatalf("failed to parse config: %v", err)
 	}
 	return appCfg
 }
