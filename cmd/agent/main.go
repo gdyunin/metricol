@@ -1,11 +1,8 @@
 package main
 
-import (
-	"log"
-)
+import "github.com/gdyunin/metricol.git/pkg/logger"
 
 func main() {
-	if err := run(); err != nil {
-		log.Fatalf("Application terminated due to a critical error: %v", err)
-	}
+	appRunner := newRunner(logger.LevelINFO)
+	appRunner.run()
 }

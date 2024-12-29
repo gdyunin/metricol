@@ -4,19 +4,22 @@ import (
 	"sync"
 
 	"github.com/gdyunin/metricol.git/internal/agent/entities"
+	"go.uber.org/zap"
 )
 
 // InMemoryRepository is a thread-safe in-memory storage for metrics.
 type InMemoryRepository struct {
 	mu      *sync.RWMutex      // Mutex for concurrent access control.
 	metrics []*entities.Metric // Slice to hold metrics.
+	logger  *zap.SugaredLogger
 }
 
 // NewInMemoryRepository creates and returns a new instance of InMemoryRepository.
-func NewInMemoryRepository() *InMemoryRepository {
+func NewInMemoryRepository(logger *zap.SugaredLogger) *InMemoryRepository {
 	return &InMemoryRepository{
 		metrics: make([]*entities.Metric, 0), // Initialize the metrics slice.
 		mu:      &sync.RWMutex{},             // Initialize the mutex.
+		logger:  logger,
 	}
 }
 

@@ -41,7 +41,7 @@ func NewBackupManager(
 	}
 }
 
-func (b *BackupManager) StartBackup() {
+func (b *BackupManager) Start() {
 	if b.interval == 0 {
 		b.syncBackup()
 	} else {
@@ -49,7 +49,7 @@ func (b *BackupManager) StartBackup() {
 	}
 }
 
-func (b *BackupManager) StopBackup() {
+func (b *BackupManager) Stop() {
 	if b.followChan != nil {
 		close(b.followChan)
 	}

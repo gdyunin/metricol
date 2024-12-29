@@ -49,13 +49,17 @@ func NewMemStatsCollector(
 	repo entities.MetricsRepository,
 	logger *zap.SugaredLogger,
 ) *MemStatsCollector {
-	return &MemStatsCollector{
+	collector := MemStatsCollector{
 		adp:      collectors.NewMemStatsCollectorAdapter(repo),
 		ms:       &runtime.MemStats{},
 		interval: interval,
 		mu:       &sync.RWMutex{},
 		log:      logger,
 	}
+
+	logger.Infof("Collector inited: %+v", collector)
+
+	return &collector
 }
 
 // StartCollect begins periodic memory statistics collection.

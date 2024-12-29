@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/caarlos0/env/v6"
+	"go.uber.org/zap"
 )
 
 // All basic settings.
@@ -28,7 +29,7 @@ type Config struct {
 // ParseConfig initializes the Config with basic values,
 // overrides them with environment variables if available,
 // and allows command-line flags to set or override the configuration.
-func ParseConfig() (*Config, error) {
+func ParseConfig(logger *zap.SugaredLogger) (*Config, error) {
 	// Default settings for the server configuration.
 	cfg := Config{
 		ServerAddress:   defaultServerAddress,
@@ -44,6 +45,8 @@ func ParseConfig() (*Config, error) {
 	if err := env.Parse(&cfg); err != nil {
 		return nil, fmt.Errorf("error parse env variables %w", err)
 	}
+
+	logger.Infof("App config: %+v", cfg)
 	return &cfg, nil
 }
 

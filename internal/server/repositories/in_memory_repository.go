@@ -6,6 +6,7 @@ import (
 
 	"github.com/gdyunin/metricol.git/internal/common"
 	"github.com/gdyunin/metricol.git/internal/server/entities"
+	"go.uber.org/zap"
 )
 
 // InMemoryRepository is an in-memory implementation of the MetricRepository interface.
@@ -15,15 +16,17 @@ type InMemoryRepository struct {
 	gauges    map[string]float64 // Stores gauge metrics.
 	mu        *sync.RWMutex      // Provides thread-safe access to the metrics.
 	observers map[common.Observer]struct{}
+	logger    *zap.SugaredLogger
 }
 
 // NewInMemoryRepository creates and returns a new instance of InMemoryRepository.
 // It initializes empty maps for counters and gauges.
-func NewInMemoryRepository() *InMemoryRepository {
+func NewInMemoryRepository(logger *zap.SugaredLogger) *InMemoryRepository {
 	return &InMemoryRepository{
 		counters: make(map[string]int64),
 		gauges:   make(map[string]float64),
 		mu:       &sync.RWMutex{},
+		logger:   logger,
 	}
 }
 

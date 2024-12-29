@@ -48,7 +48,7 @@ func NewRestyClient(
 ) *RestyClient {
 	rc := resty.New()
 
-	return &RestyClient{
+	producer := RestyClient{
 		adp:       producers.NewRestyClientAdapter(repo, logger.Named("resty client adapters")),
 		client:    rc,
 		interval:  interval,
@@ -57,6 +57,10 @@ func NewRestyClient(
 		log:       logger,
 		baseURL:   serverAddress,
 	}
+
+	logger.Infof("Producer inited: %+v", producer)
+
+	return &producer
 }
 
 // waitServer checks if the server is available by sending a ping request.
