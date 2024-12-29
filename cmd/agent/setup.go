@@ -28,7 +28,7 @@ type loggers struct {
 func newLoggers(level string) *loggers {
 	baseLogger, err := logger.Logger(level)
 	if err != nil {
-		log.Fatalf("failed to initialize logger: %w", err)
+		log.Fatalf("failed to initialize logger: %v", err)
 	}
 
 	return &loggers{
