@@ -3,11 +3,12 @@ package main
 import (
 	"fmt"
 
-	"github.com/gdyunin/metricol.git/internal/agent/collect"
+	collectorFact "github.com/gdyunin/metricol.git/internal/agent/collect/factory"
 	"github.com/gdyunin/metricol.git/internal/agent/config"
 	"github.com/gdyunin/metricol.git/internal/agent/orchestrate"
-	"github.com/gdyunin/metricol.git/internal/agent/produce"
-	"github.com/gdyunin/metricol.git/internal/agent/repositories"
+	orchestratorFact "github.com/gdyunin/metricol.git/internal/agent/orchestrate/factory"
+	producerFact "github.com/gdyunin/metricol.git/internal/agent/produce/factory"
+	repositoryFact "github.com/gdyunin/metricol.git/internal/agent/repositories/factory"
 	"github.com/gdyunin/metricol.git/internal/common/patterns"
 	"github.com/gdyunin/metricol.git/internal/common/utils"
 	"github.com/gdyunin/metricol.git/pkg/logger"
@@ -60,21 +61,21 @@ func makeOrchestrator(logLevel string) (orchestrate.Orchestrator, error) {
 	}
 
 	// Initialize the repository factory and create the metrics repository.
-	repositoryFactory, err := repositories.AbstractRepositoriesFactory(repositories.RepoTypeInMemory, baseLogger.Named(LoggerNameRepository))
+	repositoryFactory, err := repositoryFact.AbstractRepositoriesFactory(repositoryFact.RepoTypeInMemory, baseLogger.Named(LoggerNameRepository))
 	if err != nil {
 		return nil, fmt.Errorf("error occurred while initializing the repository: %w", err)
 	}
 	repository := repositoryFactory.CreateMetricsRepository()
 
 	// Initialize the collector factory and create the collector.
-	collectorFactory, err := collect.AbstractCollectorFactory(collect.CollectorTypeMemStats, utils.IntegerToSeconds(appCfg.PollInterval), repository, baseLogger.Named(LoggerNameCollector))
+	collectorFactory, err := collectorFact.AbstractCollectorFactory(collectorFact.CollectorTypeMemStats, utils.IntegerToSeconds(appCfg.PollInterval), repository, baseLogger.Named(LoggerNameCollector))
 	if err != nil {
 		return nil, fmt.Errorf("error occurred while initializing the collector: %w", err)
 	}
 	collector := collectorFactory.CreateCollector()
 
 	// Initialize the producer factory and create the producer.
-	producerFactory, err := produce.AbstractProducerFactory(produce.ProducerTypeRestyClient, utils.IntegerToSeconds(appCfg.ReportInterval), appCfg.ServerAddress, repository, baseLogger.Named(LoggerNameProducer))
+	producerFactory, err := producerFact.AbstractProducerFactory(producerFact.ProducerTypeRestyClient, utils.IntegerToSeconds(appCfg.ReportInterval), appCfg.ServerAddress, repository, baseLogger.Named(LoggerNameProducer))
 	if err != nil {
 		return nil, fmt.Errorf("error occurred while initializing the producer: %w", err)
 	}
@@ -87,7 +88,7 @@ func makeOrchestrator(logLevel string) (orchestrate.Orchestrator, error) {
 	}
 
 	// Initialize the orchestrator factory and create the orchestrator.
-	orchestratorFactory, err := orchestrate.AbstractOrchestratorsFactory(orchestrate.OrchestratorTypeBasic, collector, producer, baseLogger.Named(LoggerNameOrchestrator))
+	orchestratorFactory, err := orchestratorFact.AbstractOrchestratorsFactory(orchestratorFact.OrchestratorTypeBasic, collector, producer, baseLogger.Named(LoggerNameOrchestrator))
 	if err != nil {
 		return nil, fmt.Errorf("error occurred while initializing the orchestrator: %w", err)
 	}

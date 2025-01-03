@@ -1,9 +1,10 @@
-package collect
+package factory
 
 import (
 	"fmt"
 	"time"
 
+	"github.com/gdyunin/metricol.git/internal/agent/collect"
 	"github.com/gdyunin/metricol.git/internal/agent/collect/collectors/mscollector"
 	"github.com/gdyunin/metricol.git/internal/agent/entities"
 	"go.uber.org/zap"
@@ -13,7 +14,7 @@ const (
 	CollectorTypeMemStats = "memory stats"
 )
 
-func AbstractCollectorFactory(collectorType string, interval time.Duration, repo entities.MetricsRepository, logger *zap.SugaredLogger) (CollectorAbstractFactory, error) {
+func AbstractCollectorFactory(collectorType string, interval time.Duration, repo entities.MetricsRepository, logger *zap.SugaredLogger) (collect.CollectorAbstractFactory, error) {
 	switch collectorType {
 	case CollectorTypeMemStats:
 		return mscollector.NewMemStatsCollectorFactory(interval, repo, logger), nil

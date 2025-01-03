@@ -16,5 +16,6 @@ func main() {
 		log.Fatalf("A critical error occurred while running the application with logging level %s: %v.", logLvl, err)
 	}
 
+	// Also log a critical error message if the application was stopped without errors.
 	log.Fatalf("The application with logging level %s completed without errors.", logLvl)
 }
