@@ -13,9 +13,10 @@ import (
 
 	"github.com/gdyunin/metricol.git/internal/agent/adapters/producers"
 	"github.com/gdyunin/metricol.git/internal/agent/entities"
+	"github.com/gdyunin/metricol.git/internal/agent/produce"
 	"github.com/gdyunin/metricol.git/internal/agent/produce/produsers/rstclient/model"
-	common2 "github.com/gdyunin/metricol.git/internal/common"
-
+	common2 "github.com/gdyunin/metricol.git/internal/common/helpers"
+	"github.com/gdyunin/metricol.git/internal/common/patterns"
 	"github.com/go-resty/resty/v2"
 	"go.uber.org/zap"
 )
@@ -25,6 +26,26 @@ const (
 	maxErrorsToInterrupt        = 3
 )
 
+type RestyClientProducerFactory struct {
+	interval      time.Duration
+	serverAddress string
+	repo          entities.MetricsRepository
+	logger        *zap.SugaredLogger
+}
+
+func NewRestyClientProducerFactory(interval time.Duration, serverAddress string, repo entities.MetricsRepository, logger *zap.SugaredLogger) *RestyClientProducerFactory {
+	return &RestyClientProducerFactory{
+		interval:      interval,
+		serverAddress: serverAddress,
+		repo:          repo,
+		logger:        logger,
+	}
+}
+
+func (f *RestyClientProducerFactory) CreateProducer() produce.Producer {
+	return NewRestyClient(f.interval, f.serverAddress, f.repo, f.logger)
+}
+
 // RestyClient is a producer that sends metrics to a server using the Resty library.
 type RestyClient struct {
 	adp         *producers.RestyClientAdapter
@@ -33,7 +54,7 @@ type RestyClient struct {
 	interrupter *common2.Interrupter
 	mu          *sync.RWMutex
 	log         *zap.SugaredLogger
-	observers   map[common2.Observer]struct{}
+	observers   map[patterns.Observer]struct{}
 	baseURL     string
 	interval    time.Duration
 }
@@ -52,7 +73,7 @@ func NewRestyClient(
 		adp:       producers.NewRestyClientAdapter(repo, logger.Named("resty client adapters")),
 		client:    rc,
 		interval:  interval,
-		observers: make(map[common2.Observer]struct{}),
+		observers: make(map[patterns.Observer]struct{}),
 		mu:        &sync.RWMutex{},
 		log:       logger,
 		baseURL:   serverAddress,
@@ -125,7 +146,7 @@ func (r *RestyClient) StartProduce() error {
 }
 
 // RegisterObserver adds a new observer to be notified of events.
-func (r *RestyClient) RegisterObserver(observer common2.Observer) error {
+func (r *RestyClient) RegisterObserver(observer patterns.Observer) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -139,7 +160,7 @@ func (r *RestyClient) RegisterObserver(observer common2.Observer) error {
 }
 
 // RemoveObserver removes an existing observer from the notification list.
-func (r *RestyClient) RemoveObserver(observer common2.Observer) error {
+func (r *RestyClient) RemoveObserver(observer patterns.Observer) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

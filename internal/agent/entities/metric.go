@@ -75,3 +75,8 @@ type MetricsRepository interface {
 	// It returns a slice of pointers to Metric instances.
 	Metrics() []*Metric
 }
+
+type RepositoryAbstractFactory interface {
+	// CreateMetricsRepository creates a MetricsRepository instance.
+	CreateMetricsRepository() MetricsRepository
+}

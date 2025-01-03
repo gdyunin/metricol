@@ -8,6 +8,7 @@ require (
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/stretchr/testify v1.10.0
 	go.uber.org/zap v1.27.0
+	golang.org/x/exp v0.0.0-20250103163809-dd03c70a0a45
 )
 
 require (

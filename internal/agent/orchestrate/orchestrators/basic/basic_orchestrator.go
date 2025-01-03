@@ -1,16 +1,32 @@
 package basic
 
 import (
-	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/gdyunin/metricol.git/internal/agent/collect"
+	"github.com/gdyunin/metricol.git/internal/agent/orchestrate"
 	"github.com/gdyunin/metricol.git/internal/agent/produce"
-	"github.com/gdyunin/metricol.git/internal/common"
-
 	"go.uber.org/zap"
 )
+
+type OrchestratorFactory struct {
+	collector collect.Collector
+	producer  produce.Producer
+	logger    *zap.SugaredLogger
+}
+
+func NewOrchestratorFactory(collector collect.Collector, producer produce.Producer, logger *zap.SugaredLogger) *OrchestratorFactory {
+	return &OrchestratorFactory{
+		collector: collector,
+		producer:  producer,
+		logger:    logger,
+	}
+}
+
+func (f *OrchestratorFactory) CreateOrchestrator() orchestrate.Orchestrator {
+	return NewOrchestrator(f.collector, f.producer, f.logger)
+}
 
 // Orchestrator is the main struct responsible for managing data collection and production.
 // It coordinates the Collector and Producer and ensures proper execution flow.
@@ -36,22 +52,13 @@ func NewOrchestrator(
 	collector collect.Collector,
 	producer produce.Producer,
 	logger *zap.SugaredLogger,
-	options ...func(*Orchestrator) error,
-) (a *Orchestrator, err error) {
+) *Orchestrator {
 	// Initialize the Orchestrator with provided components.
-	a = &Orchestrator{
+	return &Orchestrator{
 		collector: collector,
 		producer:  producer,
 		log:       logger,
 	}
-
-	// Apply each provided functional option to configure the Orchestrator.
-	for _, o := range options {
-		if err = o(a); err != nil {
-			return nil, fmt.Errorf("failed to apply option function of type %T: %w", o, err)
-		}
-	}
-	return
 }
 
 // StartAll begins the data collection and production processes in parallel.
@@ -96,34 +103,5 @@ func (a *Orchestrator) StartAll() error {
 	if err != nil {
 		return fmt.Errorf("orchestrate was stopped: %s process encountered an error: %w", interruptedExecutor, err)
 	}
-	return nil
-}
-
-// WithSubscribeConsumer2Producer subscribes the Collector to the Producer's events.
-// It ensures the Collector implements the Observer interface and the Producer implements the ObserveSubject interface.
-//
-// Parameters:
-//   - orchestrate: A pointer to the Orchestrator instance.
-//
-// Returns:
-//   - An error if the subscription process fails.
-func WithSubscribeConsumer2Producer(agent *Orchestrator) error {
-	// Verify the collectors implements the Observer interface.
-	observer, ok := agent.collector.(common.Observer)
-	if !ok {
-		return errors.New("collectors does not implement the Observer interface")
-	}
-
-	// Verify the producer implements the ObserveSubject interface.
-	subject, ok := agent.producer.(common.ObserveSubject)
-	if !ok {
-		return errors.New("producer does not implement the ObserveSubject interface")
-	}
-
-	// Subscribe the collectors to the producer's events.
-	if err := common.Subscribe(observer, subject); err != nil {
-		return fmt.Errorf("failed to subscribe collectors to producer: %w", err)
-	}
-
 	return nil
 }

@@ -7,6 +7,23 @@ import (
 	"go.uber.org/zap"
 )
 
+// InMemoryRepositoryFactory implements RepositoryAbstractFactory for InMemoryRepository.
+type InMemoryRepositoryFactory struct {
+	logger *zap.SugaredLogger
+}
+
+// NewInMemoryRepositoryFactory creates a new instance of InMemoryRepositoryFactory.
+func NewInMemoryRepositoryFactory(logger *zap.SugaredLogger) *InMemoryRepositoryFactory {
+	return &InMemoryRepositoryFactory{
+		logger: logger,
+	}
+}
+
+// CreateMetricsRepository creates and returns a new InMemoryRepository instance.
+func (f *InMemoryRepositoryFactory) CreateMetricsRepository() entities.MetricsRepository {
+	return NewInMemoryRepository(f.logger)
+}
+
 // InMemoryRepository is a thread-safe in-memory storage for metrics.
 type InMemoryRepository struct {
 	mu      *sync.RWMutex      // Mutex for concurrent access control.

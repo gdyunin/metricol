@@ -11,3 +11,7 @@ type Producer interface {
 	//   - An error if the production process fails to start or encounters issues.
 	StartProduce() error
 }
+
+type ProducerAbstractFactory interface {
+	CreateProducer() Producer
+}

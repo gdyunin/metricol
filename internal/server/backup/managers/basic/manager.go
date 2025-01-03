@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/gdyunin/metricol.git/internal/common"
+	"github.com/gdyunin/metricol.git/internal/common/patterns"
 	"github.com/gdyunin/metricol.git/internal/server/entities"
 )
 
@@ -65,7 +65,7 @@ func (b *BackupManager) OnNotify() {
 }
 
 func (b *BackupManager) syncBackup() {
-	sbj, ok := b.repo.(common.ObserveSubject)
+	sbj, ok := b.repo.(patterns.ObserveSubject)
 	if !ok {
 		return
 	}

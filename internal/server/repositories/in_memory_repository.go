@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/gdyunin/metricol.git/internal/common"
+	"github.com/gdyunin/metricol.git/internal/common/patterns"
 	"github.com/gdyunin/metricol.git/internal/server/entities"
 	"go.uber.org/zap"
 )
@@ -15,7 +15,7 @@ type InMemoryRepository struct {
 	counters  map[string]int64   // Stores counter metrics.
 	gauges    map[string]float64 // Stores gauge metrics.
 	mu        *sync.RWMutex      // Provides thread-safe access to the metrics.
-	observers map[common.Observer]struct{}
+	observers map[patterns.Observer]struct{}
 	logger    *zap.SugaredLogger
 }
 
@@ -153,7 +153,7 @@ func (r *InMemoryRepository) metricsCount() int {
 	return len(r.counters) + len(r.gauges)
 }
 
-func (r *InMemoryRepository) RegisterObserver(observer common.Observer) error {
+func (r *InMemoryRepository) RegisterObserver(observer patterns.Observer) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -165,7 +165,7 @@ func (r *InMemoryRepository) RegisterObserver(observer common.Observer) error {
 	return nil
 }
 
-func (r *InMemoryRepository) RemoveObserver(observer common.Observer) error {
+func (r *InMemoryRepository) RemoveObserver(observer patterns.Observer) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

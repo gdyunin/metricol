@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/gdyunin/metricol.git/internal/agent/adapters/collectors"
+	"github.com/gdyunin/metricol.git/internal/agent/collect"
 	"github.com/gdyunin/metricol.git/internal/agent/collect/collectors/mscollector/model"
 	"github.com/gdyunin/metricol.git/internal/agent/entities"
-	"github.com/gdyunin/metricol.git/internal/common"
-
+	"github.com/gdyunin/metricol.git/internal/common/helpers"
 	"go.uber.org/zap"
 )
 
@@ -23,12 +23,26 @@ const (
 	MaxErrorsToInterrupt = 3
 )
 
+type MemStatsCollectorFactory struct {
+	interval time.Duration
+	repo     entities.MetricsRepository
+	logger   *zap.SugaredLogger
+}
+
+func NewMemStatsCollectorFactory(interval time.Duration, repo entities.MetricsRepository, logger *zap.SugaredLogger) *MemStatsCollectorFactory {
+	return &MemStatsCollectorFactory{interval: interval, repo: repo, logger: logger}
+}
+
+func (f *MemStatsCollectorFactory) CreateCollector() collect.Collector {
+	return NewMemStatsCollector(f.interval, f.repo, f.logger)
+}
+
 // MemStatsCollector collects memory statistics periodically and stores them as metrics.
 type MemStatsCollector struct {
 	adp         *collectors.MemStatsCollectorAdapter // Adapter to interface with the metrics repository.
 	ms          *runtime.MemStats                    // Stores memory statistics collected from the runtime.
 	ticker      *time.Ticker                         // Ticker to trigger periodic data collection.
-	interrupter *common.Interrupter                  // Handles error limits and interrupt signals.
+	interrupter *helpers.Interrupter                 // Handles error limits and interrupt signals.
 	mu          *sync.RWMutex                        // Synchronizes access to shared resources.
 	log         *zap.SugaredLogger                   // Logger for recording process information.
 	polls       int                                  // Tracks the number of polls performed.
@@ -70,7 +84,7 @@ func (c *MemStatsCollector) StartCollect() error {
 	defer c.ticker.Stop() // Ensure ticker is stopped when the method exits.
 
 	// Initialize an interrupter to manage error handling and stopping criteria.
-	interrupter, err := common.NewInterrupter(c.interval*ResetErrorCountersIntervals, MaxErrorsToInterrupt)
+	interrupter, err := helpers.NewInterrupter(c.interval*ResetErrorCountersIntervals, MaxErrorsToInterrupt)
 	if err != nil {
 		return fmt.Errorf("failed to initialize the interrupter for error handling: %w", err)
 	}

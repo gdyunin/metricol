@@ -4,7 +4,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/gdyunin/metricol.git/internal/common"
+	"github.com/gdyunin/metricol.git/internal/common/helpers"
 	"github.com/gdyunin/metricol.git/internal/server/backup"
 	"github.com/gdyunin/metricol.git/internal/server/consume"
 	"github.com/gdyunin/metricol.git/internal/server/entities"
@@ -32,9 +32,9 @@ func (r *runner) run() {
 	r.bm.Restore()
 	go r.bm.Start()
 
-	sm := common.NewShutdownManager()
+	sm := helpers.NewShutdownManager()
 	sm.Add(r.bm.Stop)
-	common.SetupGracefulShutdown(sm)
+	helpers.SetupGracefulShutdown(sm)
 
 	if err := r.consumer.StartConsume(); err != nil {
 		log.Fatal("")

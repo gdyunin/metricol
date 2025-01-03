@@ -10,3 +10,7 @@ type Collector interface {
 	//   - An error if the data collection process fails to start or encounters issues.
 	StartCollect() error
 }
+
+type CollectorAbstractFactory interface {
+	CreateCollector() Collector
+}
