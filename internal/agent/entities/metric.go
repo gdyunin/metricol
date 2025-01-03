@@ -21,6 +21,26 @@ func (m *Metric) Equal(compare *Metric) bool {
 	return m.Name == compare.Name && m.Type == compare.Type
 }
 
+// MetricsRepository represents a repository for storing and retrieving metrics.
+//
+// Implementations of this interface should provide mechanisms to add a metric
+// and retrieve all stored metrics as a collection.
+type MetricsRepository interface {
+	// Store stores a given metric in the repository.
+	// The metric parameter is a pointer to the Metric instance to be added.
+	Store(metric *Metric)
+
+	// Metrics retrieves all metrics currently stored in the repository.
+	// It returns a slice of pointers to Metric instances.
+	Metrics() []*Metric
+}
+
+// RepositoryAbstractFactory provides an interface for creating a MetricsRepository instance.
+type RepositoryAbstractFactory interface {
+	// CreateMetricsRepository creates a MetricsRepository instance.
+	CreateMetricsRepository() MetricsRepository
+}
+
 // MetricsInterface provides methods to interact with a metrics repository.
 //
 // This struct serves as an interface between the application logic and the underlying
@@ -60,23 +80,4 @@ func (mi *MetricsInterface) Store(metric *Metric) error {
 //   - A slice of pointers to Metric instances currently stored in the repository.
 func (mi *MetricsInterface) Metrics() []*Metric {
 	return mi.repo.Metrics()
-}
-
-// MetricsRepository represents a repository for storing and retrieving metrics.
-//
-// Implementations of this interface should provide mechanisms to add a metric
-// and retrieve all stored metrics as a collection.
-type MetricsRepository interface {
-	// Add stores a given metric in the repository.
-	// The metric parameter is a pointer to the Metric instance to be added.
-	Store(metric *Metric)
-
-	// Metrics retrieves all metrics currently stored in the repository.
-	// It returns a slice of pointers to Metric instances.
-	Metrics() []*Metric
-}
-
-type RepositoryAbstractFactory interface {
-	// CreateMetricsRepository creates a MetricsRepository instance.
-	CreateMetricsRepository() MetricsRepository
 }

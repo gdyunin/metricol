@@ -2,7 +2,7 @@ package producers
 
 import (
 	"github.com/gdyunin/metricol.git/internal/agent/entities"
-	"github.com/gdyunin/metricol.git/internal/agent/produce/produsers/rstclient/model"
+	"github.com/gdyunin/metricol.git/internal/agent/produce/produsers/httpresty/model"
 
 	"go.uber.org/zap"
 )
@@ -71,7 +71,7 @@ func (r *RestyClientAdapter) em2m(em *entities.Metric) *model.Metric {
 		} else {
 			// Log an error if the value type is incorrect.
 			r.logger.Errorf(
-				"metric skipped: failed to convert counter metric '%s':"+
+				"metric convert skipped: failed to cast value of counter metric '%s':"+
 					" expected int64 but got %T", em.Name, em.Value,
 			)
 		}
@@ -81,13 +81,13 @@ func (r *RestyClientAdapter) em2m(em *entities.Metric) *model.Metric {
 			m.Value = &v // Set Value field for gauge metrics.
 		} else {
 			// Log an error if the value type is incorrect.
-			r.logger.Errorf("metric skipped: failed to convert gauge metric '%s':"+
+			r.logger.Errorf("metric convert skipped: failed to cast value of gauge metric '%s':"+
 				" expected float64 but got %T", em.Name, em.Value,
 			)
 		}
 	default:
 		// Log a warning for unknown metric types.
-		r.logger.Warnf("metric skipped: unknown metric type for metric '%s': %s", em.Name, em.Type)
+		r.logger.Errorf("metric convert skipped: unknown metric type for metric '%s': %s", em.Name, em.Type)
 	}
 
 	return m // Return the converted metric.

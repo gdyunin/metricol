@@ -3,7 +3,7 @@ package collectors
 import (
 	"fmt"
 
-	"github.com/gdyunin/metricol.git/internal/agent/collect/collectors/mscollector/model"
+	"github.com/gdyunin/metricol.git/internal/agent/collect/collectors/memstat/model"
 	"github.com/gdyunin/metricol.git/internal/agent/entities"
 )
 
@@ -26,7 +26,7 @@ func NewMemStatsCollectorAdapter(repo entities.MetricsRepository) *MemStatsColle
 }
 
 // Store saves a metric from the memory statistics collectors into the repository.
-// It converts the incoming metric from the memory statistics collectors's format
+// It converts the incoming metric from the memory statistics collectors`s format
 // to a format compatible with the repository before saving.
 //
 // Parameters:

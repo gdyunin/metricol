@@ -11,14 +11,27 @@ import (
 )
 
 const (
+	// OrchestratorTypeBasic represents the type identifier for the basic orchestrator.
 	OrchestratorTypeBasic = "basic"
 )
 
+// AbstractOrchestratorsFactory creates an abstract factory for orchestrators based on the specified type.
+// Parameters:
+//   - orchestratorType: The type of orchestrator to create (e.g., "basic").
+//   - collector: A Collector instance responsible for gathering metrics.
+//   - producer: A Producer instance responsible for processing and sending metrics.
+//   - logger: Logger for logging activities and errors.
+//
+// Returns:
+//   - An instance of orchestrate.OrchestratorAbstractFactory for the specified orchestrator type.
+//   - An error if the orchestrator type is unsupported.
 func AbstractOrchestratorsFactory(orchestratorType string, collector collect.Collector, producer produce.Producer, logger *zap.SugaredLogger) (orchestrate.OrchestratorAbstractFactory, error) {
 	switch orchestratorType {
 	case OrchestratorTypeBasic:
+		// Create and return a factory for the basic orchestrator type.
 		return basic.NewOrchestratorFactory(collector, producer, logger), nil
 	default:
-		return nil, fmt.Errorf("unsupported orchestrator type: %s", orchestratorType)
+		// Return an error for unsupported orchestrator types.
+		return nil, fmt.Errorf("unsupported orchestrator type: '%s'. Please provide a valid orchestrator type.", orchestratorType)
 	}
 }

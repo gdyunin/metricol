@@ -1,4 +1,4 @@
-package mscollector
+package memstat
 
 import (
 	"errors"
@@ -10,7 +10,7 @@ import (
 
 	"github.com/gdyunin/metricol.git/internal/agent/adapters/collectors"
 	"github.com/gdyunin/metricol.git/internal/agent/collect"
-	"github.com/gdyunin/metricol.git/internal/agent/collect/collectors/mscollector/model"
+	"github.com/gdyunin/metricol.git/internal/agent/collect/collectors/memstat/model"
 	"github.com/gdyunin/metricol.git/internal/agent/entities"
 	"github.com/gdyunin/metricol.git/internal/common/helpers"
 	"go.uber.org/zap"
@@ -23,18 +23,11 @@ const (
 	MaxErrorsToInterrupt = 3
 )
 
+// MemStatsCollectorFactory is responsible for creating MemStatsCollector instances.
 type MemStatsCollectorFactory struct {
 	interval time.Duration
 	repo     entities.MetricsRepository
 	logger   *zap.SugaredLogger
-}
-
-func NewMemStatsCollectorFactory(interval time.Duration, repo entities.MetricsRepository, logger *zap.SugaredLogger) *MemStatsCollectorFactory {
-	return &MemStatsCollectorFactory{interval: interval, repo: repo, logger: logger}
-}
-
-func (f *MemStatsCollectorFactory) CreateCollector() collect.Collector {
-	return NewMemStatsCollector(f.interval, f.repo, f.logger)
 }
 
 // MemStatsCollector collects memory statistics periodically and stores them as metrics.
@@ -48,6 +41,16 @@ type MemStatsCollector struct {
 	polls       int                                  // Tracks the number of polls performed.
 	interval    time.Duration                        // Interval between data collection cycles.
 	seed        float64                              // Random value of current metric poll.
+}
+
+// NewMemStatsCollectorFactory creates a new MemStatsCollectorFactory.
+func NewMemStatsCollectorFactory(interval time.Duration, repo entities.MetricsRepository, logger *zap.SugaredLogger) *MemStatsCollectorFactory {
+	return &MemStatsCollectorFactory{interval: interval, repo: repo, logger: logger}
+}
+
+// CreateCollector creates and returns a new MemStatsCollector instance.
+func (f *MemStatsCollectorFactory) CreateCollector() collect.Collector {
+	return NewMemStatsCollector(f.interval, f.repo, f.logger)
 }
 
 // NewMemStatsCollector creates a new instance of MemStatsCollector with a specified collection interval.
@@ -126,7 +129,7 @@ func (c *MemStatsCollector) update() {
 	// Read the latest memory statistics from the runtime package.
 	runtime.ReadMemStats(c.ms)
 	c.polls++               // Increment the poll counter.
-	c.seed = rand.Float64() // Generate a new random seed value for testing purposes.
+	c.seed = rand.Float64() // Generate a new random seed value.
 }
 
 // store saves the collected metrics to the repository.

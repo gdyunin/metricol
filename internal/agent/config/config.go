@@ -1,5 +1,3 @@
-// Package config provides functionality to configure an orchestrate with parameters
-// that can be set via environment variables or command-line flags.
 package config
 
 import (
@@ -17,7 +15,7 @@ const (
 	defaultReportInterval = 10
 )
 
-// Config holds the configuration for the orchestrate, including server address,
+// Config holds the configuration, including server address,
 // polling interval, and reporting interval.
 type Config struct {
 	ServerAddress  string `env:"ADDRESS"`         // Address of the server to connect to

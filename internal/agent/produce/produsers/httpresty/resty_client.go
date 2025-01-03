@@ -1,4 +1,4 @@
-package rstclient
+package httpresty
 
 import (
 	"bytes"
@@ -14,18 +14,21 @@ import (
 	"github.com/gdyunin/metricol.git/internal/agent/adapters/producers"
 	"github.com/gdyunin/metricol.git/internal/agent/entities"
 	"github.com/gdyunin/metricol.git/internal/agent/produce"
-	"github.com/gdyunin/metricol.git/internal/agent/produce/produsers/rstclient/model"
-	common2 "github.com/gdyunin/metricol.git/internal/common/helpers"
+	"github.com/gdyunin/metricol.git/internal/agent/produce/produsers/httpresty/model"
+	"github.com/gdyunin/metricol.git/internal/common/helpers"
 	"github.com/gdyunin/metricol.git/internal/common/patterns"
 	"github.com/go-resty/resty/v2"
 	"go.uber.org/zap"
 )
 
 const (
+	// resetErrorCountersIntervals defines the interval for resetting error counters.
 	resetErrorCountersIntervals = 4
-	maxErrorsToInterrupt        = 3
+	// maxErrorsToInterrupt sets the maximum number of errors allowed before interruption.
+	maxErrorsToInterrupt = 3
 )
 
+// RestyClientProducerFactory is responsible for creating RestyClient producers.
 type RestyClientProducerFactory struct {
 	interval      time.Duration
 	serverAddress string
@@ -33,6 +36,7 @@ type RestyClientProducerFactory struct {
 	logger        *zap.SugaredLogger
 }
 
+// NewRestyClientProducerFactory creates a new instance of RestyClientProducerFactory.
 func NewRestyClientProducerFactory(interval time.Duration, serverAddress string, repo entities.MetricsRepository, logger *zap.SugaredLogger) *RestyClientProducerFactory {
 	return &RestyClientProducerFactory{
 		interval:      interval,
@@ -42,6 +46,7 @@ func NewRestyClientProducerFactory(interval time.Duration, serverAddress string,
 	}
 }
 
+// CreateProducer creates and returns a new RestyClient producer.
 func (f *RestyClientProducerFactory) CreateProducer() produce.Producer {
 	return NewRestyClient(f.interval, f.serverAddress, f.repo, f.logger)
 }
@@ -51,7 +56,7 @@ type RestyClient struct {
 	adp         *producers.RestyClientAdapter
 	client      *resty.Client
 	ticker      *time.Ticker
-	interrupter *common2.Interrupter
+	interrupter *helpers.Interrupter
 	mu          *sync.RWMutex
 	log         *zap.SugaredLogger
 	observers   map[patterns.Observer]struct{}
@@ -59,18 +64,12 @@ type RestyClient struct {
 	interval    time.Duration
 }
 
-// NewRestyClient creates a new RestyClient instance with the specified interval,
-// server address, repository, and logger.
-func NewRestyClient(
-	interval time.Duration,
-	serverAddress string,
-	repo entities.MetricsRepository,
-	logger *zap.SugaredLogger,
-) *RestyClient {
+// NewRestyClient creates a new RestyClient instance.
+func NewRestyClient(interval time.Duration, serverAddress string, repo entities.MetricsRepository, logger *zap.SugaredLogger) *RestyClient {
 	rc := resty.New()
 
 	producer := RestyClient{
-		adp:       producers.NewRestyClientAdapter(repo, logger.Named("resty client adapters")),
+		adp:       producers.NewRestyClientAdapter(repo, logger.Named("resty_client_adapter")),
 		client:    rc,
 		interval:  interval,
 		observers: make(map[patterns.Observer]struct{}),
@@ -79,13 +78,12 @@ func NewRestyClient(
 		baseURL:   serverAddress,
 	}
 
-	logger.Infof("Producer inited: %+v", producer)
+	logger.Infof("Producer initialized: %+v", producer)
 
 	return &producer
 }
 
 // waitServer checks if the server is available by sending a ping request.
-// It retries up to a maximum number of attempts with increasing intervals.
 func (r *RestyClient) waitServer() error {
 	const (
 		maxRetries  = 10               // Maximum number of retry attempts.
@@ -96,7 +94,6 @@ func (r *RestyClient) waitServer() error {
 	for i := range make([]struct{}, maxRetries) {
 		r.log.Infof("Checking server availability... Attempt %d/%d", i+1, maxRetries)
 
-		// Send a ping request to check server availability.
 		resp, err := r.client.R().Get(fmt.Sprintf("http://%s/ping", r.baseURL))
 		if err == nil && resp.StatusCode() == http.StatusOK {
 			r.log.Info("Server is available.")
@@ -116,7 +113,6 @@ func (r *RestyClient) waitServer() error {
 }
 
 // StartProduce starts the metrics production process.
-// It runs in a loop until an error occurs or the interrupter stops it.
 func (r *RestyClient) StartProduce() error {
 	if err := r.waitServer(); err != nil {
 		return fmt.Errorf("server is not available: %w", err)
@@ -125,7 +121,7 @@ func (r *RestyClient) StartProduce() error {
 	r.ticker = time.NewTicker(r.interval)
 	defer r.ticker.Stop()
 
-	interrupter, err := common2.NewInterrupter(r.interval*resetErrorCountersIntervals, maxErrorsToInterrupt)
+	interrupter, err := helpers.NewInterrupter(r.interval*resetErrorCountersIntervals, maxErrorsToInterrupt)
 	if err != nil {
 		return fmt.Errorf("failed to initialize interrupter: %w", err)
 	}
