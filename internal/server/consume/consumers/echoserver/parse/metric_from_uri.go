@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/model"
-	"github.com/gdyunin/metricol.git/internal/server/entity"
+	"github.com/gdyunin/metricol.git/internal/server/entities"
 	"github.com/labstack/echo/v4"
 )
 
@@ -18,13 +18,13 @@ func MetricFromURI(c echo.Context) (*model.Metric, error) {
 	valueStr := c.Param("value")
 	if valueStr != "" {
 		switch m.MType {
-		case entity.MetricTypeCounter:
+		case entities.MetricTypeCounter:
 			delta, err := strconv.ParseInt(valueStr, 10, 64)
 			if err != nil {
 				return nil, fmt.Errorf("error when cast %s to int64: %w", valueStr, err)
 			}
 			m.Delta = &delta
-		case entity.MetricTypeGauge:
+		case entities.MetricTypeGauge:
 			value, err := strconv.ParseFloat(valueStr, 64)
 			if err != nil {
 				return nil, fmt.Errorf("error when cast %s to float64: %w", valueStr, err)

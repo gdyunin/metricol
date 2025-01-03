@@ -7,9 +7,10 @@ import (
 	"fmt"
 
 	"github.com/caarlos0/env/v6"
+	"go.uber.org/zap"
 )
 
-// All default settings.
+// All basic settings.
 const (
 	defaultServerAddress   = "localhost:8080"
 	defaultStoreInterval   = 300
@@ -25,10 +26,10 @@ type Config struct {
 	Restore         bool   `env:"RESTORE"`
 }
 
-// ParseConfig initializes the Config with default values,
+// ParseConfig initializes the Config with basic values,
 // overrides them with environment variables if available,
 // and allows command-line flags to set or override the configuration.
-func ParseConfig() (*Config, error) {
+func ParseConfig(logger *zap.SugaredLogger) (*Config, error) {
 	// Default settings for the server configuration.
 	cfg := Config{
 		ServerAddress:   defaultServerAddress,
@@ -37,18 +38,20 @@ func ParseConfig() (*Config, error) {
 		Restore:         defaultRestoreFlag,
 	}
 
-	// Parse command-line arguments or set default settings if no args are provided.
+	// Parse command-line arguments or set basic settings if no args are provided.
 	parseFlagsOrSetDefault(&cfg)
 
 	// Attempt to parse values from environment variables; if unsuccessful, return the error.
 	if err := env.Parse(&cfg); err != nil {
 		return nil, fmt.Errorf("error parse env variables %w", err)
 	}
+
+	logger.Infof("App config: %+v", cfg)
 	return &cfg, nil
 }
 
 // parseFlagsOrSetDefault populates the Config from command-line flags
-// or retains the default values set in the configuration.
+// or retains the basic values set in the configuration.
 func parseFlagsOrSetDefault(cfg *Config) {
 	flag.StringVar(&cfg.ServerAddress, "a", cfg.ServerAddress, "Address of the server")
 	flag.IntVar(&cfg.StoreInterval, "i", cfg.StoreInterval, "Interval for store to fs in sec, if = 0 sync store")

@@ -3,15 +3,15 @@ package update
 import (
 	"net/http"
 
-	"github.com/gdyunin/metricol.git/internal/server/adapter"
+	"github.com/gdyunin/metricol.git/internal/server/adapters/consumers"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/model"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/parse"
-	"github.com/gdyunin/metricol.git/internal/server/entity"
+	"github.com/gdyunin/metricol.git/internal/server/entities"
 	"github.com/gdyunin/metricol.git/pkg/logger"
 	"github.com/labstack/echo/v4"
 )
 
-func FromJSON(adp *adapter.EchoAdapter) echo.HandlerFunc {
+func FromJSON(adp *consumers.EchoAdapter) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		l, _ := logger.Logger("INFO")
 		l.Info("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
@@ -40,11 +40,11 @@ func isValidModel(metric *model.Metric) bool {
 	}
 
 	switch metric.MType {
-	case entity.MetricTypeCounter:
+	case entities.MetricTypeCounter:
 		if metric.Delta == nil {
 			return false
 		}
-	case entity.MetricTypeGauge:
+	case entities.MetricTypeGauge:
 		if metric.Value == nil {
 			return false
 		}

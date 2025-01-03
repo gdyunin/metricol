@@ -4,13 +4,13 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/gdyunin/metricol.git/internal/server/adapter"
+	"github.com/gdyunin/metricol.git/internal/server/adapters/consumers"
 	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/parse"
-	"github.com/gdyunin/metricol.git/internal/server/entity"
+	"github.com/gdyunin/metricol.git/internal/server/entities"
 	"github.com/labstack/echo/v4"
 )
 
-func FromURI(adp *adapter.EchoAdapter) echo.HandlerFunc {
+func FromURI(adp *consumers.EchoAdapter) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		metric, err := parse.MetricFromURI(c)
 		if err != nil {
@@ -18,7 +18,7 @@ func FromURI(adp *adapter.EchoAdapter) echo.HandlerFunc {
 		}
 
 		stored, err := adp.PullMetric(metric)
-		if errors.Is(err, entity.ErrMetricNotFound) {
+		if errors.Is(err, entities.ErrMetricNotFound) {
 			return c.String(http.StatusNotFound, http.StatusText(http.StatusNotFound))
 		}
 
