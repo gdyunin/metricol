@@ -28,10 +28,8 @@ const (
 func AbstractConsumerFactory(consumerType string, addr string, repo entities.MetricsRepository, logger *zap.SugaredLogger) (consume.ConsumerAbstractFactory, error) {
 	switch consumerType {
 	case ConsumerTypeEchoServer:
-		// Return a factory for the EchoServer consumer.
 		return echohttp.NewEchoServerConsumerFactory(addr, repo, logger), nil
 	default:
-		// Return an error for unsupported consumer types.
 		return nil, fmt.Errorf("unsupported consumer type: '%s', please provide a valid consumer type", consumerType)
 	}
 }

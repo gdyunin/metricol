@@ -43,6 +43,7 @@ func NewEchoServerConsumerFactory(addr string, repo entities.MetricsRepository, 
 
 // CreateConsumer creates and returns a new EchoServer instance.
 func (f *EchoServerConsumerFactory) CreateConsumer() consume.Consumer {
+	f.logger.Info("Creating a new echo http server consumer.")
 	return NewEchoServer(f.addr, f.repo, f.logger)
 }
 
@@ -92,11 +93,7 @@ func NewEchoServer(addr string, repo entities.MetricsRepository, logger *zap.Sug
 // Returns:
 //   - An error if the server fails to start.
 func (s *EchoServer) StartConsume() error {
-	metrics, _ := s.adp.PullAllMetrics()
-	for _, m := range metrics {
-		fmt.Printf("%#v\n", m)
-	}
-
+	s.log.Info("Starting consume.")
 	err := s.server.Start(s.serverAddress)
 	if err != nil {
 		return fmt.Errorf("failed to start Echo server on address '%s': %w", s.serverAddress, err)
