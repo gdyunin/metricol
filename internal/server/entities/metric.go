@@ -11,33 +11,37 @@ const (
 	MetricTypeCounter = "counter"
 
 	// MetricTypeGauge represents a metric type that measures a value at a specific point in time.
-	// Gauges can increase or decrease and are commonly used to represent things current resource usage.
+	// Gauges can increase or decrease and are commonly used to represent current resource usage.
 	MetricTypeGauge = "gauge"
 )
 
+// Predefined error messages for common metric operations.
+var (
+	// ErrPushMetric indicates an error when pushing a metric to the repository.
+	ErrPushMetric = errors.New("failed to push the metric to the repository")
+
+	// ErrPullMetric indicates an error when pulling a metric from the repository.
+	ErrPullMetric = errors.New("failed to pull the metric from the repository")
+
+	// ErrAllMetricsInRepo indicates an error when retrieving all metrics from the repository.
+	ErrAllMetricsInRepo = errors.New("failed to retrieve all metrics from the repository")
+
+	// ErrMetricNotFound indicates an error when a metric is not found in the repository.
+	ErrMetricNotFound = errors.New("the requested metric was not found in the repository")
+)
+
 // Metric represents a metric with a name, type, and value.
-//
-// Fields:
-//   - Name: A descriptive identifier for the metric.
-//   - Type: Specifies the metric type (e.g., "counter" or "gauge").
-//   - Value: The actual data associated with the metric, whose type depends on the metric's type.
-//     Counters typically use integers, while gauges may use floating-point numbers.
 type Metric struct {
-	// Value holds the data associated with the metric.
-	// The data type depends on the metric's type:
-	// - Counters typically use integers.
-	// - Gauges often use floating-point numbers.
-	Value any `json:"value"`
-
-	// Name is the name for the metric.
-	// It should be a descriptive and unique string that clearly defines the metric's purpose.
-	Name string `json:"name"`
-
-	// Type specifies the type of the metric.
-	// Valid types are defined as constants in this package, such as "counter" and "gauge".
-	Type string `json:"type"`
+	Value any    `json:"value"` // The data associated with the metric.
+	Name  string `json:"name"`  // The name of the metric.
+	Type  string `json:"type"`  // The type of the metric (e.g., "counter" or "gauge").
 }
 
+// AfterJSONUnmarshalling processes the metric after unmarshalling from JSON.
+// Ensures the Value field matches the expected type based on the metric type.
+//
+// Returns:
+//   - An error if the metric's value does not match its type.
 func (m *Metric) AfterJSONUnmarshalling() error {
 	if m.Type == MetricTypeCounter {
 		switch v := m.Value.(type) {
@@ -46,41 +50,68 @@ func (m *Metric) AfterJSONUnmarshalling() error {
 		case int:
 			m.Value = int64(v)
 		case float64:
-			m.Value = int64(v) // Явное преобразование float64 -> int64
+			m.Value = int64(v)
 		default:
-			return errors.New("invalid value type for counter")
+			return errors.New("invalid value type for counter metric")
 		}
 	}
 	return nil
 }
 
-// Predefined error messages for common metric operations.
-var (
-	// ErrPushMetric indicates an error when pushing a metric to the repository.
-	ErrPushMetric = errors.New("failed to push metric")
+// Filter represents the criteria used to filter metrics in the repository.
+type Filter struct {
+	Name string // Name of the metric to filter by.
+	Type string // Type of the metric to filter by.
+}
 
-	// ErrPullMetric indicates an error when pulling a metric from the repository.
-	ErrPullMetric = errors.New("failed to pull metric")
+// MetricsRepository defines the methods that any metric repository must implement.
+type MetricsRepository interface {
+	// Create adds a new metric to the repository.
+	Create(metric *Metric) error
 
-	// ErrAllMetricsInRepo indicates an error when retrieving all metrics from the repository.
-	ErrAllMetricsInRepo = errors.New("failed to retrieve all metrics")
+	// Read retrieves a metric from the repository based on the provided filter.
+	Read(filter *Filter) (*Metric, error)
 
-	ErrMetricNotFound = errors.New("metric not found in repository")
-)
+	// Update modifies an existing metric in the repository.
+	Update(metric *Metric) error
+
+	// IsExists checks whether a metric exists in the repository based on the provided filter.
+	IsExists(filter *Filter) (bool, error)
+
+	// All retrieves all metrics stored in the repository.
+	All() ([]*Metric, error)
+}
+
+// RepositoryAbstractFactory defines a factory for creating MetricsRepository instances.
+type RepositoryAbstractFactory interface {
+	// CreateMetricsRepository creates a new MetricsRepository instance.
+	CreateMetricsRepository() MetricsRepository
+}
 
 // MetricsInterface provides methods to manage metrics in a repository.
 type MetricsInterface struct {
-	repo MetricsRepository // The repository used for storing and managing metrics.
+	repo MetricsRepository
 }
 
-// NewMetricsInterface creates a new instance of `MetricsInterface` with the given repository.
-// Returns a pointer to the newly created `MetricsInterface`.
+// NewMetricsInterface creates a new instance of MetricsInterface with the given repository.
+//
+// Parameters:
+//   - repo: The repository used for storing and managing metrics.
+//
+// Returns:
+//   - A pointer to a newly created MetricsInterface.
 func NewMetricsInterface(repo MetricsRepository) *MetricsInterface {
 	return &MetricsInterface{repo: repo}
 }
 
 // PushMetric pushes a new metric to the repository or updates an existing one.
-// Returns the updated metric and an error if the operation fails.
+//
+// Parameters:
+//   - metric: A pointer to the metric to be added or updated.
+//
+// Returns:
+//   - The updated or newly created metric.
+//   - An error if the operation fails.
 func (mi *MetricsInterface) PushMetric(metric *Metric) (*Metric, error) {
 	if isValid := validateNewMetric(metric); !isValid {
 		return nil, fmt.Errorf("%w: invalid metric data: %+v", ErrPushMetric, metric)
@@ -88,31 +119,35 @@ func (mi *MetricsInterface) PushMetric(metric *Metric) (*Metric, error) {
 
 	isExists, err := mi.repo.IsExists(&Filter{Name: metric.Name, Type: metric.Type})
 	if err != nil {
-		return nil, fmt.Errorf("%w: error checking metric existence: %w", ErrPushMetric, err)
+		return nil, fmt.Errorf("%w: failed to check metric existence: %w", ErrPushMetric, err)
 	}
 
 	if !isExists {
-		// Create the metric if it does not exist.
 		if err = mi.repo.Create(metric); err != nil {
-			return nil, fmt.Errorf("%w: error creating new metric: %w", ErrPushMetric, err)
+			return nil, fmt.Errorf("%w: failed to create a new metric: %w", ErrPushMetric, err)
 		}
 		return metric, nil
 	}
 
-	// Update the existing metric.
 	m, err := mi.updateExistsMetric(metric)
 	if err != nil {
-		return nil, fmt.Errorf("%w: error updating existing metric: %w", ErrPushMetric, err)
+		return nil, fmt.Errorf("%w: failed to update the existing metric: %w", ErrPushMetric, err)
 	}
 	return m, nil
 }
 
 // PullMetric retrieves a metric from the repository by its name and type.
-// Returns the metric and an error if the operation fails or if the metric does not exist.
+//
+// Parameters:
+//   - metric: A pointer to the metric to be retrieved.
+//
+// Returns:
+//   - The requested metric.
+//   - An error if the metric does not exist or the operation fails.
 func (mi *MetricsInterface) PullMetric(metric *Metric) (*Metric, error) {
 	isExists, err := mi.IsExists(metric)
 	if err != nil {
-		return nil, fmt.Errorf("%w: error checking metric existence: %w", ErrPullMetric, err)
+		return nil, fmt.Errorf("%w: failed to check metric existence: %w", ErrPullMetric, err)
 	}
 
 	if !isExists {
@@ -121,35 +156,48 @@ func (mi *MetricsInterface) PullMetric(metric *Metric) (*Metric, error) {
 
 	m, err := mi.repo.Read(&Filter{Name: metric.Name, Type: metric.Type})
 	if err != nil {
-		return nil, fmt.Errorf("%w: error reading metric from repository: %w", ErrPullMetric, err)
+		return nil, fmt.Errorf("%w: failed to read the metric from the repository: %w", ErrPullMetric, err)
 	}
 	return m, nil
 }
 
+// IsExists checks if a metric exists in the repository.
+//
+// Parameters:
+//   - metric: A pointer to the metric to check.
+//
+// Returns:
+//   - A boolean indicating whether the metric exists.
+//   - An error if the operation fails.
 func (mi *MetricsInterface) IsExists(metric *Metric) (bool, error) {
 	isExists, err := mi.repo.IsExists(&Filter{Name: metric.Name, Type: metric.Type})
 	if err != nil {
-		return false, fmt.Errorf("error checking metric existence in repo: %w", err)
+		return false, fmt.Errorf("failed to check metric existence in the repository: %w", err)
 	}
 
 	return isExists, nil
 }
 
 // AllMetricsInRepo retrieves all metrics from the repository.
-// Returns a slice of metrics and an error if the operation fails.
+//
+// Returns:
+//   - A slice of pointers to all metrics in the repository.
+//   - An error if the operation fails.
 func (mi *MetricsInterface) AllMetricsInRepo() ([]*Metric, error) {
 	m, err := mi.repo.All()
 	if err != nil {
-		return nil, fmt.Errorf("%w: error retrieving metrics: %w", ErrAllMetricsInRepo, err)
+		return nil, fmt.Errorf("%w: failed to retrieve metrics: %w", ErrAllMetricsInRepo, err)
 	}
 	return m, nil
 }
 
 // validateNewMetric checks if the provided metric is valid.
-// Returns true if the metric has a non-empty name, a valid type, and a value of the expected type.
 //
-// - MetricTypeCounter requires an `int64` value.
-// - MetricTypeGauge requires a `float64` value.
+// Parameters:
+//   - metric: A pointer to the metric to validate.
+//
+// Returns:
+//   - A boolean indicating whether the metric is valid.
 func validateNewMetric(metric *Metric) bool {
 	if metric.Name == "" || metric.Type == "" {
 		return false
@@ -157,75 +205,39 @@ func validateNewMetric(metric *Metric) bool {
 
 	switch metric.Type {
 	case MetricTypeCounter:
-		_, ok := metric.Value.(int64) // Counter metrics must have an int64 value.
+		_, ok := metric.Value.(int64)
 		return ok
 	case MetricTypeGauge:
-		_, ok := metric.Value.(float64) // Gauge metrics must have a float64 value.
+		_, ok := metric.Value.(float64)
 		return ok
 	default:
-		return false // Unsupported metric types are considered invalid.
+		return false
 	}
 }
 
 // updateExistsMetric updates an existing metric in the repository based on its type.
-// For Counter metrics, it increments the stored value by the new value.
-// Returns the updated metric and an error if the operation fails.
+//
+// Parameters:
+//   - metric: A pointer to the metric to update.
+//
+// Returns:
+//   - The updated metric.
+//   - An error if the update operation fails.
 func (mi *MetricsInterface) updateExistsMetric(metric *Metric) (*Metric, error) {
 	if metric.Type == MetricTypeCounter {
 		m, err := mi.repo.Read(&Filter{Name: metric.Name, Type: metric.Type})
 		if err != nil {
-			return nil, fmt.Errorf("error reading existing metric: %w", err)
+			return nil, fmt.Errorf("failed to read the existing metric: %w", err)
 		}
 
-		newValue, _ := metric.Value.(int64)   // New value to add.
-		storedValue, _ := m.Value.(int64)     // Current stored value.
-		metric.Value = storedValue + newValue // Increment the value.
+		newValue, _ := metric.Value.(int64)
+		storedValue, _ := m.Value.(int64)
+		metric.Value = storedValue + newValue
 	}
 
 	err := mi.repo.Update(metric)
 	if err != nil {
-		return nil, fmt.Errorf("error updating metric in repository: %w", err)
+		return nil, fmt.Errorf("failed to update the metric in the repository: %w", err)
 	}
 	return metric, nil
-}
-
-// MetricsRepository defines the methods that any metric repository must implement.
-//
-// The interface provides a contract for operations on metrics, including creation, retrieval,
-// updates, existence checks, and listing all stored metrics.
-type MetricsRepository interface {
-	// Create adds a new metric to the repository.
-	// Returns an error if the operation fails, such as due to duplicate entries or storage issues.
-	Create(metric *Metric) error
-
-	// Read retrieves a metric from the repository based on the provided filter.
-	// If no matching metric is found or if an error occurs during retrieval, it returns an error.
-	Read(filter *Filter) (*Metric, error)
-
-	// Update modifies an existing metric in the repository.
-	// Returns an error if the metric does not exist or if the update operation fails.
-	Update(metric *Metric) error
-
-	// IsExists checks whether a metric exists in the repository based on the provided filter.
-	// Returns a boolean indicating the existence of the metric and an error if the operation fails.
-	IsExists(filter *Filter) (bool, error)
-
-	// All retrieves all metrics stored in the repository.
-	// Returns a slice of metrics and an error if the operation fails.
-	All() ([]*Metric, error)
-}
-
-type RepositoryAbstractFactory interface {
-	// CreateMetricsRepository creates a MetricsRepository instance.
-	CreateMetricsRepository() MetricsRepository
-}
-
-// Filter represents the criteria used to filter metrics in the repository.
-//
-// Fields:
-// - Name: The name of the metric to filter by. If empty, no filtering is applied by name.
-// - Type: The type of the metric to filter by (e.g., "counter" or "gauge"). If empty, no filtering is applied by type.
-type Filter struct {
-	Name string // Name of the metric to filter by.
-	Type string // Type of the metric to filter by.
 }

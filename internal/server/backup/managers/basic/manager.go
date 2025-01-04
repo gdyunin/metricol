@@ -14,10 +14,13 @@ import (
 )
 
 const (
+	// FileDefaultPerm defines default permissions for backup files.
 	FileDefaultPerm = 0o600
-	DirDefaultPerm  = 0o750
+	// DirDefaultPerm defines default permissions for backup directories.
+	DirDefaultPerm = 0o750
 )
 
+// BackupManagerFactory creates instances of BackupManager with specified parameters.
 type BackupManagerFactory struct {
 	path     string
 	filename string
@@ -26,7 +29,18 @@ type BackupManagerFactory struct {
 	repo     entities.MetricsRepository
 }
 
-func NewBackupManagerFactory(path string, filename string, interval time.Duration, restore bool, repo entities.MetricsRepository) *BackupManagerFactory {
+// NewBackupManagerFactory initializes and returns a new BackupManagerFactory.
+//
+// Parameters:
+//   - path: Directory path for backup files.
+//   - filename: Name of the backup file.
+//   - interval: Interval for regular backups.
+//   - restore: Whether restoration from backups is enabled.
+//   - repo: Metrics repository to manage.
+//
+// Returns:
+//   - A pointer to a BackupManagerFactory instance.
+func NewBackupManagerFactory(path, filename string, interval time.Duration, restore bool, repo entities.MetricsRepository) *BackupManagerFactory {
 	return &BackupManagerFactory{
 		path:     path,
 		filename: filename,
@@ -36,10 +50,12 @@ func NewBackupManagerFactory(path string, filename string, interval time.Duratio
 	}
 }
 
+// CreateManager creates and returns a new BackupManager instance.
 func (f *BackupManagerFactory) CreateManager() backup.Manager {
 	return NewBackupManager(f.path, f.filename, f.interval, f.restore, f.repo)
 }
 
+// BackupManager manages backup and restore operations for metrics.
 type BackupManager struct {
 	repo        entities.MetricsRepository
 	ticker      *time.Ticker
@@ -49,13 +65,18 @@ type BackupManager struct {
 	needRestore bool
 }
 
-func NewBackupManager(
-	path string,
-	filename string,
-	interval time.Duration,
-	restore bool,
-	repo entities.MetricsRepository,
-) *BackupManager {
+// NewBackupManager initializes and returns a new BackupManager.
+//
+// Parameters:
+//   - path: Directory path for backup files.
+//   - filename: Name of the backup file.
+//   - interval: Interval for regular backups.
+//   - restore: Whether restoration from backups is enabled.
+//   - repo: Metrics repository to manage.
+//
+// Returns:
+//   - A pointer to a BackupManager instance.
+func NewBackupManager(path, filename string, interval time.Duration, restore bool, repo entities.MetricsRepository) *BackupManager {
 	return &BackupManager{
 		path:        filepath.Join(path, filename),
 		interval:    interval,
@@ -64,6 +85,7 @@ func NewBackupManager(
 	}
 }
 
+// Start begins the backup process. If an interval is set, regular backups occur; otherwise, backups are event-driven.
 func (b *BackupManager) Start() {
 	if b.interval == 0 {
 		b.syncBackup()
@@ -72,14 +94,18 @@ func (b *BackupManager) Start() {
 	}
 }
 
+// Stop halts the backup process and performs a final backup.
 func (b *BackupManager) Stop() {
 	if b.followChan != nil {
 		close(b.followChan)
 	}
-	b.ticker.Stop()
+	if b.ticker != nil {
+		b.ticker.Stop()
+	}
 	b.backup()
 }
 
+// OnNotify triggers an immediate backup in response to an observed event.
 func (b *BackupManager) OnNotify() {
 	if b.followChan == nil {
 		b.followChan = make(chan bool, 1)
@@ -87,6 +113,14 @@ func (b *BackupManager) OnNotify() {
 	b.followChan <- true
 }
 
+// Restore restores metrics from a backup if restoration is enabled.
+func (b *BackupManager) Restore() {
+	if b.needRestore {
+		b.mustRestore()
+	}
+}
+
+// syncBackup manages backups triggered by observed changes.
 func (b *BackupManager) syncBackup() {
 	sbj, ok := b.repo.(patterns.ObserveSubject)
 	if !ok {
@@ -102,6 +136,7 @@ func (b *BackupManager) syncBackup() {
 	}
 }
 
+// regularBackup performs backups at regular intervals.
 func (b *BackupManager) regularBackup() {
 	b.ticker = time.NewTicker(b.interval)
 	defer b.ticker.Stop()
@@ -111,6 +146,7 @@ func (b *BackupManager) regularBackup() {
 	}
 }
 
+// backup saves all metrics to the configured backup file.
 func (b *BackupManager) backup() {
 	metrics, err := b.repo.All()
 	if err != nil {
@@ -135,27 +171,18 @@ func (b *BackupManager) backup() {
 			continue
 		}
 		data = append(data, '\n')
-
 		buf.Write(data)
 	}
 
 	writer := bufio.NewWriter(file)
-	_, err = writer.Write(buf.Bytes())
-	if err != nil {
+	if _, err = writer.Write(buf.Bytes()); err != nil {
 		return
 	}
 
-	if err := writer.Flush(); err != nil {
-		return
-	}
+	_ = writer.Flush()
 }
 
-func (b *BackupManager) Restore() {
-	if b.needRestore {
-		b.mustRestore()
-	}
-}
-
+// mustRestore restores metrics from the backup file.
 func (b *BackupManager) mustRestore() {
 	file, err := os.Open(b.path)
 	if err != nil {
@@ -179,8 +206,6 @@ func (b *BackupManager) mustRestore() {
 			continue
 		}
 
-		if err = b.repo.Update(&metric); err != nil {
-			continue
-		}
+		_ = b.repo.Update(&metric)
 	}
 }
