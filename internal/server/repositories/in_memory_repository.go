@@ -9,7 +9,34 @@ import (
 	"go.uber.org/zap"
 )
 
-// InMemoryRepository is an in-memory implementation of the MetricRepository interface.
+// InMemoryRepositoryFactory implements RepositoryAbstractFactory for InMemoryRepository.
+type InMemoryRepositoryFactory struct {
+	logger *zap.SugaredLogger // Logger for recording factory-related activities.
+}
+
+// NewInMemoryRepositoryFactory creates a new instance of InMemoryRepositoryFactory.
+//
+// Parameters:
+//   - logger: Logger for recording factory-related activities.
+//
+// Returns:
+//   - A pointer to an initialized InMemoryRepositoryFactory instance.
+func NewInMemoryRepositoryFactory(logger *zap.SugaredLogger) *InMemoryRepositoryFactory {
+	return &InMemoryRepositoryFactory{
+		logger: logger,
+	}
+}
+
+// CreateMetricsRepository creates and returns a new InMemoryRepository instance.
+//
+// Returns:
+//   - An implementation of the MetricsRepository interface using in-memory storage.
+func (f *InMemoryRepositoryFactory) CreateMetricsRepository() entities.MetricsRepository {
+	f.logger.Info("Creating a new in-memory metrics repository.")
+	return NewInMemoryRepository(f.logger)
+}
+
+// InMemoryRepository is an in-memory implementation of the MetricsRepository interface.
 // It stores counter and gauge metrics in maps.
 type InMemoryRepository struct {
 	counters  map[string]int64   // Stores counter metrics.

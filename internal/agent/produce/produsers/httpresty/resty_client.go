@@ -65,6 +65,14 @@ type RestyClient struct {
 }
 
 // NewRestyClient creates a new RestyClient instance.
+// Parameters:
+//   - interval: The duration between data producing cycles.
+//   - serverAddress: The server address for connect to.
+//   - repo: Repository to store collected metrics.
+//   - logger: Logger instance for logging activities.
+//
+// Returns:
+//   - A pointer to a RestyClient instance.
 func NewRestyClient(interval time.Duration, serverAddress string, repo entities.MetricsRepository, logger *zap.SugaredLogger) *RestyClient {
 	rc := resty.New()
 

@@ -1,4 +1,4 @@
-package echoserver
+package echohttp
 
 import (
 	"fmt"
@@ -6,15 +6,34 @@ import (
 	"strings"
 
 	"github.com/gdyunin/metricol.git/internal/server/adapters/consumers"
-	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/handle/general"
-	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/handle/update"
-	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/handle/value"
-	mw "github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/middleware"
+	"github.com/gdyunin/metricol.git/internal/server/consume"
+	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echohttp/handle/general"
+	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echohttp/handle/update"
+	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echohttp/handle/value"
+	mw "github.com/gdyunin/metricol.git/internal/server/consume/consumers/echohttp/middleware"
 	"github.com/gdyunin/metricol.git/internal/server/entities"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"go.uber.org/zap"
 )
+
+type EchoServerConsumerFactory struct {
+	addr   string
+	repo   entities.MetricsRepository
+	logger *zap.SugaredLogger
+}
+
+func NewEchoServerConsumerFactory(addr string, repo entities.MetricsRepository, logger *zap.SugaredLogger) *EchoServerConsumerFactory {
+	return &EchoServerConsumerFactory{
+		addr:   addr,
+		repo:   repo,
+		logger: logger,
+	}
+}
+
+func (f *EchoServerConsumerFactory) CreateConsumer() consume.Consumer {
+	return NewEchoServer(f.addr, f.repo, f.logger)
+}
 
 var compressedContentTypes = [2]string{
 	"application/json",
@@ -28,7 +47,7 @@ type EchoServer struct {
 	serverAddress string
 }
 
-func NewEchoServer(addr string, repo entities.MetricRepository, logger *zap.SugaredLogger) *EchoServer {
+func NewEchoServer(addr string, repo entities.MetricsRepository, logger *zap.SugaredLogger) *EchoServer {
 	s := EchoServer{
 		server:        echo.New(),
 		adp:           consumers.NewEchoAdapter(repo),

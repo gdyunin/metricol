@@ -13,9 +13,9 @@ import (
 // OrchestratorFactory is responsible for creating Orchestrator instances.
 // It encapsulates the collector, producer, and logger required to initialize an orchestrator.
 type OrchestratorFactory struct {
-	collector collect.Collector
-	producer  produce.Producer
-	logger    *zap.SugaredLogger
+	collector collect.Collector  // Component responsible for collecting data.
+	producer  produce.Producer   // Component responsible for producing data.
+	logger    *zap.SugaredLogger // Logger for capturing runtime information and errors.
 }
 
 // NewOrchestratorFactory creates a new instance of OrchestratorFactory.

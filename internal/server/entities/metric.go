@@ -70,12 +70,12 @@ var (
 
 // MetricsInterface provides methods to manage metrics in a repository.
 type MetricsInterface struct {
-	repo MetricRepository // The repository used for storing and managing metrics.
+	repo MetricsRepository // The repository used for storing and managing metrics.
 }
 
 // NewMetricsInterface creates a new instance of `MetricsInterface` with the given repository.
 // Returns a pointer to the newly created `MetricsInterface`.
-func NewMetricsInterface(repo MetricRepository) *MetricsInterface {
+func NewMetricsInterface(repo MetricsRepository) *MetricsInterface {
 	return &MetricsInterface{repo: repo}
 }
 
@@ -189,11 +189,11 @@ func (mi *MetricsInterface) updateExistsMetric(metric *Metric) (*Metric, error) 
 	return metric, nil
 }
 
-// MetricRepository defines the methods that any metric repository must implement.
+// MetricsRepository defines the methods that any metric repository must implement.
 //
 // The interface provides a contract for operations on metrics, including creation, retrieval,
 // updates, existence checks, and listing all stored metrics.
-type MetricRepository interface {
+type MetricsRepository interface {
 	// Create adds a new metric to the repository.
 	// Returns an error if the operation fails, such as due to duplicate entries or storage issues.
 	Create(metric *Metric) error
@@ -213,6 +213,11 @@ type MetricRepository interface {
 	// All retrieves all metrics stored in the repository.
 	// Returns a slice of metrics and an error if the operation fails.
 	All() ([]*Metric, error)
+}
+
+type RepositoryAbstractFactory interface {
+	// CreateMetricsRepository creates a MetricsRepository instance.
+	CreateMetricsRepository() MetricsRepository
 }
 
 // Filter represents the criteria used to filter metrics in the repository.

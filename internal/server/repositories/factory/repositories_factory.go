@@ -3,8 +3,8 @@ package factory
 import (
 	"fmt"
 
-	"github.com/gdyunin/metricol.git/internal/agent/entities"
-	"github.com/gdyunin/metricol.git/internal/agent/repositories"
+	"github.com/gdyunin/metricol.git/internal/server/entities"
+	"github.com/gdyunin/metricol.git/internal/server/repositories"
 	"go.uber.org/zap"
 )
 

@@ -3,7 +3,7 @@ package consumers
 import (
 	"fmt"
 
-	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/model"
+	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echohttp/model"
 	"github.com/gdyunin/metricol.git/internal/server/entities"
 )
 
@@ -14,7 +14,7 @@ type EchoAdapter struct {
 }
 
 // NewEchoAdapter creates and returns a new EchoAdapter instance using the provided repository.
-func NewEchoAdapter(repository entities.MetricRepository) *EchoAdapter {
+func NewEchoAdapter(repository entities.MetricsRepository) *EchoAdapter {
 	ea := &EchoAdapter{mi: entities.NewMetricsInterface(repository)}
 	return ea
 }

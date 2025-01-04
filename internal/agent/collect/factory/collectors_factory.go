@@ -28,10 +28,8 @@ const (
 func AbstractCollectorFactory(collectorType string, interval time.Duration, repo entities.MetricsRepository, logger *zap.SugaredLogger) (collect.CollectorAbstractFactory, error) {
 	switch collectorType {
 	case CollectorTypeMemStats:
-		// Create and return a memory statistics collector factory.
 		return memstat.NewMemStatsCollectorFactory(interval, repo, logger), nil
 	default:
-		// Return an error for unsupported collector types.
 		return nil, fmt.Errorf("unsupported collector type: '%s', please provide a valid collector type", collectorType)
 	}
 }

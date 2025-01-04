@@ -25,9 +25,9 @@ const (
 
 // MemStatsCollectorFactory is responsible for creating MemStatsCollector instances.
 type MemStatsCollectorFactory struct {
-	interval time.Duration
-	repo     entities.MetricsRepository
-	logger   *zap.SugaredLogger
+	interval time.Duration              // Interval between data collection cycles.
+	repo     entities.MetricsRepository // Instance of entities.MetricsRepository for storing metrics.
+	logger   *zap.SugaredLogger         // Logger for recording process information.
 }
 
 // MemStatsCollector collects memory statistics periodically and stores them as metrics.
@@ -137,10 +137,9 @@ func (c *MemStatsCollector) update() {
 func (c *MemStatsCollector) store() {
 	c.log.Info("Storing collected metrics.")
 
-	metrics := c.metrics() // Generate the list of metrics to store.
+	metrics := c.metrics()
 	for _, m := range metrics {
 		if !c.interrupter.InLimit() {
-			// Abort storage if error limits are exceeded.
 			c.log.Error("Aborting metrics storage due to exceeding interrupter error limits.")
 			return
 		}
@@ -155,12 +154,11 @@ func (c *MemStatsCollector) store() {
 	c.log.Info("Metrics stored.")
 }
 
-// metrics generates a list of memory-related metrics to be stored in the repository.
+// metrics generates a list of metrics to be stored in the repository.
 func (c *MemStatsCollector) metrics() []*model.Metric {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	// Construct and return a slice of Metric objects based on memory statistics.
 	return []*model.Metric{
 		{Name: "Alloc", Type: entities.MetricTypeGauge, Value: float64(c.ms.Alloc)},
 		{Name: "BuckHashSys", Type: entities.MetricTypeGauge, Value: float64(c.ms.BuckHashSys)},

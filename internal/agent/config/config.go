@@ -8,24 +8,22 @@ import (
 	"go.uber.org/zap"
 )
 
-// All basic settings.
+// All default settings.
 const (
 	defaultServerAddress  = "localhost:8080"
 	defaultPollInterval   = 2
 	defaultReportInterval = 10
 )
 
-// Config holds the configuration, including server address,
-// polling interval, and reporting interval.
 type Config struct {
 	ServerAddress  string `env:"ADDRESS"`         // Address of the server to connect to
 	PollInterval   int    `env:"POLL_INTERVAL"`   // Interval for polling metrics
 	ReportInterval int    `env:"REPORT_INTERVAL"` // Interval for reporting metrics
 }
 
-// ParseConfig initializes the Config with basic values,
-// overrides them with environment variables if available,
-// and finally allows command-line flags to set or override the configuration.
+// ParseConfig initializes the Config with default values,
+// overrides them with command-line flags if available,
+// and finally allows environment variables to set or override the configuration.
 // It returns an error if environment variable parsing fails.
 func ParseConfig(logger *zap.SugaredLogger) (*Config, error) {
 	// Default settings for the orchestrate configuration.
@@ -35,7 +33,7 @@ func ParseConfig(logger *zap.SugaredLogger) (*Config, error) {
 		ReportInterval: defaultReportInterval,
 	}
 
-	// Parse command-line arguments or set basic settings if no args are provided.
+	// Parse command-line arguments or set default settings if no args are provided.
 	parseFlagsOrSetDefault(&cfg)
 
 	// Attempt to parse values from environment variables; if unsuccessful, return the error.
@@ -48,7 +46,7 @@ func ParseConfig(logger *zap.SugaredLogger) (*Config, error) {
 }
 
 // parseFlagsOrSetDefault attempts to populate the Config from command-line flags.
-// If no flags are provided, it retains the basic values set in the configuration.
+// If no flags are provided, it retains the default values set in the configuration.
 func parseFlagsOrSetDefault(cfg *Config) {
 	flag.IntVar(&cfg.PollInterval, "p", cfg.PollInterval, "Interval (in seconds) for collecting metrics")
 	flag.IntVar(&cfg.ReportInterval, "r", cfg.ReportInterval, "Interval (in seconds) for sending metrics")

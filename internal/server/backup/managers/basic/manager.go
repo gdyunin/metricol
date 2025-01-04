@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gdyunin/metricol.git/internal/common/patterns"
+	"github.com/gdyunin/metricol.git/internal/server/backup"
 	"github.com/gdyunin/metricol.git/internal/server/entities"
 )
 
@@ -17,8 +18,30 @@ const (
 	DirDefaultPerm  = 0o750
 )
 
+type BackupManagerFactory struct {
+	path     string
+	filename string
+	interval time.Duration
+	restore  bool
+	repo     entities.MetricsRepository
+}
+
+func NewBackupManagerFactory(path string, filename string, interval time.Duration, restore bool, repo entities.MetricsRepository) *BackupManagerFactory {
+	return &BackupManagerFactory{
+		path:     path,
+		filename: filename,
+		interval: interval,
+		restore:  restore,
+		repo:     repo,
+	}
+}
+
+func (f *BackupManagerFactory) CreateManager() backup.Manager {
+	return NewBackupManager(f.path, f.filename, f.interval, f.restore, f.repo)
+}
+
 type BackupManager struct {
-	repo        entities.MetricRepository
+	repo        entities.MetricsRepository
 	ticker      *time.Ticker
 	followChan  chan bool
 	path        string
@@ -31,7 +54,7 @@ func NewBackupManager(
 	filename string,
 	interval time.Duration,
 	restore bool,
-	repo entities.MetricRepository,
+	repo entities.MetricsRepository,
 ) *BackupManager {
 	return &BackupManager{
 		path:        filepath.Join(path, filename),

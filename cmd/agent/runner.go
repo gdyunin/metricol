@@ -28,7 +28,6 @@ const (
 )
 
 // run initializes the orchestrator and starts all its components.
-// It takes the logging level as input and returns an error if any step fails.
 func run(logLevel string) (err error) {
 	orchestrator, err := makeOrchestrator(logLevel)
 	if err != nil {
@@ -46,7 +45,6 @@ func run(logLevel string) (err error) {
 }
 
 // makeOrchestrator initializes and returns an orchestrator configured with the required components.
-// It takes the logging level as input and returns the orchestrator or an error if any component fails to initialize.
 func makeOrchestrator(logLevel string) (orchestrate.Orchestrator, error) {
 	// Initialize the base logger.
 	baseLogger, err := logger.Logger(logLevel)

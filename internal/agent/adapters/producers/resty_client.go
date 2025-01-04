@@ -70,7 +70,7 @@ func (r *RestyClientAdapter) em2m(em *entities.Metric) *model.Metric {
 			m.Delta = &v // Set Delta field for counter metrics.
 		} else {
 			// Log an error if the value type is incorrect.
-			r.logger.Errorf(
+			r.logger.Warnf(
 				"metric convert skipped: failed to cast value of counter metric '%s':"+
 					" expected int64 but got %T", em.Name, em.Value,
 			)
@@ -81,13 +81,13 @@ func (r *RestyClientAdapter) em2m(em *entities.Metric) *model.Metric {
 			m.Value = &v // Set Value field for gauge metrics.
 		} else {
 			// Log an error if the value type is incorrect.
-			r.logger.Errorf("metric convert skipped: failed to cast value of gauge metric '%s':"+
+			r.logger.Warnf("metric convert skipped: failed to cast value of gauge metric '%s':"+
 				" expected float64 but got %T", em.Name, em.Value,
 			)
 		}
 	default:
 		// Log a warning for unknown metric types.
-		r.logger.Errorf("metric convert skipped: unknown metric type for metric '%s': %s", em.Name, em.Type)
+		r.logger.Warnf("metric convert skipped: unknown metric type for metric '%s': %s", em.Name, em.Type)
 	}
 
 	return m // Return the converted metric.

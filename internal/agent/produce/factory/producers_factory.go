@@ -14,7 +14,7 @@ import (
 
 const (
 	// ProducerTypeRestyClient represents the type identifier for a producer that uses the Resty HTTP client.
-	ProducerTypeRestyClient = "resty client"
+	ProducerTypeRestyClient = "resty http client"
 )
 
 // AbstractProducerFactory creates an abstract producer factory based on the specified producer type.
@@ -31,10 +31,8 @@ const (
 func AbstractProducerFactory(producerType string, interval time.Duration, serverAddress string, repo entities.MetricsRepository, logger *zap.SugaredLogger) (produce.ProducerAbstractFactory, error) {
 	switch producerType {
 	case ProducerTypeRestyClient:
-		// Create and return a RestyClientProducerFactory for the specified configuration.
 		return httpresty.NewRestyClientProducerFactory(interval, serverAddress, repo, logger), nil
 	default:
-		// Return an error for unsupported producer types.
 		return nil, fmt.Errorf("unsupported producer type: '%s', please provide a valid producer type", producerType)
 	}
 }

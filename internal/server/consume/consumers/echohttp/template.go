@@ -1,4 +1,4 @@
-package echoserver
+package echohttp
 
 import (
 	"fmt"

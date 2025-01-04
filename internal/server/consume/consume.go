@@ -7,3 +7,7 @@ type Consumer interface {
 	// It returns an error if the consumption process fails to start or encounters an issue.
 	StartConsume() error
 }
+
+type ConsumerAbstractFactory interface {
+	CreateConsumer() Consumer
+}

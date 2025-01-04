@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/model"
+	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echohttp/model"
 	"github.com/gdyunin/metricol.git/internal/server/entities"
 	"github.com/labstack/echo/v4"
 )

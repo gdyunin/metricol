@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gdyunin/metricol.git/internal/server/adapters/consumers"
-	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver/parse"
+	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echohttp/parse"
 	"github.com/gdyunin/metricol.git/internal/server/entities"
 	"github.com/labstack/echo/v4"
 )
