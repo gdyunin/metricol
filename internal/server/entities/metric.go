@@ -1,8 +1,11 @@
 package entities
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+
+	"github.com/gdyunin/metricol.git/internal/common/utils"
 )
 
 const (
@@ -37,24 +40,27 @@ type Metric struct {
 	Type  string `json:"type"`  // The type of the metric (e.g., "counter" or "gauge").
 }
 
-// AfterJSONUnmarshalling processes the metric after unmarshalling from JSON.
-// Ensures the Value field matches the expected type based on the metric type.
-//
-// Returns:
-//   - An error if the metric's value does not match its type.
-func (m *Metric) AfterJSONUnmarshalling() error {
-	if m.Type == MetricTypeCounter {
-		switch v := m.Value.(type) {
-		case int64:
-			m.Value = v
-		case int:
-			m.Value = int64(v)
-		case float64:
-			m.Value = int64(v)
-		default:
-			return errors.New("invalid value type for counter metric")
-		}
+func (m *Metric) UnmarshalJSON(data []byte) error {
+	type MetricAlias Metric
+
+	aux := &struct {
+		*MetricAlias
+	}{
+		MetricAlias: (*MetricAlias)(m),
 	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return fmt.Errorf("failed while unmarshalling metric: %w", err)
+	}
+
+	if m.Type == MetricTypeCounter {
+		v, err := utils.AnyToInt64(m.Value)
+		if err != nil {
+			return fmt.Errorf("invalid type for value in counter metric: expected number, got %T", m.Value)
+		}
+		m.Value = v
+	}
+
 	return nil
 }
 

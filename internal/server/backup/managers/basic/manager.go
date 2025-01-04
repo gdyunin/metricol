@@ -202,10 +202,6 @@ func (b *BackupManager) mustRestore() {
 			continue
 		}
 
-		if err := metric.AfterJSONUnmarshalling(); err != nil {
-			continue
-		}
-
 		_ = b.repo.Update(&metric)
 	}
 }
