@@ -2,69 +2,113 @@ package main
 
 import (
 	"fmt"
-	"time"
 
-	"github.com/gdyunin/metricol.git/internal/agent/agent"
-	"github.com/gdyunin/metricol.git/internal/agent/collect/collectors/mscollector"
+	collectorFact "github.com/gdyunin/metricol.git/internal/agent/collect/factory"
 	"github.com/gdyunin/metricol.git/internal/agent/config"
-	"github.com/gdyunin/metricol.git/internal/agent/produce/produsers/rstclient"
-	"github.com/gdyunin/metricol.git/pkg/agent/repositories"
+	"github.com/gdyunin/metricol.git/internal/agent/orchestrate"
+	orchestratorFact "github.com/gdyunin/metricol.git/internal/agent/orchestrate/factory"
+	producerFact "github.com/gdyunin/metricol.git/internal/agent/produce/factory"
+	repositoryFact "github.com/gdyunin/metricol.git/internal/agent/repositories/factory"
+	"github.com/gdyunin/metricol.git/internal/common/patterns"
+	"github.com/gdyunin/metricol.git/internal/common/utils"
 	"github.com/gdyunin/metricol.git/pkg/logger"
 )
 
-// run initializes and executes the application logic. It configures the logger, parses the configuration,
-// sets up necessary components, and starts the application.
-func run() error {
-	// Initialize the logger with INFO level.
-	baseLogger, err := logger.Logger(logger.LevelINFO)
+const (
+	// LoggerNameConfigParser is the logger name used for configuration parsing.
+	LoggerNameConfigParser = "config_parser"
+	// LoggerNameRepository is the logger name used for repository operations.
+	LoggerNameRepository = "repository"
+	// LoggerNameCollector is the logger name used for metric collection.
+	LoggerNameCollector = "collector"
+	// LoggerNameProducer is the logger name used for producer operations.
+	LoggerNameProducer = "producer"
+	// LoggerNameOrchestrator is the logger name used for the orchestrator.
+	LoggerNameOrchestrator = "orchestrator"
+)
+
+// run initializes the orchestrator and starts all its components.
+func run(logLevel string) (err error) {
+	orchestrator, err := makeOrchestrator(logLevel)
 	if err != nil {
-		// Return an error if the logger initialization fails.
-		return fmt.Errorf("failed to initialize logger: %w", err)
+		err = fmt.Errorf("error occurred during orchestrator initialization: %w", err)
+		return
 	}
 
-	// Parse the application configuration from environment variables or defaults.
-	appCfg, err := config.ParseConfig()
+	err = orchestrator.StartAll()
 	if err != nil {
-		// Return an error if the configuration parsing fails.
-		return fmt.Errorf("failed to parse config: %w", err)
+		err = fmt.Errorf("error occurred while starting or running the orchestrator: %w", err)
+		return
 	}
 
-	// Create an in-memory repository for storing metrics.
-	repo := repositories.NewInMemoryRepository()
+	return
+}
 
-	// Initialize a memory statistics collector with the configured polling interval.
-	collector := mscollector.NewMemStatsCollector(
-		time.Duration(appCfg.PollInterval)*time.Second, // Convert poll interval to time.Duration.
-		repo,                          // Repository to store collected metrics.
-		baseLogger.Named("collector"), // Logger with a named scope for the collector.
-	)
+// makeOrchestrator initializes and returns an orchestrator configured with the required components.
+func makeOrchestrator(logLevel string) (orchestrate.Orchestrator, error) {
+	// Initialize the base logger.
+	baseLogger, err := logger.Logger(logLevel)
+	if err != nil {
+		return nil, fmt.Errorf("error occurred while initializing the logger: %w", err)
+	}
 
-	// Initialize a REST client producer to send metrics to the server at the configured report interval.
-	producer := rstclient.NewRestyClient(
-		time.Duration(appCfg.ReportInterval)*time.Second, // Convert report interval to time.Duration.
-		appCfg.ServerAddress,         // Server address for the REST client.
-		repo,                         // Repository to fetch metrics for sending.
-		baseLogger.Named("producer"), // Logger with a named scope for the producer.
-	)
+	// Parse the application configuration.
+	appCfg, err := config.ParseConfig(baseLogger.Named(LoggerNameConfigParser))
+	if err != nil {
+		return nil, fmt.Errorf("error occurred while parsing the application configuration: %w", err)
+	}
 
-	// Create a new agent to manage the collector and producer.
-	app, err := agent.NewAgent(
-		collector,                            // The metrics collector component.
-		producer,                             // The metrics producer component.
-		baseLogger.Named("agent"),            // Logger with a named scope for the agent.
-		agent.WithSubscribeConsumer2Producer, // Additional configuration option for the agent.
+	// Initialize the repository factory and create the metrics repository.
+	repositoryFactory, err := repositoryFact.AbstractRepositoriesFactory(
+		repositoryFact.RepoTypeInMemory,
+		baseLogger.Named(LoggerNameRepository),
 	)
 	if err != nil {
-		// Return an error if the agent initialization fails.
-		return fmt.Errorf("failed to initialize agent: %w", err)
+		return nil, fmt.Errorf("error occurred while initializing the repository: %w", err)
+	}
+	repository := repositoryFactory.CreateMetricsRepository()
+
+	// Initialize the collector factory and create the collector.
+	collectorFactory, err := collectorFact.AbstractCollectorFactory(
+		collectorFact.CollectorTypeMemStats,
+		utils.IntegerToSeconds(appCfg.PollInterval),
+		repository,
+		baseLogger.Named(LoggerNameCollector),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error occurred while initializing the collector: %w", err)
+	}
+	collector := collectorFactory.CreateCollector()
+
+	// Initialize the producer factory and create the producer.
+	producerFactory, err := producerFact.AbstractProducerFactory(
+		producerFact.ProducerTypeRestyClient,
+		utils.IntegerToSeconds(appCfg.ReportInterval),
+		appCfg.ServerAddress,
+		repository,
+		baseLogger.Named(LoggerNameProducer),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error occurred while initializing the producer: %w", err)
+	}
+	producer := producerFactory.CreateProducer()
+
+	// Link the collector to the producer using the observer pattern.
+	err = patterns.Subscribe(collector, producer)
+	if err != nil {
+		return nil, fmt.Errorf("error occurred while linking the collector to the producer: %w", err)
 	}
 
-	// Start the agent, which begins collecting and producing metrics.
-	if err = app.Start(); err != nil {
-		// Return an error if the agent fails to start.
-		return fmt.Errorf("failed to start agent: %w", err)
+	// Initialize the orchestrator factory and create the orchestrator.
+	orchestratorFactory, err := orchestratorFact.AbstractOrchestratorsFactory(
+		orchestratorFact.OrchestratorTypeBasic,
+		collector,
+		producer,
+		baseLogger.Named(LoggerNameOrchestrator),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error occurred while initializing the orchestrator: %w", err)
 	}
 
-	// Return nil to indicate successful execution.
-	return nil
+	return orchestratorFactory.CreateOrchestrator(), nil
 }

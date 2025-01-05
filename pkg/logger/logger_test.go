@@ -15,8 +15,8 @@ func TestLogger(t *testing.T) {
 	tests := []struct {
 		name          string
 		logLevel      string
-		expectError   bool
 		errorContains string
+		expectError   bool
 	}{
 		{
 			name:        "Valid log level INFO",

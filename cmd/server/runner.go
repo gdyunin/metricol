@@ -2,89 +2,129 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
-	"github.com/gdyunin/metricol.git/internal/server/backup/backupers/basebackup"
+	"github.com/gdyunin/metricol.git/internal/common/helpers"
+	"github.com/gdyunin/metricol.git/internal/common/utils"
+	"github.com/gdyunin/metricol.git/internal/server/backup"
+	backupManagerFact "github.com/gdyunin/metricol.git/internal/server/backup/factory"
 	"github.com/gdyunin/metricol.git/internal/server/config"
-	"github.com/gdyunin/metricol.git/internal/server/consume/consumers/echoserver"
+	"github.com/gdyunin/metricol.git/internal/server/consume"
+	consumerFact "github.com/gdyunin/metricol.git/internal/server/consume/factory"
+	"github.com/gdyunin/metricol.git/internal/server/entities"
+	repositoryFact "github.com/gdyunin/metricol.git/internal/server/repositories/factory"
 	"github.com/gdyunin/metricol.git/pkg/logger"
-	"github.com/gdyunin/metricol.git/pkg/server/repositories"
+	"go.uber.org/zap"
 )
 
-// stopper is a function type used for managing cleanup tasks during shutdown.
-type stopper func()
+const (
+	// LoggerNameConfigParser is the logger name used for configuration parsing.
+	LoggerNameConfigParser = "config_parser"
+	// LoggerNameRepository is the logger name used for repository operations.
+	LoggerNameRepository = "repository"
+	// LoggerNameConsumer is the logger name used for consumer operations.
+	LoggerNameConsumer = "consumer"
+)
 
-// shutdown holds a collection of cleanup functions to execute during a graceful shutdown.
-type shutdown struct {
-	fn []stopper // Slice of cleanup functions.
+// Components aggregates all application components for streamlined initialization and management.
+type Components struct {
+	baseLogger      *zap.SugaredLogger
+	repository      entities.MetricsRepository
+	consumer        consume.Consumer
+	backupManager   backup.Manager
+	shutdownManager *helpers.ShutdownManager
 }
 
-// executeAll runs all registered cleanup functions in the order they were added.
-func (s *shutdown) executeAll() {
-	for _, f := range s.fn {
-		f() // Execute each cleanup function.
-	}
-}
-
-// run initializes and starts the application, handling all core components and logic.
-func run() error {
-	// Initialize the logger with INFO level logging.
-	baseInfoLogger, err := logger.Logger(logger.LevelINFO)
+// run initializes the application components and starts the main application loop.
+//
+// Parameters:
+//   - logLevel: Logging level for the application.
+//
+// Returns:
+//   - An error if the application fails to initialize or run.
+func run(logLevel string) (err error) {
+	appComponents, err := prepareComponents(logLevel)
 	if err != nil {
-		return fmt.Errorf("failed to initialize logger: %w", err)
+		return fmt.Errorf("error occurred while initializing application components: %w", err)
 	}
 
-	// Parse the application configuration from environment variables or defaults.
-	appCfg, err := config.ParseConfig()
+	// Restore metrics from backup if configured.
+	appComponents.backupManager.Restore()
+
+	// Start periodic backups in a separate goroutine.
+	go appComponents.backupManager.Start()
+
+	// Ensure the backup manager stops gracefully on application shutdown.
+	appComponents.shutdownManager.Add(appComponents.backupManager.Stop)
+	helpers.SetupGracefulShutdown(appComponents.shutdownManager)
+
+	// Start the consumer to handle incoming metrics.
+	err = appComponents.consumer.StartConsume()
 	if err != nil {
-		return fmt.Errorf("failed to parse config: %w", err)
-	}
-
-	// Create an in-memory repository for storing server data.
-	repo := repositories.NewInMemoryRepository()
-
-	// Initialize the EchoServer consumer with the server address and repository.
-	consumer := echoserver.NewEchoServer(appCfg.ServerAddress, repo, baseInfoLogger)
-
-	// Set up the backup system to save server data to a file.
-	backupper := basebackup.NewBaseBackupper(
-		appCfg.FileStoragePath, // Path to the backup file.
-		"backup.txt",           // Backup file name.
-		time.Duration(appCfg.StoreInterval)*time.Second, // Interval for saving backups.
-		appCfg.Restore, // Whether to restore data on startup.
-		repo,           // Repository to backup and restore.
-	)
-
-	// Restore data from the backup file, if enabled in the configuration.
-	backupper.Restore()
-
-	// Start the backup process in a separate goroutine.
-	go backupper.StartBackup()
-
-	// Set up graceful shutdown to ensure cleanup on termination.
-	setupGracefulShutdown(&shutdown{fn: []stopper{
-		backupper.StopBackup, // Add the StopBackup function to the shutdown tasks.
-	}})
-
-	// Start the consumer to process incoming data.
-	if err = consumer.StartConsume(); err != nil {
-		return fmt.Errorf("failed to start the consumption process: %w", err)
+		return fmt.Errorf("failed to start or run the consumer: %w", err)
 	}
 
 	return nil
 }
 
-// setupGracefulShutdown configures signal handling for graceful application termination.
-func setupGracefulShutdown(s *shutdown) {
-	stopChan := make(chan os.Signal, 1)                    // Create a channel to receive OS signals.
-	signal.Notify(stopChan, os.Interrupt, syscall.SIGTERM) // Subscribe to interrupt and terminate signals.
+// prepareComponents initializes all required application components.
+//
+// Parameters:
+//   - logLevel: Logging level for the application.
+//
+// Returns:
+//   - A pointer to a Components struct containing all initialized components.
+//   - An error if any component fails to initialize.
+func prepareComponents(logLevel string) (*Components, error) {
+	baseLogger, err := logger.Logger(logLevel)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize the logger: %w", err)
+	}
 
-	go func() {
-		<-stopChan     // Wait for a termination signal.
-		s.executeAll() // Execute all registered cleanup tasks.
-		os.Exit(0)     // Exit the application with a success code.
-	}()
+	appCfg, err := config.ParseConfig(baseLogger.Named(LoggerNameConfigParser))
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse application configuration: %w", err)
+	}
+
+	repositoryFactory, err := repositoryFact.AbstractRepositoriesFactory(
+		repositoryFact.RepoTypeInMemory,
+		baseLogger.Named(LoggerNameRepository),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize the repository: %w", err)
+	}
+	repository := repositoryFactory.CreateMetricsRepository()
+
+	consumerFactory, err := consumerFact.AbstractConsumerFactory(
+		consumerFact.ConsumerTypeEchoServer,
+		appCfg.ServerAddress,
+		repository,
+		baseLogger.Named(LoggerNameConsumer),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize the consumer: %w", err)
+	}
+	consumer := consumerFactory.CreateConsumer()
+
+	backupManagerFactory, err := backupManagerFact.AbstractManagerFactory(
+		backupManagerFact.ManagerTypeBasic,
+		appCfg.FileStoragePath,
+		"backup.txt",
+		utils.IntegerToSeconds(appCfg.StoreInterval),
+		appCfg.Restore,
+		repository,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize the backup manager: %w", err)
+	}
+	backupManager := backupManagerFactory.CreateManager()
+
+	shutdownManager := helpers.NewShutdownManager()
+
+	return &Components{
+		baseLogger:      baseLogger,
+		repository:      repository,
+		consumer:        consumer,
+		backupManager:   backupManager,
+		shutdownManager: shutdownManager,
+	}, nil
 }
