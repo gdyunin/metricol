@@ -14,6 +14,7 @@ import (
 func Ping() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// Respond with HTTP 200 status and "pong".
+		// TODO: Add db healthcheck.
 		return c.String(http.StatusOK, "pong")
 	}
 }
