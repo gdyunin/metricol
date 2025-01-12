@@ -71,7 +71,7 @@ func (s *EchoServer) setupGeneralMiddlewares() {
 	s.echo.Use(
 		custMiddleware.Log(s.logger.Named("request")),
 		echoMiddleware.Decompress(),
-		custMiddleware.Compress(),
+		echoMiddleware.Gzip(),
 	)
 }
 
