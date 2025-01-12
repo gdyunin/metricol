@@ -1,129 +1,146 @@
 package agent
 
 import (
-	"errors"
-	"fmt"
-	"sync"
-
-	"github.com/gdyunin/metricol.git/internal/agent/collect"
-	"github.com/gdyunin/metricol.git/internal/agent/produce"
-	"github.com/gdyunin/metricol.git/internal/common"
+	"NewNewMetricol/internal/agent/internal/entity"
+	"context"
+	"time"
 
 	"go.uber.org/zap"
 )
 
-// Agent is the main struct responsible for managing data collection and production.
-// It coordinates the Collector and Producer and ensures proper execution flow.
-type Agent struct {
-	collector collect.Collector  // Component responsible for collecting data.
-	producer  produce.Producer   // Component responsible for producing data.
-	log       *zap.SugaredLogger // Logger for capturing runtime information and errors.
+// Collector defines the interface for collecting and exporting metrics.
+type Collector interface {
+	// Collect gathers metrics from the system or application.
+	Collect()
+	// Export returns a slice of collected metrics.
+	Export() (*entity.Metrics, chan bool)
 }
 
-// NewAgent initializes a new Agent instance with the provided Collector, Producer, and logger.
-// Optionally, it applies additional configurations through functional options.
+// Sender defines the interface for sending metrics to a remote server.
+type Sender interface {
+	// SendSingle sends a single metric to a remote server.
+	// Parameters:
+	//   - ctx: The context for managing timeout and cancellation.
+	//   - *entity.Metric: The metric to be sent.
+	// Returns:
+	//   - error: An error if the operation fails, or nil if successful.
+	SendSingle(context.Context, *entity.Metric) error
+	SendBatch(context.Context, *entity.Metrics) error
+}
+
+// Agent is responsible for collecting and sending metrics at specified intervals.
+type Agent struct {
+	collector      Collector     // Component for collecting metrics.
+	sender         Sender        // Component for sending metrics.
+	pollInterval   time.Duration // Interval between metric collection.
+	reportInterval time.Duration // Interval between sending metrics to the server.
+	logger         *zap.SugaredLogger
+}
+
+// NewAgent creates and initializes a new Agent.
 //
 // Parameters:
 //   - collector: An implementation of the Collector interface.
-//   - producer: An implementation of the Producer interface.
-//   - logger: An instance of zap.SugaredLogger for logging purposes.
-//   - options: Optional functional configurations for the Agent.
+//   - sender: An implementation of the Sender interface.
+//   - pollInterval: Duration between metric collection cycles.
+//   - reportInterval: Duration between metric reporting cycles.
 //
 // Returns:
-//   - A pointer to the initialized Agent instance.
-//   - An error if applying any of the options fails.
-func NewAgent(
-	collector collect.Collector,
-	producer produce.Producer,
-	logger *zap.SugaredLogger,
-	options ...func(*Agent) error,
-) (a *Agent, err error) {
-	// Initialize the Agent with provided components.
-	a = &Agent{
-		collector: collector,
-		producer:  producer,
-		log:       logger,
+//   - *Agent: A pointer to the initialized Agent.
+func NewAgent(collector Collector, sender Sender, pollInterval time.Duration, reportInterval time.Duration, logger *zap.SugaredLogger) *Agent {
+	logger.Infof("Init agent with poll_interval=%d and report_interval=%d", pollInterval, reportInterval)
+	return &Agent{
+		collector:      collector,
+		sender:         sender,
+		pollInterval:   pollInterval,
+		reportInterval: reportInterval,
+		logger:         logger,
 	}
-
-	// Apply each provided functional option to configure the Agent.
-	for _, o := range options {
-		if err = o(a); err != nil {
-			return nil, fmt.Errorf("failed to apply option function of type %T: %w", o, err)
-		}
-	}
-	return
 }
 
-// Start begins the data collection and production processes in parallel.
-// If either process encounters an error, it stops the agent and returns the error.
+// Start runs the Agent, collecting and sending metrics at configured intervals.
 //
-// Returns:
-//   - An error indicating which executor (collector or producer) stopped the agent.
-func (a *Agent) Start() error {
-	var workGroup sync.WaitGroup
-	workGroup.Add(1) // If one of the task (producer or consumer) was done, the apllication will be stopped.
-
-	var interruptedExecutor string // Tracks which executor caused an interruption.
-	var err error                  // Holds the error encountered by an executor.
-
-	// Start the data collection process.
-	go func() {
-		defer func() {
-			interruptedExecutor = "collector" // Mark the collector as the interrupted executor if it fails.
-			workGroup.Done()                  // Signal the WaitGroup that this task is complete.
-		}()
-
-		if collectorErr := a.collector.StartCollect(); collectorErr != nil {
-			err = collectorErr // Capture the error encountered by the collector.
-		}
-	}()
-
-	// Start the data production process.
-	go func() {
-		defer func() {
-			interruptedExecutor = "producer" // Mark the producer as the interrupted executor if it fails.
-			workGroup.Done()                 // Signal the WaitGroup that this task is complete.
-		}()
-
-		if producerErr := a.producer.StartProduce(); producerErr != nil {
-			err = producerErr // Capture the error encountered by the producer.
-		}
-	}()
-
-	workGroup.Wait()
-
-	// Return an error if either executor failed.
-	if err != nil {
-		return fmt.Errorf("agent was stopped: %s process encountered an error: %w", interruptedExecutor, err)
-	}
-	return nil
-}
-
-// WithSubscribeConsumer2Producer subscribes the Collector to the Producer's events.
-// It ensures the Collector implements the Observer interface and the Producer implements the ObserveSubject interface.
+// This method blocks indefinitely, so if non-blocking behavior is required,
+// it should be executed in a separate goroutine.
+//
+// Metrics collection is performed every `pollInterval`, and metrics are sent
+// to the server every `reportInterval`. The operation can be stopped by canceling
+// the provided context.
 //
 // Parameters:
-//   - agent: A pointer to the Agent instance.
 //
-// Returns:
-//   - An error if the subscription process fails.
-func WithSubscribeConsumer2Producer(agent *Agent) error {
-	// Verify the collector implements the Observer interface.
-	observer, ok := agent.collector.(common.Observer)
-	if !ok {
-		return errors.New("collector does not implement the Observer interface")
+//	ctx: The context used to manage the lifecycle of the agent. The context
+//	     allows graceful termination when canceled or timed out.
+func (a *Agent) Start(ctx context.Context) {
+	a.logger.Info("agent started")
+	// Set up a ticker for metric collection.
+	collectTicker := time.NewTicker(a.pollInterval)
+	defer collectTicker.Stop() // Ensure the ticker is stopped to release resources.
+
+	// Set up a ticker for sending metrics.
+	sendTicker := time.NewTicker(a.reportInterval)
+	defer sendTicker.Stop() // Ensure the ticker is stopped to release resources.
+
+	for {
+		select {
+		case <-ctx.Done():
+			// Stop execution when the context is canceled or its deadline is exceeded.
+			return
+		case <-collectTicker.C:
+			// Collect metrics at regular intervals defined by pollInterval.
+			a.collect()
+		case t := <-sendTicker.C:
+			// Send metrics to the server at regular intervals defined by reportInterval.
+			senderCtx, cancel := context.WithDeadline(ctx, t.Add(a.reportInterval))
+			a.sendBySingle(senderCtx)
+			cancel()
+		}
+	}
+}
+
+// collect triggers the collection of metrics using the Collector interface.
+func (a *Agent) collect() {
+	a.collector.Collect()
+}
+
+// sendBySingle sends all collected metrics using the Sender interface.
+func (a *Agent) sendBySingle(ctx context.Context) {
+	metrics, resetCh := a.collector.Export()
+
+	reset := true
+	defer func() { resetCh <- reset }()
+
+	for _, m := range *metrics {
+		if ctx.Err() != nil {
+			// Context was canceled or deadline exceeded; stop sending.
+			reset = false
+			a.logger.Warn("Context canceled or deadline exceeded during sendBySingle")
+			return
+		}
+
+		// Attempt to sendBySingle the metric.
+		if err := a.sender.SendSingle(ctx, m); err != nil {
+			reset = !m.IsMetadata
+			a.logger.Warnf("Error sending metric %s: %v | metadata will be reset: %t", m.Name, err, reset)
+		}
+	}
+}
+
+func (a *Agent) sendByBatch(ctx context.Context) {
+	metrics, resetCh := a.collector.Export()
+
+	reset := true
+	defer func() { resetCh <- reset }()
+
+	if ctx.Err() != nil {
+		// Context was canceled or deadline exceeded; stop sending.
+		reset = false
+		a.logger.Warn("Context canceled or deadline exceeded during sendBySingle")
+		return
 	}
 
-	// Verify the producer implements the ObserveSubject interface.
-	subject, ok := agent.producer.(common.ObserveSubject)
-	if !ok {
-		return errors.New("producer does not implement the ObserveSubject interface")
+	if err := a.sender.SendBatch(ctx, metrics); err != nil {
+		reset = false
+		a.logger.Warnf("Error sending batch of metrics. Count: %d | Metrics: [%s] | Error: %v | metadata will be reset: %t", metrics.Length(), metrics.ToString(), err, reset)
 	}
-
-	// Subscribe the collector to the producer's events.
-	if err := common.Subscribe(observer, subject); err != nil {
-		return fmt.Errorf("failed to subscribe collector to producer: %w", err)
-	}
-
-	return nil
 }

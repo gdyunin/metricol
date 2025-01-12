@@ -1,11 +1,13 @@
 package main
 
 import (
-	"log"
+	"NewNewMetricol/internal/server/delivery"
+	"NewNewMetricol/internal/server/repository"
+
+	"go.uber.org/zap"
 )
 
 func main() {
-	if err := run(); err != nil {
-		log.Fatalf("Application terminated due to a critical error: %v", err)
-	}
+	es := delivery.NewEchoServer("localhost:8080", repository.NewInMemoryRepository(zap.NewExample().Sugar()), zap.NewExample().Sugar())
+	es.Start()
 }
