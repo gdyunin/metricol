@@ -75,7 +75,7 @@ func (a *Agent) Start(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			a.logger.Warn("Context canceled: stopping agent")
+			a.logger.Info("Context canceled: stopping agent")
 			return
 		case <-collectTicker.C:
 			a.collect()
