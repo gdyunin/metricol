@@ -17,7 +17,7 @@ func main() {
 
 	var repo repository.Repository
 	r, err := repository.NewFileStorageRepository(zap.NewExample().Sugar(), appCfg.FileStoragePath, "backup.txt", convert.IntegerToSeconds(appCfg.StoreInterval), appCfg.Restore)
-	if err != nil {
+	if err == nil {
 		repo = r
 		go func() {
 			stopChan := make(chan os.Signal, 1)                    // Create a channel to receive OS signals.
