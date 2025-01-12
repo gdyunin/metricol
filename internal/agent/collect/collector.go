@@ -117,13 +117,11 @@ func (c *Collector) waitResetConfirmation() {
 	defer c.mu.RUnlock()
 
 	c.logger.Info("Waiting for metadata reset confirmation...")
-	select {
-	case reset := <-c.resetMetaConfirmCh:
-		if reset {
-			c.metadata.Reset()
-			c.logger.Info("Metadata reset successfully.")
-		} else {
-			c.logger.Warn("Metadata reset was canceled.")
-		}
+
+	if reset := <-c.resetMetaConfirmCh; reset {
+		c.metadata.Reset()
+		c.logger.Info("Metadata reset successfully.")
+	} else {
+		c.logger.Warn("Metadata reset was canceled.")
 	}
 }
