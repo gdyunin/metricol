@@ -9,27 +9,34 @@ import (
 )
 
 // Collector is responsible for collecting runtime memory statistics
-// and exporting them as a set of metrics along with metadata metrics.
+// and exporting them as metrics along with metadata metrics.
 type Collector struct {
-	metadata *Metadata
-	ms       *runtime.MemStats
-	mu       *sync.RWMutex
-	logger   *zap.SugaredLogger
-	resetCh  chan bool
+	metadata           *Metadata          // Metadata for metrics.
+	ms                 *runtime.MemStats  // Memory statistics from runtime.
+	mu                 *sync.RWMutex      // Mutex for concurrent access.
+	logger             *zap.SugaredLogger // Logger for logging events.
+	resetMetaConfirmCh chan bool          // Channel for metadata reset confirmation.
 }
 
-// NewCollector initializes a new Collector instance.
+// NewCollector initializes and returns a new instance of Collector.
+//
+// Parameters:
+//   - logger: Logger instance for recording events.
+//
+// Returns:
+//   - *Collector: A pointer to the newly created Collector instance.
 func NewCollector(logger *zap.SugaredLogger) *Collector {
+	logger.Info("Initializing Collector")
 	return &Collector{
-		metadata: NewMetadata(),
-		ms:       &runtime.MemStats{},
-		mu:       &sync.RWMutex{},
-		logger:   logger,
-		resetCh:  make(chan bool),
+		metadata:           NewMetadata(),
+		ms:                 &runtime.MemStats{},
+		mu:                 &sync.RWMutex{},
+		logger:             logger,
+		resetMetaConfirmCh: make(chan bool),
 	}
 }
 
-// Collect gathers the latest runtime memory statistics and updates the metadata.
+// Collect gathers runtime memory statistics and updates metadata.
 func (c *Collector) Collect() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -39,20 +46,27 @@ func (c *Collector) Collect() {
 	c.logger.Info("Metrics collected.")
 }
 
-// Export gathers all collected metrics, including memory and metadata metrics,
-// and resets the metadata state.
+// Export combines runtime memory metrics and metadata metrics into a single
+// metrics entity and starts a goroutine to handle metadata reset confirmation.
+//
+// Returns:
+//   - *entity.Metrics: A pointer to the exported metrics.
+//   - chan bool: A channel for metadata reset confirmation.
 func (c *Collector) Export() (*entity.Metrics, chan bool) {
 	c.mu.RLock()
 	metrics := append(c.exportMemoryMetrics(), c.exportMetadataMetrics()...)
 	c.mu.RUnlock()
 
-	go c.awaitResetConfirmation()
+	go c.waitResetConfirmation()
 
-	c.logger.Infof("Metrics exported. Count: %d | Metrics: [%s].", metrics.Length(), metrics.ToString())
-	return &metrics, c.resetCh
+	c.logger.Infof("Exporting metrics: Count=%d, Metrics=[%s]", metrics.Length(), metrics.ToString())
+	return &metrics, c.resetMetaConfirmCh
 }
 
-// exportMemoryMetrics converts memory statistics into a slice of Metric entity.
+// exportMemoryMetrics converts runtime memory statistics into metrics.
+//
+// Returns:
+//   - entity.Metrics: A collection of memory-related metrics.
 func (c *Collector) exportMemoryMetrics() entity.Metrics {
 	return entity.Metrics{
 		{Name: "Alloc", Type: entity.MetricTypeGauge, Value: float64(c.ms.Alloc)},
@@ -85,7 +99,10 @@ func (c *Collector) exportMemoryMetrics() entity.Metrics {
 	}
 }
 
-// exportMetadataMetrics converts metadata into a slice of Metric entity.
+// exportMetadataMetrics converts metadata information into metrics.
+//
+// Returns:
+//   - entity.Metrics: A collection of metadata-related metrics.
 func (c *Collector) exportMetadataMetrics() entity.Metrics {
 	return entity.Metrics{
 		{Name: "RandomValue", Type: entity.MetricTypeGauge, Value: c.metadata.LastPollSeed(), IsMetadata: true},
@@ -93,19 +110,20 @@ func (c *Collector) exportMetadataMetrics() entity.Metrics {
 	}
 }
 
-// awaitResetConfirmation waits for confirmation to reset metadata.
-func (c *Collector) awaitResetConfirmation() {
+// waitResetConfirmation waits for a confirmation signal to reset metadata.
+// Resets the metadata if the signal is received, otherwise logs cancellation.
+func (c *Collector) waitResetConfirmation() {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	c.logger.Info("Wait confirmation for reset metadata...")
+	c.logger.Info("Waiting for metadata reset confirmation...")
 	select {
-	case reset := <-c.resetCh:
+	case reset := <-c.resetMetaConfirmCh:
 		if reset {
 			c.metadata.Reset()
-			c.logger.Info("Metadata reset after confirmation.")
+			c.logger.Info("Metadata reset successfully.")
 		} else {
-			c.logger.Warn("Metadata reset canceled.")
+			c.logger.Warn("Metadata reset was canceled.")
 		}
 	}
 }

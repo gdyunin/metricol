@@ -6,13 +6,16 @@ import (
 	"fmt"
 )
 
-// Compressor provides functionality for compressing data using gzip.
+// Compressor provides methods for compressing data using gzip.
 type Compressor struct {
-	buf    *bytes.Buffer
-	writer *gzip.Writer
+	buf    *bytes.Buffer // Buffer to hold compressed data.
+	writer *gzip.Writer  // Gzip writer for compression.
 }
 
 // NewCompressor initializes and returns a new Compressor instance.
+//
+// Returns:
+//   - *Compressor: A pointer to the newly created Compressor instance.
 func NewCompressor() *Compressor {
 	buf := &bytes.Buffer{}
 	writer := gzip.NewWriter(buf)
@@ -24,21 +27,24 @@ func NewCompressor() *Compressor {
 }
 
 // Compress compresses the given data using gzip and returns the compressed bytes.
-// If an error occurs during compression, it is returned.
+//
+// Parameters:
+//   - data: The data to be compressed.
+//
+// Returns:
+//   - []byte: The compressed data.
+//   - error: An error if compression fails.
 func (c *Compressor) Compress(data []byte) ([]byte, error) {
-	defer c.buf.Reset()         // Reset the buffer to reuse.
-	defer c.writer.Reset(c.buf) // Reset the gzip writer to reuse.
+	defer c.buf.Reset()
+	defer c.writer.Reset(c.buf)
 
-	// Write data to the gzip writer.
 	if _, err := c.writer.Write(data); err != nil {
-		return nil, fmt.Errorf("failed to write data to gzip writer: %w", err)
+		return nil, fmt.Errorf("compression error: unable to write data to gzip writer: %w", err)
 	}
 
-	// Close the gzip writer to finalize the compression.
 	if err := c.writer.Close(); err != nil {
-		return nil, fmt.Errorf("failed to close gzip writer: %w", err)
+		return nil, fmt.Errorf("compression error: unable to close gzip writer: %w", err)
 	}
 
-	// Return the compressed data from the buffer.
 	return c.buf.Bytes(), nil
 }

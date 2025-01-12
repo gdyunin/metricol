@@ -23,4 +23,6 @@ vendor/
 # IDEs directories
 .idea
 .vscode
-/golangci-lint/
+golangci-lint/
+
+*backup.txt

@@ -5,16 +5,18 @@ import (
 	"sync"
 )
 
-// Metadata holds information about the number of polls and the last poll seed.
-// It provides thread-safe methods to update and access this data.
+// Metadata maintains metrics about polling operations, including the number
+// of polls conducted and a random seed for the last poll.
 type Metadata struct {
-	pollsCount   int64
-	lastPollSeed float64
-	mu           *sync.RWMutex
+	pollsCount   int64         // Total number of polls conducted.
+	lastPollSeed float64       // Random seed value from the last poll.
+	mu           *sync.RWMutex // Mutex to synchronize access to fields.
 }
 
-// NewMetadata initializes and returns a new instance of Metadata.
-// The initial values for pollsCount and lastPollSeed are set to 0.
+// NewMetadata creates and initializes a new instance of Metadata.
+//
+// Returns:
+//   - *Metadata: A pointer to the initialized Metadata instance.
 func NewMetadata() *Metadata {
 	return &Metadata{
 		pollsCount:   0,
@@ -23,8 +25,7 @@ func NewMetadata() *Metadata {
 	}
 }
 
-// Update increments the pollsCount by 1 and generates a new random seed for lastPollSeed.
-// This method is thread-safe.
+// Update increments the poll count and generates a new random seed.
 func (m *Metadata) Update() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -33,8 +34,7 @@ func (m *Metadata) Update() {
 	m.lastPollSeed = rand.Float64()
 }
 
-// Reset sets the pollsCount and lastPollSeed to 0.
-// This method is thread-safe.
+// Reset clears the poll count and resets the random seed to zero.
 func (m *Metadata) Reset() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -43,14 +43,20 @@ func (m *Metadata) Reset() {
 	m.lastPollSeed = 0
 }
 
-// PollsCount retrieves the current value of pollsCount in a thread-safe manner.
+// PollsCount retrieves the total number of polls conducted.
+//
+// Returns:
+//   - int64: The current poll count.
 func (m *Metadata) PollsCount() int64 {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.pollsCount
 }
 
-// LastPollSeed retrieves the current value of lastPollSeed in a thread-safe manner.
+// LastPollSeed retrieves the random seed value from the last poll.
+//
+// Returns:
+//   - float64: The last poll seed value.
 func (m *Metadata) LastPollSeed() float64 {
 	m.mu.RLock()
 	defer m.mu.RUnlock()

@@ -7,19 +7,19 @@ import (
 	"github.com/go-resty/resty/v2"
 )
 
-// RequestBuilder provides functionality for building HTTP requests with optional gzip compression.
+// RequestBuilder is responsible for creating HTTP requests, with support for gzip compression.
 type RequestBuilder struct {
 	httpClient *resty.Client        // HTTP client for sending requests.
-	compressor *compress.Compressor // Compressor for handling gzip compression.
+	compressor *compress.Compressor // Compressor for gzip encoding.
 }
 
 // NewRequestBuilder initializes and returns a new RequestBuilder instance.
 //
 // Parameters:
-//   - httpClient: A pointer to an instance of resty.Client.
+//   - httpClient: An instance of resty.Client to send HTTP requests.
 //
 // Returns:
-//   - *RequestBuilder: A new RequestBuilder instance.
+//   - *RequestBuilder: A pointer to the initialized RequestBuilder.
 func NewRequestBuilder(httpClient *resty.Client) *RequestBuilder {
 	return &RequestBuilder{
 		httpClient: httpClient,
@@ -27,12 +27,12 @@ func NewRequestBuilder(httpClient *resty.Client) *RequestBuilder {
 	}
 }
 
-// Build constructs a new HTTP request without compression.
+// Build creates a basic HTTP request with the given method, endpoint, and body.
 //
 // Parameters:
-//   - method: The HTTP method (e.g., "GET", "POST").
-//   - endpoint: The target URL for the request.
-//   - body: The request body as a byte slice.
+//   - method: The HTTP method (e.g., GET, POST, etc.).
+//   - endpoint: The URL endpoint for the request.
+//   - body: The body content for the request.
 //
 // Returns:
 //   - *resty.Request: The constructed HTTP request.
@@ -44,12 +44,12 @@ func (b *RequestBuilder) Build(method string, endpoint string, body []byte) *res
 	return req
 }
 
-// BuildWithGzip constructs a new HTTP request with gzip compression.
+// BuildWithGzip creates an HTTP request with gzip-compressed body.
 //
 // Parameters:
-//   - method: The HTTP method (e.g., "GET", "POST").
-//   - endpoint: The target URL for the request.
-//   - body: The request body as a byte slice.
+//   - method: The HTTP method (e.g., POST, PUT, etc.).
+//   - endpoint: The URL endpoint for the request.
+//   - body: The body content to be compressed and included in the request.
 //
 // Returns:
 //   - *resty.Request: The constructed HTTP request with gzip-compressed body.
@@ -57,7 +57,7 @@ func (b *RequestBuilder) Build(method string, endpoint string, body []byte) *res
 func (b *RequestBuilder) BuildWithGzip(method string, endpoint string, body []byte) (*resty.Request, error) {
 	body, err := b.compressor.Compress(body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to compress body: %w", err)
+		return nil, fmt.Errorf("gzip compression failed for request body: %w", err)
 	}
 
 	req := b.Build(method, endpoint, body)
