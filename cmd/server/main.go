@@ -1,6 +1,7 @@
 package main
 
 import (
+	"NewNewMetricol/internal/server/config"
 	"NewNewMetricol/internal/server/delivery"
 	"NewNewMetricol/internal/server/repository"
 
@@ -8,6 +9,8 @@ import (
 )
 
 func main() {
-	es := delivery.NewEchoServer("localhost:8080", repository.NewInMemoryRepository(zap.NewExample().Sugar()), zap.NewExample().Sugar())
+	appCfg, _ := config.ParseConfig()
+
+	es := delivery.NewEchoServer(appCfg.ServerAddress, repository.NewInMemoryRepository(zap.NewExample().Sugar()), zap.NewExample().Sugar())
 	es.Start()
 }
