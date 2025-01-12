@@ -128,7 +128,7 @@ func (r *InMemoryRepository) allCounters() entity.Metrics {
 		metrics = append(metrics, &entity.Metric{
 			Value: value,
 			Name:  name,
-			Type:  entity.MetricTypeGauge,
+			Type:  entity.MetricTypeCounter,
 		})
 	}
 	return metrics

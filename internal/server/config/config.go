@@ -9,8 +9,9 @@ import (
 
 // All default settings.
 const (
-	defaultServerAddress   = "localhost:8080"
-	defaultStoreInterval   = 300
+	defaultServerAddress = "localhost:8080"
+	defaultStoreInterval = 300
+	//defaultStoreInterval   = 10
 	defaultFileStoragePath = ""
 	defaultRestoreFlag     = true
 )
