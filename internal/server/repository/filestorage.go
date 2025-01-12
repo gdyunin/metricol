@@ -88,6 +88,10 @@ func (r *FileStorageRepository) build() (*FileStorageRepository, error) {
 	return r, nil
 }
 
+func (r *FileStorageRepository) Shutdown() {
+	r.save()
+}
+
 func (r *FileStorageRepository) save() {
 	metrics, err := r.All()
 	if err != nil || metrics == nil {
