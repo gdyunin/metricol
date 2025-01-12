@@ -3,6 +3,7 @@ package value
 import (
 	"NewNewMetricol/internal/server/delivery/model"
 	"NewNewMetricol/internal/server/internal/entity"
+	"fmt"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -48,6 +49,6 @@ func FromURI(puller MetricsPuller) echo.HandlerFunc {
 		}
 
 		c.Response().Header().Set("Content-Type", "text/plain")
-		return c.String(http.StatusOK, metric.Value.(string))
+		return c.String(http.StatusOK, fmt.Sprint(metric.Value))
 	}
 }
