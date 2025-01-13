@@ -144,8 +144,8 @@ func (r *InFileRepository) mustBuild() *InFileRepository {
 
 // shouldRestore restores metrics from the storage file.
 func (r *InFileRepository) shouldRestore() error {
-	if err := retry.WithRetry(AttemptsDefaultCount, r.restore); err != nil {
-		return fmt.Errorf("failed to restore metrics after retries: path=%s, error=%v", r.filepath, err)
+	if err := r.restore(); err != nil {
+		return fmt.Errorf("failed to restore metrics: path=%s, error=%v", r.filepath, err)
 	}
 	return nil
 }
