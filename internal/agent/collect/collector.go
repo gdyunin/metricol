@@ -1,9 +1,10 @@
 package collect
 
 import (
-	"NewNewMetricol/internal/agent/internal/entity"
 	"runtime"
 	"sync"
+
+	"github.com/gdyunin/metricol.git/internal/agent/internal/entity"
 
 	"go.uber.org/zap"
 )

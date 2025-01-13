@@ -1,8 +1,9 @@
 package send
 
 import (
-	"NewNewMetricol/internal/agent/send/compress"
 	"fmt"
+
+	"github.com/gdyunin/metricol.git/internal/agent/send/compress"
 
 	"github.com/go-resty/resty/v2"
 )

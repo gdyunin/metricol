@@ -1,9 +1,10 @@
 package repository
 
 import (
-	"NewNewMetricol/internal/server/internal/entity"
 	"fmt"
 	"sync"
+
+	"github.com/gdyunin/metricol.git/internal/server/internal/entity"
 
 	"go.uber.org/zap"
 )

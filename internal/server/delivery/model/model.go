@@ -1,7 +1,7 @@
 package model
 
 import (
-	"NewNewMetricol/internal/server/internal/entity"
+	"github.com/gdyunin/metricol.git/internal/server/internal/entity"
 )
 
 // Metric represents the structure used for JSON serialization and deserialization.

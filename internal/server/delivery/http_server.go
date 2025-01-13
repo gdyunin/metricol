@@ -1,19 +1,20 @@
 package delivery
 
 import (
-	"NewNewMetricol/internal/server/delivery/handle/general"
-	"NewNewMetricol/internal/server/delivery/handle/update"
-	"NewNewMetricol/internal/server/delivery/handle/value"
-	custMiddleware "NewNewMetricol/internal/server/delivery/middleware"
-	"NewNewMetricol/internal/server/delivery/render"
-	"NewNewMetricol/internal/server/internal/control"
-	"NewNewMetricol/internal/server/repository"
 	"context"
 	"errors"
 	"html/template"
 	"net/http"
 	"path"
 	"time"
+
+	"github.com/gdyunin/metricol.git/internal/server/delivery/handle/general"
+	"github.com/gdyunin/metricol.git/internal/server/delivery/handle/update"
+	"github.com/gdyunin/metricol.git/internal/server/delivery/handle/value"
+	custMiddleware "github.com/gdyunin/metricol.git/internal/server/delivery/middleware"
+	"github.com/gdyunin/metricol.git/internal/server/delivery/render"
+	"github.com/gdyunin/metricol.git/internal/server/internal/control"
+	"github.com/gdyunin/metricol.git/internal/server/repository"
 
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"

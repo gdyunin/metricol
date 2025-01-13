@@ -1,8 +1,6 @@
 package repository
 
 import (
-	"NewNewMetricol/internal/server/internal/entity"
-	"NewNewMetricol/pkg/retry"
 	"bufio"
 	"bytes"
 	"encoding/json"
@@ -10,6 +8,9 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/gdyunin/metricol.git/internal/server/internal/entity"
+	"github.com/gdyunin/metricol.git/pkg/retry"
 
 	"go.uber.org/zap"
 )

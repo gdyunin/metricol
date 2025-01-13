@@ -1,11 +1,12 @@
 package control
 
 import (
-	"NewNewMetricol/internal/server/internal/entity"
-	"NewNewMetricol/internal/server/repository"
-	"NewNewMetricol/pkg/convert"
 	"errors"
 	"fmt"
+
+	"github.com/gdyunin/metricol.git/internal/server/internal/entity"
+	"github.com/gdyunin/metricol.git/internal/server/repository"
+	"github.com/gdyunin/metricol.git/pkg/convert"
 )
 
 var ErrNotFoundInRepository = errors.New("not found in repository")

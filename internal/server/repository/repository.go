@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"NewNewMetricol/internal/server/internal/entity"
+	"github.com/gdyunin/metricol.git/internal/server/internal/entity"
 )
 
 // Repository defines the interface for a metric storage repository.

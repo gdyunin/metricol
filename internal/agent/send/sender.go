@@ -1,15 +1,16 @@
 package send
 
 import (
-	"NewNewMetricol/internal/agent/internal/entity"
-	"NewNewMetricol/internal/agent/send/model"
-	"NewNewMetricol/pkg/retry"
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/gdyunin/metricol.git/internal/agent/internal/entity"
+	"github.com/gdyunin/metricol.git/internal/agent/send/model"
+	"github.com/gdyunin/metricol.git/pkg/retry"
 
 	"github.com/go-resty/resty/v2"
 	"go.uber.org/zap"

@@ -1,9 +1,10 @@
 package model
 
 import (
-	"NewNewMetricol/internal/agent/internal/entity"
 	"errors"
 	"fmt"
+
+	"github.com/gdyunin/metricol.git/internal/agent/internal/entity"
 )
 
 // Metric represents a single metric, including its type, ID, and value.

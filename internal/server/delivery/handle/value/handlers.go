@@ -1,12 +1,13 @@
 package value
 
 import (
-	"NewNewMetricol/internal/server/delivery/model"
-	"NewNewMetricol/internal/server/internal/control"
-	"NewNewMetricol/internal/server/internal/entity"
 	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/gdyunin/metricol.git/internal/server/delivery/model"
+	"github.com/gdyunin/metricol.git/internal/server/internal/control"
+	"github.com/gdyunin/metricol.git/internal/server/internal/entity"
 
 	"github.com/labstack/echo/v4"
 )

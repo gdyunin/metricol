@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"NewNewMetricol/pkg/convert"
+	"github.com/gdyunin/metricol.git/pkg/convert"
 )
 
 const (

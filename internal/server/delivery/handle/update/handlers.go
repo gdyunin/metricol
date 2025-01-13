@@ -1,10 +1,11 @@
 package update
 
 import (
-	"NewNewMetricol/internal/server/delivery/model"
-	"NewNewMetricol/internal/server/internal/entity"
 	"net/http"
 	"strconv"
+
+	"github.com/gdyunin/metricol.git/internal/server/delivery/model"
+	"github.com/gdyunin/metricol.git/internal/server/internal/entity"
 
 	"github.com/labstack/echo/v4"
 )

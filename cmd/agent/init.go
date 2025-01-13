@@ -1,18 +1,19 @@
 package main
 
 import (
-	"NewNewMetricol/internal/agent/agent"
-	"NewNewMetricol/internal/agent/collect"
-	"NewNewMetricol/internal/agent/config"
-	"NewNewMetricol/internal/agent/send"
-	"NewNewMetricol/pkg/convert"
-	"NewNewMetricol/pkg/logging"
 	"context"
 	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/gdyunin/metricol.git/internal/agent/agent"
+	"github.com/gdyunin/metricol.git/internal/agent/collect"
+	"github.com/gdyunin/metricol.git/internal/agent/config"
+	"github.com/gdyunin/metricol.git/internal/agent/send"
+	"github.com/gdyunin/metricol.git/pkg/convert"
+	"github.com/gdyunin/metricol.git/pkg/logging"
 
 	"go.uber.org/zap"
 )

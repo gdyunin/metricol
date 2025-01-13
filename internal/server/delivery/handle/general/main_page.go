@@ -1,9 +1,10 @@
 package general
 
 import (
-	"NewNewMetricol/internal/server/internal/entity"
 	"fmt"
 	"net/http"
+
+	"github.com/gdyunin/metricol.git/internal/server/internal/entity"
 
 	"github.com/labstack/echo/v4"
 )

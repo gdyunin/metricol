@@ -1,9 +1,10 @@
 package agent
 
 import (
-	"NewNewMetricol/internal/agent/internal/entity"
 	"context"
 	"time"
+
+	"github.com/gdyunin/metricol.git/internal/agent/internal/entity"
 
 	"go.uber.org/zap"
 )
