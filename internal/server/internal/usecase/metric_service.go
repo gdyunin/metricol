@@ -35,7 +35,8 @@ func (s *MetricService) Pull(metricType string, name string) (*entity.Metric, er
 		return nil, fmt.Errorf("failed check is exist in repo %w", err)
 	}
 	if !exist {
-		return nil, fmt.Errorf("metric not exist in repo %w", err)
+		return nil, nil
+		//return nil, fmt.Errorf("metric not exist in repo %w", err)
 	}
 
 	m, err := s.repo.Find(metricType, name)
