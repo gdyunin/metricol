@@ -1,5 +1,3 @@
-// Package config provides functionality to configure an agent with parameters
-// that can be set via environment variables or command-line flags.
 package config
 
 import (
@@ -16,8 +14,6 @@ const (
 	defaultReportInterval = 10
 )
 
-// Config holds the configuration for the agent, including server address,
-// polling interval, and reporting interval.
 type Config struct {
 	ServerAddress  string `env:"ADDRESS"`         // Address of the server to connect to
 	PollInterval   int    `env:"POLL_INTERVAL"`   // Interval for polling metrics
@@ -25,11 +21,11 @@ type Config struct {
 }
 
 // ParseConfig initializes the Config with default values,
-// overrides them with environment variables if available,
-// and finally allows command-line flags to set or override the configuration.
+// overrides them with command-line flags if available,
+// and finally allows environment variables to set or override the configuration.
 // It returns an error if environment variable parsing fails.
 func ParseConfig() (*Config, error) {
-	// Default settings for the agent configuration.
+	// Default settings for the service configuration.
 	cfg := Config{
 		ServerAddress:  defaultServerAddress,
 		PollInterval:   defaultPollInterval,
