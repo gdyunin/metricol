@@ -1,26 +1,30 @@
 package entity
 
 import (
-	"NewNewMetricol/pkg/convert"
 	"encoding/json"
 	"fmt"
 	"strings"
+
+	"NewNewMetricol/pkg/convert"
 )
 
 const (
+	// MetricTypeCounter defines the metric type for counters.
 	MetricTypeCounter = "counter"
-	MetricTypeGauge   = "gauge"
+	// MetricTypeGauge defines the metric type for gauges.
+	MetricTypeGauge = "gauge"
 )
 
+// Metric represents a single metric with a name, type, and value.
 type Metric struct {
-	Value any    `json:"value"`
-	Name  string `json:"name"`
-	Type  string `json:"type"`
+	Value any    `json:"value"` // The value of the metric.
+	Name  string `json:"name"`  // The name of the metric.
+	Type  string `json:"type"`  // The type of the metric, e.g., "counter" or "gauge".
 }
 
+// UnmarshalJSON implements custom JSON unmarshalling for the Metric type.
 func (m *Metric) UnmarshalJSON(data []byte) error {
-	type MetricAlias Metric
-
+	type MetricAlias Metric // Alias to avoid recursion during unmarshalling.
 	aux := &struct {
 		*MetricAlias
 	}{
@@ -28,13 +32,13 @@ func (m *Metric) UnmarshalJSON(data []byte) error {
 	}
 
 	if err := json.Unmarshal(data, &aux); err != nil {
-		return fmt.Errorf("failed while unmarshalling metric: %w", err)
+		return fmt.Errorf("unable to parse metric JSON: %w", err)
 	}
 
 	if m.Type == MetricTypeCounter {
 		v, err := convert.AnyToInt64(m.Value)
 		if err != nil {
-			return fmt.Errorf("invalid type for value in counter metric: expected number, got %T", m.Value)
+			return fmt.Errorf("invalid value for counter metric \"%s\": expected integer, got %T", m.Name, m.Value)
 		}
 		m.Value = v
 	}
@@ -42,8 +46,10 @@ func (m *Metric) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// Metrics represents a collection of metrics.
 type Metrics []*Metric
 
+// Length returns the number of metrics in the collection.
 func (m *Metrics) Length() int {
 	if m == nil {
 		return 0
@@ -51,6 +57,7 @@ func (m *Metrics) Length() int {
 	return len(*m)
 }
 
+// ToString returns a string representation of the metrics collection.
 func (m *Metrics) ToString() string {
 	if m == nil {
 		return ""

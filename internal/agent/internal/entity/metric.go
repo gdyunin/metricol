@@ -16,10 +16,10 @@ const (
 // Metric represents a single metric with its name, type, value, and a flag
 // indicating whether it is metadata.
 type Metric struct {
-	Name       string // Name of the metric.
-	Type       string // Type of the metric (e.g., counter or gauge).
-	Value      any    // Value of the metric.
-	IsMetadata bool   // Indicates if the metric is metadata.
+	Value      any
+	Name       string
+	Type       string
+	IsMetadata bool
 }
 
 // Metrics is a collection of Metric pointers.

@@ -51,8 +51,8 @@ func TestMetrics_Length(t *testing.T) {
 func TestMetrics_ToString(t *testing.T) {
 	tests := []struct {
 		name     string
-		metrics  Metrics
 		expected string
+		metrics  Metrics
 	}{
 		{
 			name:     "Nil metrics",
@@ -78,7 +78,9 @@ func TestMetrics_ToString(t *testing.T) {
 				&Metric{Name: "metric2", Type: MetricTypeCounter, Value: 456},
 				&Metric{Name: "metric3", Type: MetricTypeGauge, Value: 7.89},
 			},
-			expected: "<Name=metric1 Type=gauge Value=1.23>, <Name=metric2 Type=counter Value=456>, <Name=metric3 Type=gauge Value=7.89>",
+			expected: "<Name=metric1 Type=gauge Value=1.23>, " +
+				"<Name=metric2 Type=counter Value=456>, " +
+				"<Name=metric3 Type=gauge Value=7.89>",
 		},
 		{
 			name: "Metrics with nil elements",

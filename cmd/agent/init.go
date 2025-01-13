@@ -8,7 +8,7 @@ import (
 	"NewNewMetricol/pkg/convert"
 	"NewNewMetricol/pkg/logging"
 	"context"
-	"log"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -43,14 +43,17 @@ func loggerWithSyncFunc() (*zap.SugaredLogger, func()) {
 	return l, syncFunc
 }
 
-// loadConfig parses the configuration file and returns a Config instance.
-// Logs a fatal error if parsing fails.
-func loadConfig() *config.Config {
+// loadConfig parses the application's configuration file.
+//
+// Returns:
+//   - *config.Config: The parsed configuration.
+//   - error: An error if parsing fails.
+func loadConfig() (*config.Config, error) {
 	cfg, err := config.ParseConfig()
 	if err != nil {
-		log.Fatalf("Error occurred while parsing the application configuration: %v", err)
+		return nil, fmt.Errorf("failed to parse config: %w", err)
 	}
-	return cfg
+	return cfg, nil
 }
 
 // initComponents initializes the main components of the agent, including the
@@ -68,9 +71,10 @@ func initComponents(cfg *config.Config, logger *zap.SugaredLogger) *agent.Agent 
 	)
 }
 
-// setupGracefulShutdown sets up a graceful shutdown mechanism for the application.
-// It listens for system interrupt and termination signals (e.g., SIGTERM or SIGINT).
-// When a signal is received, it cancels the provided context and waits for the graceful shutdown timeout before exiting.
+// setupGracefulShutdown sets up a graceful shutdown mechanism for the
+// application. It listens for system interrupt and termination signals (e.g.,
+// SIGTERM or SIGINT). When a signal is received, it cancels the provided context
+// and waits for the graceful shutdown timeout before exiting.
 //
 // Parameters:
 //   - ctxCancel: The cancel function associated with the application context.

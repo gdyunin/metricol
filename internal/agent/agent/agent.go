@@ -26,11 +26,11 @@ type Sender interface {
 
 // Agent manages the collection and sending of metrics at specified intervals.
 type Agent struct {
-	collector      Collector          // Collector for gathering metrics.
-	sender         Sender             // Sender for transmitting metrics to a server.
-	pollInterval   time.Duration      // Interval for collecting metrics.
-	reportInterval time.Duration      // Interval for sending metrics.
-	logger         *zap.SugaredLogger // Logger for recording events and errors.
+	collector      Collector
+	sender         Sender
+	logger         *zap.SugaredLogger
+	pollInterval   time.Duration
+	reportInterval time.Duration
 }
 
 // NewAgent creates and initializes a new Agent.
@@ -44,8 +44,18 @@ type Agent struct {
 //
 // Returns:
 //   - *Agent: A pointer to the initialized Agent.
-func NewAgent(collector Collector, sender Sender, pollInterval time.Duration, reportInterval time.Duration, logger *zap.SugaredLogger) *Agent {
-	logger.Infof("Initializing Agent: pollInterval=%ds, reportInterval=%ds", pollInterval/time.Second, reportInterval/time.Second)
+func NewAgent(
+	collector Collector,
+	sender Sender,
+	pollInterval time.Duration,
+	reportInterval time.Duration,
+	logger *zap.SugaredLogger,
+) *Agent {
+	logger.Infof(
+		"Initializing Agent: pollInterval=%ds, reportInterval=%ds",
+		pollInterval/time.Second,
+		reportInterval/time.Second,
+	)
 	return &Agent{
 		collector:      collector,
 		sender:         sender,
@@ -64,7 +74,11 @@ func NewAgent(collector Collector, sender Sender, pollInterval time.Duration, re
 // Parameters:
 //   - ctx: Context for managing the lifecycle of the Agent.
 func (a *Agent) Start(ctx context.Context) {
-	a.logger.Infof("Agent started: pollInterval=%ds, reportInterval=%ds", a.pollInterval/time.Second, a.reportInterval/time.Second)
+	a.logger.Infof(
+		"Agent started: pollInterval=%ds, reportInterval=%ds",
+		a.pollInterval/time.Second,
+		a.reportInterval/time.Second,
+	)
 
 	collectTicker := time.NewTicker(a.pollInterval)
 	defer collectTicker.Stop()
@@ -148,7 +162,12 @@ func (a *Agent) sendByBatch(ctx context.Context) {
 
 	if err := a.sender.SendBatch(ctx, metrics); err != nil {
 		reset = false
-		a.logger.Warnf("Failed to send metrics batch: count=%d, error=%v, metadataReset=%t", metrics.Length(), err, reset)
+		a.logger.Warnf(
+			"Failed to send metrics batch: count=%d, error=%v, metadataReset=%t",
+			metrics.Length(),
+			err,
+			reset,
+		)
 	} else {
 		a.logger.Infof("Successfully sent batch of metrics: count=%d", metrics.Length())
 	}

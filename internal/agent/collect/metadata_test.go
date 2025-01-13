@@ -9,8 +9,8 @@ import (
 
 func TestMetadata(t *testing.T) {
 	tests := []struct {
-		name          string
 		actions       func(m *Metadata)
+		name          string
 		expectedPolls int64
 		expectedSeed  float64
 	}{
@@ -31,7 +31,7 @@ func TestMetadata(t *testing.T) {
 		{
 			name: "Update multiple times",
 			actions: func(m *Metadata) {
-				for i := 0; i < 5; i++ {
+				for range 5 {
 					m.Update()
 				}
 			},
@@ -77,7 +77,7 @@ func TestMetadata_ConcurrentAccess(t *testing.T) {
 	concurrency := 100
 
 	var wg sync.WaitGroup
-	for i := 0; i < concurrency; i++ {
+	for range concurrency {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()

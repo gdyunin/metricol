@@ -8,9 +8,9 @@ import (
 // Metadata maintains metrics about polling operations, including the number
 // of polls conducted and a random seed for the last poll.
 type Metadata struct {
-	pollsCount   int64         // Total number of polls conducted.
-	lastPollSeed float64       // Random seed value from the last poll.
-	mu           *sync.RWMutex // Mutex to synchronize access to fields.
+	mu           *sync.RWMutex
+	pollsCount   int64
+	lastPollSeed float64
 }
 
 // NewMetadata creates and initializes a new instance of Metadata.

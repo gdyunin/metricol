@@ -99,12 +99,11 @@ func TestParseConfig(t *testing.T) {
 			}
 
 			// Reset command-line flags
-			flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
-			// Set command-line flags for the test-case
+			flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError) //nolint:reassign // for tests
 			if len(tt.args) > 0 {
-				os.Args = append([]string{"cmd"}, tt.args...)
+				os.Args = append([]string{"cmd"}, tt.args...) //nolint:reassign // for tests
 			} else {
-				os.Args = []string{"cmd"}
+				os.Args = []string{"cmd"} //nolint:reassign // for tests
 			}
 
 			cfg, err := ParseConfig()

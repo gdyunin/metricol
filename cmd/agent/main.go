@@ -9,7 +9,11 @@ func main() {
 
 	setupGracefulShutdown(mainCtxCancel, logger.Named(LoggerNameGracefulShutdown))
 
-	appCfg := loadConfig()
+	appCfg, err := loadConfig()
+	if err != nil {
+		logger.Fatalf("Error occurred while parsing the application configuration: %v", err)
+	}
+
 	metricsAgent := initComponents(appCfg, logger)
 
 	metricsAgent.Start(mainCtx)

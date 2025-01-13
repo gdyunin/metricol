@@ -23,13 +23,13 @@ const (
 // InFileRepository represents a file-backed repository for metrics storage.
 // It extends InMemoryRepository with file synchronization capabilities.
 type InFileRepository struct {
-	*InMemoryRepository                    // Embedded in-memory repository.
-	logger              *zap.SugaredLogger // Logger for repository operations.
-	synchronized        bool               // Indicates if changes are immediately flushed to file.
-	stopCh              chan struct{}      // Channel to signal shutdown.
-	filepath            string             // Path to the storage file.
-	restoreOnBuild      bool               // Indicates if metrics should be restored on build.
-	autoFlushInterval   time.Duration      // Interval for automatic flush to file.
+	*InMemoryRepository
+	logger            *zap.SugaredLogger
+	stopCh            chan struct{}
+	filepath          string
+	autoFlushInterval time.Duration
+	synchronized      bool
+	restoreOnBuild    bool
 }
 
 // NewInFileRepository creates a new instance of InFileRepository.
@@ -71,7 +71,13 @@ func NewInFileRepository(
 //   - An error if the operation fails.
 func (r *InFileRepository) Update(metric *entity.Metric) error {
 	if err := r.InMemoryRepository.Update(metric); err != nil {
-		return fmt.Errorf("failed to update metric in memory: type=%s, name=%s, value=%v, error: %v", metric.Type, metric.Name, metric.Value, err)
+		return fmt.Errorf(
+			"failed to update metric in memory: type=%s, name=%s, value=%v, error: %w",
+			metric.Type,
+			metric.Name,
+			metric.Value,
+			err,
+		)
 	}
 
 	if r.synchronized {
@@ -104,7 +110,13 @@ func (r *InFileRepository) flush() {
 	for _, m := range *metrics {
 		data, err := json.Marshal(&m)
 		if err != nil {
-			r.logger.Warnf("failed to serialize metric: type=%s, name=%s, value=%v, error: %v", m.Type, m.Name, m.Value, err)
+			r.logger.Warnf(
+				"failed to serialize metric: type=%s, name=%s, value=%v, error: %v",
+				m.Type,
+				m.Name,
+				m.Value,
+				err,
+			)
 			continue
 		}
 		data = append(data, '\n')
@@ -145,7 +157,7 @@ func (r *InFileRepository) mustBuild() *InFileRepository {
 // shouldRestore restores metrics from the storage file.
 func (r *InFileRepository) shouldRestore() error {
 	if err := r.restore(); err != nil {
-		return fmt.Errorf("failed to restore metrics: path=%s, error=%v", r.filepath, err)
+		return fmt.Errorf("failed to restore metrics: path=%s, error=%w", r.filepath, err)
 	}
 	return nil
 }
@@ -156,7 +168,11 @@ func (r *InFileRepository) mustMakeDir() {
 	if err := retry.WithRetry(AttemptsDefaultCount, func() error {
 		return os.MkdirAll(filepath.Dir(r.filepath), DirDefaultPerm)
 	}); err != nil {
-		panic(fmt.Sprintf("failed to create directory after retries: path=%s, error=%v", filepath.Dir(r.filepath), err))
+		panic(fmt.Sprintf(
+			"failed to create directory after retries: path=%s, error=%v",
+			filepath.Dir(r.filepath),
+			err,
+		))
 	}
 }
 
@@ -169,7 +185,7 @@ func (r *InFileRepository) mustMakeFile() {
 			if os.IsExist(err) {
 				return nil
 			}
-			return fmt.Errorf("failed to create file: path=%s, error=%v", r.filepath, err)
+			return fmt.Errorf("failed to create file: path=%s, error=%w", r.filepath, err)
 		}
 		_ = file.Close()
 		return nil
@@ -185,7 +201,7 @@ func (r *InFileRepository) mustMakeFile() {
 func (r *InFileRepository) restore() error {
 	file, err := os.Open(r.filepath)
 	if err != nil {
-		return fmt.Errorf("failed to open file for restoration: path=%s, error=%v", r.filepath, err)
+		return fmt.Errorf("failed to open file for restoration: path=%s, error=%w", r.filepath, err)
 	}
 	defer func() { _ = file.Close() }()
 
@@ -200,7 +216,13 @@ func (r *InFileRepository) restore() error {
 		}
 
 		if err = r.InMemoryRepository.Update(&metric); err != nil {
-			r.logger.Warnf("failed to load metric into memory: type=%s, name=%s, value=%v, error=%v", metric.Type, metric.Name, metric.Value, err)
+			r.logger.Warnf(
+				"failed to load metric into memory: type=%s, name=%s, value=%v, error=%v",
+				metric.Type,
+				metric.Name,
+				metric.Value,
+				err,
+			)
 			continue
 		}
 	}

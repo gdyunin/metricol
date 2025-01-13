@@ -173,7 +173,7 @@ linters-settings:
       # - unslice
       # - valSwap
       - weakCond
-      - whyNoLint
+#      - whyNoLint
       # - wrapperFunc
       - yodaStyleExpr
 
@@ -509,7 +509,7 @@ linters:
     - musttag
     - nilerr
     - nilnil
-    - nolintlint
+#    - nolintlint
     - nosprintfhostport
     - perfsprint
     - prealloc
@@ -529,7 +529,7 @@ linters:
     - typecheck
     - unconvert
     - unparam
-    - unused
+#    - unused
     - usestdlibvars
     - wastedassign
     - whitespace

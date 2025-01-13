@@ -37,16 +37,28 @@ func NewFromEntityMetric(entityMetric *entity.Metric) (*Metric, error) {
 		if v, ok := entityMetric.Value.(int64); ok {
 			metric.Delta = &v
 		} else {
-			return nil, fmt.Errorf("unexpected value type for counter metric '%s': got %T, expected int64", entityMetric.Name, entityMetric.Value)
+			return nil, fmt.Errorf(
+				"unexpected value type for counter metric '%s': got %T, expected int64",
+				entityMetric.Name,
+				entityMetric.Value,
+			)
 		}
 	case entity.MetricTypeGauge:
 		if v, ok := entityMetric.Value.(float64); ok {
 			metric.Value = &v
 		} else {
-			return nil, fmt.Errorf("unexpected value type for gauge metric '%s': got %T, expected float64", entityMetric.Name, entityMetric.Value)
+			return nil, fmt.Errorf(
+				"unexpected value type for gauge metric '%s': got %T, expected float64",
+				entityMetric.Name,
+				entityMetric.Value,
+			)
 		}
 	default:
-		return nil, fmt.Errorf("unsupported metric type '%s' for metric '%s'", entityMetric.Type, entityMetric.Name)
+		return nil, fmt.Errorf(
+			"unsupported metric type '%s' for metric '%s'",
+			entityMetric.Type,
+			entityMetric.Name,
+		)
 	}
 
 	return metric, nil

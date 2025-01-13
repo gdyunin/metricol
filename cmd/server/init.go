@@ -7,7 +7,7 @@ import (
 	"NewNewMetricol/pkg/convert"
 	"NewNewMetricol/pkg/logging"
 	"context"
-	"log"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -25,32 +25,56 @@ const (
 	LoggerNameGracefulShutdown = "graceful_shutdown"
 	// GracefulShutdownTimeout is the time to wait for ongoing tasks to complete during shutdown.
 	GracefulShutdownTimeout = 5 * time.Second
+	// DefaultBackupFileName is the name of the default backup file.
+	DefaultBackupFileName = "backup.txt"
 )
 
 // mainContext initializes the main application context with a cancel function.
+//
+// Returns:
+//   - context.Context: The main context for application lifecycle management.
+//   - context.CancelFunc: A cancel function to signal application termination.
 func mainContext() (context.Context, context.CancelFunc) {
 	return context.WithCancel(context.Background())
 }
 
-// loggerWithSyncFunc initializes and returns a SugaredLogger instance
-// along with a function to flush buffered logs.
+// loggerWithSyncFunc initializes a structured logger for the application.
+//
+// Returns:
+//   - *zap.SugaredLogger: A configured logger instance.
+//   - func(): A function to flush any buffered logs.
 func loggerWithSyncFunc() (*zap.SugaredLogger, func()) {
 	l := logging.Logger(logging.LevelINFO)
 	syncFunc := func() { _ = l.Sync() }
 	return l, syncFunc
 }
 
-// loadConfig parses the configuration file and returns a Config instance.
-// Logs a fatal error if parsing fails.
-func loadConfig() *config.Config {
+// loadConfig parses the application's configuration file.
+//
+// Returns:
+//   - *config.Config: The parsed configuration.
+//   - error: An error if parsing fails.
+func loadConfig() (*config.Config, error) {
 	cfg, err := config.ParseConfig()
 	if err != nil {
-		log.Fatalf("Error occurred while parsing the application configuration: %v", err)
+		return nil, fmt.Errorf("failed to parse config: %w", err)
 	}
-	return cfg
+	return cfg, nil
 }
 
-func initComponentsWithShutdownActs(cfg *config.Config, logger *zap.SugaredLogger) (*delivery.EchoServer, []func()) {
+// initComponentsWithShutdownActs initializes application components and generates shutdown actions.
+//
+// Parameters:
+//   - cfg: The application configuration.
+//   - logger: The structured logger instance.
+//
+// Returns:
+//   - *delivery.EchoServer: The configured Echo server instance.
+//   - []func(): A list of functions to execute during application shutdown.
+func initComponentsWithShutdownActs(
+	cfg *config.Config,
+	logger *zap.SugaredLogger,
+) (*delivery.EchoServer, []func()) {
 	shutdownActions := make([]func(), 0)
 
 	repo, repoShutdownFunc := initRepo(cfg, logger.Named(LoggerNameRepository))
@@ -61,11 +85,20 @@ func initComponentsWithShutdownActs(cfg *config.Config, logger *zap.SugaredLogge
 	return echoDelivery, shutdownActions
 }
 
+// initRepo initializes the repository component and its shutdown function.
+//
+// Parameters:
+//   - cfg: The application configuration.
+//   - logger: The structured logger instance for the repository.
+//
+// Returns:
+//   - repository.Repository: The initialized repository instance.
+//   - func(): A function to cleanly shut down the repository.
 func initRepo(cfg *config.Config, logger *zap.SugaredLogger) (repository.Repository, func()) {
 	r := repository.NewInFileRepository(
 		logger,
 		cfg.FileStoragePath,
-		"backup.txt",
+		DefaultBackupFileName,
 		convert.IntegerToSeconds(cfg.StoreInterval),
 		cfg.Restore,
 	)
@@ -73,13 +106,12 @@ func initRepo(cfg *config.Config, logger *zap.SugaredLogger) (repository.Reposit
 	return r, r.Shutdown
 }
 
-// setupGracefulShutdown sets up a graceful shutdown mechanism for the application.
-// It listens for system interrupt and termination signals (e.g., SIGTERM or SIGINT).
-// When a signal is received, it cancels the provided context and waits for the graceful shutdown timeout before exiting.
+// setupGracefulShutdown configures the graceful shutdown mechanism for the application.
 //
 // Parameters:
-//   - ctxCancel: The cancel function associated with the application context.
-//     This function will be called to signal the application to shut down.
+//   - ctxCancel: The cancel function to terminate the application context.
+//   - logger: The structured logger instance for shutdown events.
+//   - shutdownActions: A variadic list of functions to execute during shutdown.
 func setupGracefulShutdown(ctxCancel context.CancelFunc, logger *zap.SugaredLogger, shutdownActions ...func()) {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)

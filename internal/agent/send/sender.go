@@ -20,6 +20,8 @@ const (
 	UpdateSingleEndpoint = "/update"
 	// UpdateBatchEndpoint defines the API endpoint for updating a batch of metrics.
 	UpdateBatchEndpoint = "/updates"
+	// AttemptsDefaultCount defines default count of attempts for retry calls.
+	AttemptsDefaultCount = 3
 )
 
 // MetricsSender provides functionality for sending metrics to a remote server.
@@ -50,7 +52,7 @@ func NewMetricsSender(serverAddress string, logger *zap.SugaredLogger) *MetricsS
 		AddRetryCondition(func(r *resty.Response, err error) bool {
 			return err != nil || r.StatusCode() >= 500 && r.StatusCode() <= 599
 		}).
-		SetRetryCount(3).
+		SetRetryCount(AttemptsDefaultCount).
 		SetRetryAfter(func(client *resty.Client, response *resty.Response) (time.Duration, error) {
 			currentAttempt := response.Request.Attempt
 			if currentAttempt > client.RetryCount {
@@ -62,7 +64,7 @@ func NewMetricsSender(serverAddress string, logger *zap.SugaredLogger) *MetricsS
 			// Attempt 2: 2*2 - 1 = 3 seconds.
 			// Attempt 3: 2*3 - 1 = 5 seconds.
 			// This logic is a requirement of the technical specification.
-			return retry.CalcByLinear(currentAttempt, 2, -1), nil
+			return retry.CalcByLinear(currentAttempt, retry.DefaultLinearCoefficientScaling, -1), nil
 		}).
 		SetLogger(logger.Named("http_client"))
 
