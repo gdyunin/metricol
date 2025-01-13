@@ -72,7 +72,11 @@ func (s *MetricService) isValidMetric(metric *entity.Metric) error {
 
 func (s *MetricService) pushCounter(metric *entity.Metric) (*entity.Metric, error) {
 	var currentVal int64
-	var newVal int64
+
+	newVal, err := convert.AnyToInt64(metric.Value)
+	if err != nil {
+		return nil, fmt.Errorf("failed while get value counter: %w", err)
+	}
 
 	exist, err := s.repo.IsExist(metric.Type, metric.Name)
 	if err != nil {
@@ -97,11 +101,6 @@ func (s *MetricService) pushCounter(metric *entity.Metric) (*entity.Metric, erro
 		if err != nil {
 			return nil, fmt.Errorf("failed while get current state of counter: %w", err)
 		}
-	}
-
-	newVal, err = convert.AnyToInt64(metric.Value)
-	if err != nil {
-		return nil, fmt.Errorf("failed while get value counter: %w", err)
 	}
 
 	return s.pushDefault(&entity.Metric{
