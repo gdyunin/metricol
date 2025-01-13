@@ -8,9 +8,11 @@ import (
 	"NewNewMetricol/internal/server/delivery/render"
 	"NewNewMetricol/internal/server/internal/usecase"
 	"NewNewMetricol/internal/server/repository"
+	"context"
 	"fmt"
 	"html/template"
 	"path"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
@@ -35,10 +37,20 @@ func NewEchoServer(serverAddress string, repo repository.Repository, logger *zap
 		tmplPath:    DefaultTemplatesPath,
 		metricsCtrl: usecase.NewMetricService(repo),
 	}
+
+	echoServer.echo.HideBanner = true
+
 	return echoServer.build()
 }
 
-func (s *EchoServer) Start() {
+func (s *EchoServer) Start(ctx context.Context) {
+	go func() {
+		<-ctx.Done()
+		shutdownCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+		_ = s.echo.Shutdown(shutdownCtx)
+	}()
+
 	err := s.echo.Start(s.addr)
 	if err != nil {
 		fmt.Printf("err: %v", err)

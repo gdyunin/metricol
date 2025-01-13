@@ -8,140 +8,108 @@ import (
 	"go.uber.org/zap"
 )
 
+// InMemoryRepository implements a thread-safe in-memory storage for metrics.
 type InMemoryRepository struct {
-	counters map[string]int64
-	gauges   map[string]float64
-	mu       *sync.RWMutex
-	logger   *zap.SugaredLogger
+	storage map[string]map[string]any // Storage for metrics organized by type and name.
+	mu      *sync.RWMutex             // Mutex to synchronize access to the storage.
+	logger  *zap.SugaredLogger        // Logger for logging repository operations.
 }
 
+// NewInMemoryRepository creates a new instance of InMemoryRepository.
+//
+// Parameters:
+//   - logger: A logger instance for recording operations.
+//
+// Returns:
+//   - A pointer to a new InMemoryRepository instance.
 func NewInMemoryRepository(logger *zap.SugaredLogger) *InMemoryRepository {
 	return &InMemoryRepository{
-		counters: make(map[string]int64),
-		gauges:   make(map[string]float64),
-		mu:       &sync.RWMutex{},
-		logger:   logger,
+		storage: make(map[string]map[string]any),
+		mu:      &sync.RWMutex{},
+		logger:  logger,
 	}
 }
 
+// Update updates or adds a metric in the repository.
+//
+// Parameters:
+//   - metric: A pointer to the Metric entity to update or add.
+//
+// Returns:
+//   - An error if the operation fails.
 func (r *InMemoryRepository) Update(metric *entity.Metric) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	updateFunctions := map[string]func(string, any) error{
-		entity.MetricTypeCounter: r.updateCounter,
-		entity.MetricTypeGauge:   r.updateGauge,
+	if r.storage[metric.Type] == nil {
+		r.storage[metric.Type] = make(map[string]any)
 	}
 
-	updateFunc, ok := updateFunctions[metric.Type]
-	if !ok {
-		return fmt.Errorf("unknown metric type: %s", metric.Type)
-	}
-
-	if err := updateFunc(metric.Name, metric.Value); err != nil {
-		return fmt.Errorf("error updating metric (%s): %w", metric.Type, err)
-	}
-
+	r.storage[metric.Type][metric.Name] = metric.Value
 	return nil
 }
 
-func (r *InMemoryRepository) updateCounter(name string, value any) error {
-	convertedValue, ok := value.(int64)
-	if !ok {
-		return fmt.Errorf("counter value must be int64 but got %T", value)
-	}
-
-	r.counters[name] = convertedValue
-	return nil
-}
-
-func (r *InMemoryRepository) updateGauge(name string, value any) error {
-	convertedValue, ok := value.(float64)
-	if !ok {
-		return fmt.Errorf("gauge value must be float64 but got %T", value)
-	}
-
-	r.gauges[name] = convertedValue
-	return nil
-}
-
-func (r *InMemoryRepository) Find(metricType string, name string) (found *entity.Metric, err error) {
+// IsExist checks if a metric exists in the repository.
+//
+// Parameters:
+//   - metricType: The type of the metric.
+//   - name: The name of the metric.
+//
+// Returns:
+//   - A boolean indicating whether the metric exists.
+//   - An error if the operation fails.
+func (r *InMemoryRepository) IsExist(metricType string, name string) (bool, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	findFunctions := map[string]func(string) (*entity.Metric, error){
-		entity.MetricTypeCounter: r.findCounter,
-		entity.MetricTypeGauge:   r.findGauge,
-	}
-
-	findFunc, ok := findFunctions[metricType]
-	if !ok {
-		return nil, fmt.Errorf("unknown metric type: %s", metricType)
-	}
-
-	found, err = findFunc(name)
-	if err != nil {
-		return nil, fmt.Errorf("error find metric (%s): %w", name, err)
-	}
-
-	return
+	_, exist := r.storage[metricType][name]
+	return exist, nil
 }
 
-func (r *InMemoryRepository) findCounter(name string) (*entity.Metric, error) {
-	value, ok := r.counters[name]
-	if !ok {
-		return nil, fmt.Errorf("%w: counter %s not exists in repository", ErrNotFound, name)
+// Find retrieves a metric from the repository by type and name.
+//
+// Parameters:
+//   - metricType: The type of the metric.
+//   - name: The name of the metric.
+//
+// Returns:
+//   - A pointer to the Metric entity if found.
+//   - An error if the metric does not exist or another issue occurs.
+func (r *InMemoryRepository) Find(metricType string, name string) (*entity.Metric, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	value, exist := r.storage[metricType][name]
+	if !exist {
+		return nil, fmt.Errorf("metric not found: type=%s, name=%s", metricType, name)
 	}
 
 	return &entity.Metric{
 		Value: value,
 		Name:  name,
-		Type:  entity.MetricTypeCounter,
+		Type:  metricType,
 	}, nil
 }
 
-func (r *InMemoryRepository) findGauge(name string) (*entity.Metric, error) {
-	value, ok := r.gauges[name]
-	if !ok {
-		return nil, fmt.Errorf("%w: counter %s not exists in repository", ErrNotFound, name)
-	}
-
-	return &entity.Metric{
-		Value: value,
-		Name:  name,
-		Type:  entity.MetricTypeGauge,
-	}, nil
-}
-
+// All retrieves all metrics from the repository.
+//
+// Returns:
+//   - A pointer to a Metrics slice containing all metrics.
+//   - An error if the operation fails.
 func (r *InMemoryRepository) All() (*entity.Metrics, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	metrics := append(r.allCounters(), r.allGauges()...)
+	metrics := entity.Metrics{}
+	for metricType, metricMap := range r.storage {
+		for name, value := range metricMap {
+			metrics = append(metrics, &entity.Metric{
+				Value: value,
+				Name:  name,
+				Type:  metricType,
+			})
+		}
+	}
 
 	return &metrics, nil
-}
-
-func (r *InMemoryRepository) allCounters() entity.Metrics {
-	metrics := make(entity.Metrics, 0, len(r.counters))
-	for name, value := range r.counters {
-		metrics = append(metrics, &entity.Metric{
-			Value: value,
-			Name:  name,
-			Type:  entity.MetricTypeCounter,
-		})
-	}
-	return metrics
-}
-
-func (r *InMemoryRepository) allGauges() entity.Metrics {
-	metrics := make(entity.Metrics, 0, len(r.gauges))
-	for name, value := range r.gauges {
-		metrics = append(metrics, &entity.Metric{
-			Value: value,
-			Name:  name,
-			Type:  entity.MetricTypeGauge,
-		})
-	}
-	return metrics
 }

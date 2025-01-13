@@ -30,12 +30,15 @@ func (s *MetricService) PushMetric(metric *entity.Metric) (*entity.Metric, error
 }
 
 func (s *MetricService) Pull(metricType string, name string) (*entity.Metric, error) {
-	m, err := s.repo.Find(metricType, name)
-
-	if err != nil && errors.Is(err, repository.ErrNotFound) {
-		return nil, nil
+	exist, err := s.repo.IsExist(metricType, name)
+	if err != nil {
+		return nil, fmt.Errorf("failed check is exist in repo %w", err)
+	}
+	if !exist {
+		return nil, fmt.Errorf("metric not exist in repo %w", err)
 	}
 
+	m, err := s.repo.Find(metricType, name)
 	if err != nil {
 		return nil, fmt.Errorf("error while pull from repo: %w", err)
 	}
@@ -71,8 +74,21 @@ func (s *MetricService) pushCounter(metric *entity.Metric) (*entity.Metric, erro
 	var currentVal int64
 	var newVal int64
 
+	exist, err := s.repo.IsExist(metric.Type, metric.Name)
+	if err != nil {
+		return nil, fmt.Errorf("failed check is exist in repo %w", err)
+	}
+
+	if !exist {
+		return s.pushDefault(&entity.Metric{
+			Value: currentVal + newVal,
+			Name:  metric.Name,
+			Type:  entity.MetricTypeCounter,
+		})
+	}
+
 	current, err := s.repo.Find(metric.Type, metric.Name)
-	if err != nil && !errors.Is(err, repository.ErrNotFound) {
+	if err != nil {
 		return nil, fmt.Errorf("failed push counter: %w", err)
 	}
 
