@@ -6,6 +6,10 @@ import (
 	"github.com/gdyunin/metricol.git/internal/server/internal/entity"
 )
 
+const (
+	AttemptsDefaultCount = 4 // Default count of attempts for retry calls.
+)
+
 // Repository defines the interface for a metric storage repository.
 // It provides methods for managing and querying metrics.
 type Repository interface {

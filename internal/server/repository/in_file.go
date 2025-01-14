@@ -16,9 +16,8 @@ import (
 )
 
 const (
-	FileDefaultPerm      = 0o600 // Default file permissions.
-	DirDefaultPerm       = 0o750 // Default directory permissions.
-	AttemptsDefaultCount = 4     // Default count of attempts for retry calls.
+	FileDefaultPerm = 0o600 // Default file permissions.
+	DirDefaultPerm  = 0o750 // Default directory permissions.
 )
 
 // InFileRepository represents a file-backed repository for metrics storage.
