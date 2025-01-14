@@ -1,6 +1,8 @@
 package repository
 
 import (
+	"context"
+
 	"github.com/gdyunin/metricol.git/internal/server/internal/entity"
 )
 
@@ -44,4 +46,13 @@ type Repository interface {
 	//   - A pointer to a Metrics slice containing all metrics.
 	//   - An error if the operation fails.
 	All() (*entity.Metrics, error)
+
+	// CheckConnection verifies the repository's connection.
+	//
+	// Parameters:
+	//   - ctx: The context used to manage the connection check lifecycle.
+	//
+	// Returns:
+	//   - An error if the connection check fails.
+	CheckConnection(context.Context) error
 }

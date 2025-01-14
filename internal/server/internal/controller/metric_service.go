@@ -1,6 +1,7 @@
-package control
+package controller
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -89,6 +90,20 @@ func (s *MetricService) PullAll() (*entity.Metrics, error) {
 		return nil, fmt.Errorf("failed to retrieve all metrics: %w", err)
 	}
 	return metrics, nil
+}
+
+// CheckConnection verifies the connectivity to the repository.
+//
+// Parameters:
+//   - ctx: The context used to control cancellation and timeout for the operation.
+//
+// Returns:
+//   - error: An error indicating the connectivity issue, or nil if the connection is valid.
+func (s *MetricService) CheckConnection(ctx context.Context) error {
+	if err := s.repo.CheckConnection(ctx); err != nil {
+		return fmt.Errorf("failed to check connection to the repository: %w", err)
+	}
+	return nil
 }
 
 // validate checks if the given metric is valid.

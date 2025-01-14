@@ -12,8 +12,15 @@ func main() {
 		logger.Fatalf("Error occurred while parsing the application configuration: %v", err)
 	}
 
-	server, shutdownActs := initComponentsWithShutdownActs(appCfg, logger)
-	setupGracefulShutdown(mainCtxCancel, logger.Named(LoggerNameGracefulShutdown), shutdownActs...)
+	deliveryWithShutdownActs, err := initComponentsWithShutdownActs(appCfg, logger)
+	if err != nil {
+		logger.Fatalf("Error occurred while initialize the application components: %v", err)
+	}
 
-	server.Start(mainCtx)
+	setupGracefulShutdown(
+		mainCtxCancel,
+		logger.Named(LoggerNameGracefulShutdown),
+		deliveryWithShutdownActs.shutdownActions...,
+	)
+	deliveryWithShutdownActs.server.Start(mainCtx)
 }

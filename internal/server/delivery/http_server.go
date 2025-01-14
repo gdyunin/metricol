@@ -13,7 +13,7 @@ import (
 	"github.com/gdyunin/metricol.git/internal/server/delivery/handle/value"
 	custMiddleware "github.com/gdyunin/metricol.git/internal/server/delivery/middleware"
 	"github.com/gdyunin/metricol.git/internal/server/delivery/render"
-	"github.com/gdyunin/metricol.git/internal/server/internal/control"
+	"github.com/gdyunin/metricol.git/internal/server/internal/controller"
 	"github.com/gdyunin/metricol.git/internal/server/repository"
 
 	"github.com/labstack/echo/v4"
@@ -31,7 +31,7 @@ const (
 type EchoServer struct {
 	echo        *echo.Echo
 	logger      *zap.SugaredLogger
-	metricsCtrl *control.MetricService
+	metricsCtrl *controller.MetricService
 	addr        string
 	tmplPath    string
 }
@@ -51,7 +51,7 @@ func NewEchoServer(serverAddress string, repo repository.Repository, logger *zap
 		logger:      logger,
 		addr:        serverAddress,
 		tmplPath:    DefaultTemplatesPath,
-		metricsCtrl: control.NewMetricService(repo),
+		metricsCtrl: controller.NewMetricService(repo),
 	}
 
 	echoServer.echo.HideBanner = true
@@ -151,5 +151,5 @@ func (s *EchoServer) setupRouters() {
 	valueGroup.GET("/:type/:id", value.FromURI(s.metricsCtrl))
 
 	s.echo.GET("/", general.MainPage(s.metricsCtrl))
-	s.echo.GET("/ping", general.Ping())
+	s.echo.GET("/ping", general.Ping(s.metricsCtrl))
 }

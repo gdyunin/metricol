@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gdyunin/metricol.git/internal/server/delivery/model"
-	"github.com/gdyunin/metricol.git/internal/server/internal/control"
+	"github.com/gdyunin/metricol.git/internal/server/internal/controller"
 	"github.com/gdyunin/metricol.git/internal/server/internal/entity"
 
 	"github.com/labstack/echo/v4"
@@ -77,7 +77,7 @@ func FromURI(puller MetricsPuller) echo.HandlerFunc {
 func pullMetric(puller MetricsPuller, m model.Metric) (*entity.Metric, error) {
 	metric, err := puller.Pull(m.MType, m.ID)
 	if err != nil {
-		if errors.Is(err, control.ErrNotFoundInRepository) {
+		if errors.Is(err, controller.ErrNotFoundInRepository) {
 			return nil, echo.NewHTTPError(http.StatusNotFound, "Metric not found in the repository.")
 		}
 		return nil, echo.NewHTTPError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))

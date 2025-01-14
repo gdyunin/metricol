@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -113,4 +114,15 @@ func (r *InMemoryRepository) All() (*entity.Metrics, error) {
 	}
 
 	return &metrics, nil
+}
+
+// CheckConnection checks the connection status of the repository.
+//
+// Parameters:
+//   - ctx: A context to allow cancellation or timeout control.
+//
+// Returns:
+//   - An error if the connection check fails; otherwise, nil.
+func (r *InMemoryRepository) CheckConnection(_ context.Context) error {
+	return nil
 }

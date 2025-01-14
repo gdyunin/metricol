@@ -63,6 +63,16 @@ func loadConfig() (*config.Config, error) {
 	return cfg, nil
 }
 
+// deliveryWithShutdown holds the Echo server and shutdown actions.
+//
+// Fields:
+//   - server: The Echo server instance.
+//   - shutdownActions: A list of functions to execute during shutdown.
+type deliveryWithShutdown struct {
+	server          *delivery.EchoServer
+	shutdownActions []func()
+}
+
 // initComponentsWithShutdownActs initializes application components and generates shutdown actions.
 //
 // Parameters:
@@ -70,20 +80,40 @@ func loadConfig() (*config.Config, error) {
 //   - logger: The structured logger instance.
 //
 // Returns:
-//   - *delivery.EchoServer: The configured Echo server instance.
-//   - []func(): A list of functions to execute during application shutdown.
+//   - *deliveryWithShutdown: A wrapper for Echo server and its shutdown actions.
+//   - error: An error if initialization fails.
 func initComponentsWithShutdownActs(
 	cfg *config.Config,
 	logger *zap.SugaredLogger,
-) (*delivery.EchoServer, []func()) {
+) (*deliveryWithShutdown, error) {
 	shutdownActions := make([]func(), 0)
 
-	repo, repoShutdownFunc := initRepo(cfg, logger.Named(LoggerNameRepository))
-	shutdownActions = append(shutdownActions, repoShutdownFunc)
+	repoWithShutdownFunc, err := initRepo(cfg, logger.Named(LoggerNameRepository))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create repository: %w", err)
+	}
+	shutdownActions = append(shutdownActions, repoWithShutdownFunc.shutdown)
 
-	echoDelivery := delivery.NewEchoServer(cfg.ServerAddress, repo, logger.Named(LoggerNameDelivery))
+	echoDelivery := delivery.NewEchoServer(
+		cfg.ServerAddress,
+		repoWithShutdownFunc.repository,
+		logger.Named(LoggerNameDelivery),
+	)
 
-	return echoDelivery, shutdownActions
+	return &deliveryWithShutdown{
+		server:          echoDelivery,
+		shutdownActions: shutdownActions,
+	}, nil
+}
+
+// repoWithShutdown holds the repository instance and its shutdown function.
+//
+// Fields:
+//   - repository: The repository instance.
+//   - shutdown: The function to cleanly shut down the repository.
+type repoWithShutdown struct {
+	repository repository.Repository
+	shutdown   func()
 }
 
 // initRepo initializes the repository component and its shutdown function.
@@ -93,18 +123,34 @@ func initComponentsWithShutdownActs(
 //   - logger: The structured logger instance for the repository.
 //
 // Returns:
-//   - repository.Repository: The initialized repository instance.
-//   - func(): A function to cleanly shut down the repository.
-func initRepo(cfg *config.Config, logger *zap.SugaredLogger) (repository.Repository, func()) {
-	r := repository.NewInFileRepository(
-		logger,
-		cfg.FileStoragePath,
-		DefaultBackupFileName,
-		convert.IntegerToSeconds(cfg.StoreInterval),
-		cfg.Restore,
-	)
+//   - *repoWithShutdown: A wrapper for repository and its shutdown function.
+//   - error: An error if initialization fails.
+func initRepo(cfg *config.Config, logger *zap.SugaredLogger) (*repoWithShutdown, error) {
+	var doNothing = func() {}
 
-	return r, r.Shutdown
+	if cfg.DatabaseDSN != "" {
+		r, err := repository.NewPostgreSQL(cfg.DatabaseDSN)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize PostgreSQL repository: %w", err)
+		}
+		return &repoWithShutdown{repository: r, shutdown: r.Shutdown}, nil
+	}
+
+	if cfg.FileStoragePath != "" {
+		r := repository.NewInFileRepository(
+			logger,
+			cfg.FileStoragePath,
+			DefaultBackupFileName,
+			convert.IntegerToSeconds(cfg.StoreInterval),
+			cfg.Restore,
+		)
+		return &repoWithShutdown{repository: r, shutdown: r.Shutdown}, nil
+	}
+
+	return &repoWithShutdown{
+		repository: repository.NewInMemoryRepository(logger),
+		shutdown:   doNothing,
+	}, nil
 }
 
 // setupGracefulShutdown configures the graceful shutdown mechanism for the application.
