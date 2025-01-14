@@ -16,6 +16,17 @@ import (
 // PSQLDefaultConnectionCheckTimeout specifies the duration to wait for a connection check before timing out.
 const PSQLDefaultConnectionCheckTimeout = time.Second
 
+var (
+	// ErrQueryExecuteFailed is a predefined error for handling failures during query execution.
+	// Use this error to provide consistent error messaging for query-related issues.
+	ErrQueryExecuteFailed = errors.New("failed to execute query")
+
+	// QueryErrFmt is a format string used for wrapping errors related to query execution.
+	// It combines multiple errors into a single error message using the fmt.Errorf function
+	// and helps maintain consistency in error handling.
+	QueryErrFmt = "%w: %w"
+)
+
 // PostgreSQL represents the PostgreSQL repository. It holds the database connection and provides methods
 // to interact with the metrics data stored in the PostgreSQL database.
 type PostgreSQL struct {
@@ -64,7 +75,7 @@ func (p *PostgreSQL) Update(metric *entity.Metric) error {
 
 	_, err = p.db.ExecContext(context.TODO(), query, metric.Type, metric.Name, mValue)
 	if err != nil {
-		return fmt.Errorf("failed to execute query: %w", err)
+		return fmt.Errorf(QueryErrFmt, ErrQueryExecuteFailed, err)
 	}
 
 	return nil
@@ -90,7 +101,7 @@ func (p *PostgreSQL) IsExist(metricType string, metricName string) (exist bool, 
 	`
 
 	if err = p.db.QueryRowContext(context.TODO(), query, metricType, metricName).Scan(&exist); err != nil {
-		err = fmt.Errorf("failed to execute query: %w", err)
+		err = fmt.Errorf(QueryErrFmt, ErrQueryExecuteFailed, err)
 	}
 	return
 }
@@ -120,7 +131,7 @@ func (p *PostgreSQL) Find(metricType string, metricName string) (*entity.Metric,
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("metric not found: type=%s, name=%s", metricType, metricName)
 		}
-		return nil, fmt.Errorf("failed to execute query: %w", err)
+		return nil, fmt.Errorf(QueryErrFmt, ErrQueryExecuteFailed, err)
 	}
 
 	err = json.Unmarshal(rawValue, &m.Value)
@@ -142,7 +153,7 @@ func (p *PostgreSQL) All() (*entity.Metrics, error) {
 
 	rows, err := p.db.QueryContext(context.TODO(), query)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute query: %w", err)
+		return nil, fmt.Errorf(QueryErrFmt, ErrQueryExecuteFailed, err)
 	}
 	defer func() { _ = rows.Close() }()
 
