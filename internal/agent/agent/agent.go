@@ -96,7 +96,7 @@ func (a *Agent) Start(ctx context.Context) {
 			a.collect()
 		case t := <-sendTicker.C:
 			senderCtx, cancel := context.WithDeadline(ctx, t.Add(a.reportInterval))
-			a.sendBySingle(senderCtx)
+			a.sendByBatch(senderCtx)
 			cancel()
 		}
 	}
