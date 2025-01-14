@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/gdyunin/metricol.git/internal/server/internal/entity"
+	"github.com/gdyunin/metricol.git/pkg/convert"
 )
 
 // Metric represents the structure used for JSON serialization and deserialization.
@@ -68,7 +69,7 @@ func FromEntityMetric(em *entity.Metric) *Metric {
 
 	switch em.Type {
 	case entity.MetricTypeCounter:
-		if value, ok := em.Value.(int64); ok {
+		if value, err := convert.AnyToInt64(em.Value); err == nil {
 			metric.Delta = &value
 		}
 	case entity.MetricTypeGauge:
