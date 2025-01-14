@@ -79,3 +79,55 @@ func FromEntityMetric(em *entity.Metric) *Metric {
 
 	return &metric
 }
+
+// Metrics represents a slice of Metric pointers.
+type Metrics []*Metric
+
+// ToEntityMetrics converts a slice of Metric models to a slice of entity.Metric.
+//
+// This function iterates over each Metric in the slice, converts it to an entity.Metric
+// using ToEntityMetric, and appends it to the resulting entity.Metrics slice.
+//
+// Returns:
+//   - A pointer to an entity.Metrics slice with converted metrics.
+func (m *Metrics) ToEntityMetrics() *entity.Metrics {
+	eMetrics := entity.Metrics{}
+	if m == nil {
+		return &eMetrics
+	}
+
+	for _, model := range *m {
+		if model == nil {
+			continue
+		}
+		eMetrics = append(eMetrics, model.ToEntityMetric())
+	}
+
+	return &eMetrics
+}
+
+// FromEntityMetrics converts a slice of entity.Metric to a slice of Metric models.
+//
+// This function iterates over each entity.Metric in the slice, converts it to a Metric model
+// using FromEntityMetric, and appends it to the resulting Metrics slice.
+//
+// Parameters:
+//   - em: A pointer to an entity.Metrics slice to convert. Can be nil.
+//
+// Returns:
+//   - A pointer to a Metrics slice with converted metrics.
+func FromEntityMetrics(em *entity.Metrics) *Metrics {
+	models := Metrics{}
+	if em == nil {
+		return &models
+	}
+
+	for _, metric := range *em {
+		if metric == nil {
+			continue
+		}
+		models = append(models, FromEntityMetric(metric))
+	}
+
+	return &models
+}

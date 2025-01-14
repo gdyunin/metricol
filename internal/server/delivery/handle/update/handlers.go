@@ -31,7 +31,7 @@ func FromJSON(updater MetricsUpdater) echo.HandlerFunc {
 
 		updated, err := updater.PushMetric(m.ToEntityMetric())
 		if err != nil {
-			return c.String(http.StatusBadRequest, "Unable to update metric. Please check the provided data.")
+			return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		}
 
 		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)

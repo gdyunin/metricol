@@ -10,6 +10,7 @@ import (
 
 	"github.com/gdyunin/metricol.git/internal/server/delivery/handle/general"
 	"github.com/gdyunin/metricol.git/internal/server/delivery/handle/update"
+	"github.com/gdyunin/metricol.git/internal/server/delivery/handle/updates"
 	"github.com/gdyunin/metricol.git/internal/server/delivery/handle/value"
 	custMiddleware "github.com/gdyunin/metricol.git/internal/server/delivery/middleware"
 	"github.com/gdyunin/metricol.git/internal/server/delivery/render"
@@ -145,6 +146,9 @@ func (s *EchoServer) setupRouters() {
 	updateGroup := s.echo.Group("/update")
 	updateGroup.POST("", update.FromJSON(s.metricsCtrl))
 	updateGroup.POST("/:type/:id/:value", update.FromURI(s.metricsCtrl))
+
+	updatesGroup := s.echo.Group("/updates")
+	updatesGroup.POST("", updates.FromJSON(s.metricsCtrl))
 
 	valueGroup := s.echo.Group("/value")
 	valueGroup.POST("", value.FromJSON(s.metricsCtrl))
