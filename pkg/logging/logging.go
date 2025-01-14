@@ -34,6 +34,7 @@ var (
 // init initializes the default logger used as a fallback.
 func init() {
 	zl, err := zap.NewProduction()
+	// TODO: А точно ли хочется паниковать здесь? Хз, подумать.
 	if err != nil {
 		panic(fmt.Sprintf("Initialization error: failed to initialize default logger: %v", err))
 	}
@@ -48,6 +49,7 @@ func init() {
 // Returns:
 //   - *zap.SugaredLogger: A logger instance configured for the specified level.
 func Logger(level string) *zap.SugaredLogger {
+	// [ДЛЯ РЕВЬЮ]: Самый простой способ избежать дубли, кажется сложнее в этом проекте не надо.
 	level = strings.ToUpper(level)
 
 	mu.Lock()

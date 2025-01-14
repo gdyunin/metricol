@@ -14,7 +14,7 @@ import (
 
 // MetricsPuller defines the interface for retrieving metrics.
 type MetricsPuller interface {
-	Pull(metricType string, name string) (*entity.Metric, error)
+	Pull(metricType string, name string) (*entity.Metric, error) // TODO: Надо чтобы стало с использованием контекста.
 }
 
 // FromJSON handles HTTP requests to fetch a metric's value using JSON payloads.
@@ -31,6 +31,7 @@ func FromJSON(puller MetricsPuller) echo.HandlerFunc {
 			return c.String(http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 		}
 
+		// TODO: Передавать в pullMetric(...) контекст с тайм-аутом.
 		metric, err := pullMetric(puller, m)
 		if err != nil {
 			return c.String(err.(*echo.HTTPError).Code, err.Error()) //nolint
@@ -55,6 +56,7 @@ func FromURI(puller MetricsPuller) echo.HandlerFunc {
 			return c.String(http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 		}
 
+		// TODO: Передавать в pullMetric(...) контекст с тайм-аутом.
 		metric, err := pullMetric(puller, m)
 		if err != nil {
 			return c.String(err.(*echo.HTTPError).Code, err.Error()) //nolint
@@ -75,6 +77,7 @@ func FromURI(puller MetricsPuller) echo.HandlerFunc {
 //   - The fetched metric if found.
 //   - An error response if the metric is not found or if an error occurs during retrieval.
 func pullMetric(puller MetricsPuller, m model.Metric) (*entity.Metric, error) {
+	// TODO: Передавать в Pull(...) контекст с тайм-аутом. Получать на вход контекст запроса и наследовать от него.
 	metric, err := puller.Pull(m.MType, m.ID)
 	if err != nil {
 		if errors.Is(err, controller.ErrNotFoundInRepository) {

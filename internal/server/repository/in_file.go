@@ -70,6 +70,7 @@ func NewInFileRepository(
 // Returns:
 //   - An error if the operation fails.
 func (r *InFileRepository) Update(metric *entity.Metric) error {
+	// TODO: Добавить работу с контекстом для контроля времени выполнения. Добавить контекст в сигнатуру метода.
 	if err := r.InMemoryRepository.Update(metric); err != nil {
 		return fmt.Errorf(
 			"failed to update metric in memory: type=%s, name=%s, value=%v, error: %w",
@@ -93,6 +94,7 @@ func (r *InFileRepository) Shutdown() {
 
 // flush writes all metrics to the storage file.
 func (r *InFileRepository) flush() {
+	// TODO: Добавить работу с контекстом для контроля времени выполнения. Добавить контекст в сигнатуру метода.
 	metrics, err := r.All()
 	if err != nil || metrics == nil {
 		r.logger.Warnf("failed to retrieve metrics for flushing: error=%v", err)

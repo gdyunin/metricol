@@ -72,7 +72,8 @@ func (p *PostgreSQL) Update(metric *entity.Metric) error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal metric value: %w", err)
 	}
-
+	// TODO: Заменить context.TODO() на контекст, который будет в аргументах функции.
+	// TODO: Соответственно добавить контекст в сигнатуру метода.
 	_, err = p.db.ExecContext(context.TODO(), query, metric.Type, metric.Name, mValue)
 	if err != nil {
 		return fmt.Errorf(QueryErrFmt, ErrQueryExecuteFailed, err)
@@ -100,6 +101,8 @@ func (p *PostgreSQL) IsExist(metricType string, metricName string) (exist bool, 
 		) AS is_exist;
 	`
 
+	// TODO: Заменить context.TODO() на контекст, который будет в аргументах функции.
+	// TODO: Соответственно добавить контекст в сигнатуру метода.
 	if err = p.db.QueryRowContext(context.TODO(), query, metricType, metricName).Scan(&exist); err != nil {
 		err = fmt.Errorf(QueryErrFmt, ErrQueryExecuteFailed, err)
 	}
@@ -126,6 +129,8 @@ func (p *PostgreSQL) Find(metricType string, metricName string) (*entity.Metric,
 	m := entity.Metric{}
 	var rawValue []byte
 
+	// TODO: Заменить context.TODO() на контекст, который будет в аргументах функции.
+	// TODO: Соответственно добавить контекст в сигнатуру метода.
 	err := p.db.QueryRowContext(context.TODO(), query, metricType, metricName).Scan(&m.Name, &m.Type, &rawValue)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -134,6 +139,7 @@ func (p *PostgreSQL) Find(metricType string, metricName string) (*entity.Metric,
 		return nil, fmt.Errorf(QueryErrFmt, ErrQueryExecuteFailed, err)
 	}
 
+	// [ДЛЯ РЕВЬЮ]: Храним значение как JSONB. Подробнее в комментах к func (p *PostgreSQL) createTables() error.
 	err = json.Unmarshal(rawValue, &m.Value)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode JSON value: %w", err)
@@ -151,6 +157,8 @@ func (p *PostgreSQL) All() (*entity.Metrics, error) {
 	metrics := make(entity.Metrics, 0)
 	query := `SELECT m_name, m_type, m_value FROM metrics;`
 
+	// TODO: Заменить context.TODO() на контекст, который будет в аргументах функции.
+	// TODO: Соответственно добавить контекст в сигнатуру метода.
 	rows, err := p.db.QueryContext(context.TODO(), query)
 	if err != nil {
 		return nil, fmt.Errorf(QueryErrFmt, ErrQueryExecuteFailed, err)
@@ -166,6 +174,7 @@ func (p *PostgreSQL) All() (*entity.Metrics, error) {
 			return nil, fmt.Errorf("failed to process database response: %w", err)
 		}
 
+		// [ДЛЯ РЕВЬЮ]: Храним значение как JSONB. Подробнее в комментах к func (p *PostgreSQL) createTables() error.
 		err = json.Unmarshal(rawValue, &m.Value)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode JSON value: %w", err)
@@ -258,6 +267,13 @@ func (p *PostgreSQL) mustBuild() *PostgreSQL {
 // Returns:
 //   - error: an error if the table creation query fails.
 func (p *PostgreSQL) createTables() error {
+	// [ДЛЯ РЕВЬЮ]: Для простоты в рамках обучения выбрана плоская таблица, без других таблиц и отношений.
+	// [ДЛЯ РЕВЬЮ]: В реальных условиях так делать не стоит, я понимаю. Здесь ради обучения
+	// [ДЛЯ РЕВЬЮ]: производительность в угоду простоте.
+	// [ДЛЯ РЕВЬЮ]: Значение храним не в типизированном поле, а в JSONB, чтобы что угодно туда можно было класть.
+	// [ДЛЯ РЕВЬЮ]: Опять таки жертвуем производительностью для простоты. Хотя я видел подобное и на проде.
+	// [ДЛЯ РЕВЬЮ]: CONSTRAINT unique_type_name UNIQUE (m_type, m_name) как гарантия уникальности имени в типе.
+	// TODO: Индексы.
 	mainTableCreateSQL := `
 	CREATE TABLE IF NOT EXISTS metrics (
 		id SERIAL PRIMARY KEY,
@@ -267,7 +283,9 @@ func (p *PostgreSQL) createTables() error {
 		CONSTRAINT unique_type_name UNIQUE (m_type, m_name)
 	);`
 
-	_, err := p.db.Exec(mainTableCreateSQL)
+	// TODO: Заменить context.TODO() на контекст, который будет в аргументах функции.
+	// TODO: Соответственно добавить контекст в сигнатуру метода.
+	_, err := p.db.ExecContext(context.TODO(), mainTableCreateSQL)
 	if err != nil {
 		return fmt.Errorf("failed to create metrics table: %w", err)
 	}

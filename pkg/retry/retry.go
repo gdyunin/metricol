@@ -22,6 +22,9 @@ const DefaultLinearCoefficientScaling = 2
 //
 // Returns:
 //   - time.Duration: The calculated delay duration.
+//
+// TODO: Вот это надо реализовать через паттерн итератор, а не функцию.
+// TODO: Это позволит инкапсулировать кол-во попыток и не заставлять потребителя думать, какой номер передать.
 func CalcByLinear(attempt int, k int, b int) time.Duration {
 	return time.Duration(k*attempt+b) * time.Second
 }
@@ -35,6 +38,7 @@ func CalcByLinear(attempt int, k int, b int) time.Duration {
 // Returns:
 //   - error: The last encountered error if all attempts fail, wrapped with context.
 func WithRetry(attempts int, fn func() error) (err error) {
+	// TODO: Начать принимать и работать с контекстом.
 	for i := range attempts {
 		if i > 0 {
 			time.Sleep(CalcByLinear(i, DefaultLinearCoefficientScaling, 1))
@@ -44,6 +48,7 @@ func WithRetry(attempts int, fn func() error) (err error) {
 		if err == nil {
 			return nil
 		}
+		// TODO: Подумать, как логгировать каждую попытку.
 	}
 	return fmt.Errorf("operation failed after %d attempts: last error: %w", attempts, err)
 }

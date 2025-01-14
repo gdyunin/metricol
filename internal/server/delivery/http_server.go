@@ -84,8 +84,10 @@ func (s *EchoServer) handleShutdown(ctx context.Context) {
 	s.logger.Info("Starting server shutdown listener")
 	<-ctx.Done()
 	s.logger.Info("Received shutdown signal")
+
 	shutdownCtx, cancel := context.WithTimeout(ctx, GracefulShutdownTimeout)
 	defer cancel()
+
 	if err := s.echo.Shutdown(shutdownCtx); err != nil {
 		s.logger.Warnf("Failed to shutdown server gracefully: %v", err)
 	} else {
@@ -98,6 +100,7 @@ func (s *EchoServer) handleShutdown(ctx context.Context) {
 // Returns:
 //   - A pointer to the configured EchoServer.
 func (s *EchoServer) build() *EchoServer {
+	// [ДЛЯ РЕВЬЮ]: Хз, почему через слайс и цикл, а не просто ручными вызовами. Просто захотелось :D.
 	buildSteps := []func(){
 		s.setupPreMiddlewares,
 		s.setupGeneralMiddlewares,
@@ -129,6 +132,15 @@ func (s *EchoServer) setupGeneralMiddlewares() {
 		custMiddleware.Log(s.logger.Named("request")),
 		echoMiddleware.Decompress(),
 		echoMiddleware.Gzip(),
+		// [ДЛЯ РЕВЬЮ]: Тут немного не по ТЗ, а именно, гзиппим всё, а по ТЗ только то,
+		// [ДЛЯ РЕВЬЮ]: что с некоторыми контент-тайпами (application/json и text/html вроде).
+		// [ДЛЯ РЕВЬЮ]: Через эховский миддлвари так нельзя, нужно кастомное.
+		// [ДЛЯ РЕВЬЮ]: Я его сделал и так оно страшно и чужеродно было без супер видимого преимущества,
+		// [ДЛЯ РЕВЬЮ]: Что я по итогу кастомное убрал и оставил эховский middleware.Gzip().
+		// [ДЛЯ РЕВЬЮ]: Могу вернуть кастомное, если оно задумывалось не просто как поучиться перехватывать
+		// [ДЛЯ РЕВЬЮ]: байты и писать их через кастомный райтер со встроенным дефолтным (существующем) райтером.
+		// [ДЛЯ РЕВЬЮ]: А так автотесты проходят, значит не супер критично :D
+		// [ДЛЯ РЕВЬЮ]: В общем, скажи как быть, так и поступим.
 	)
 }
 

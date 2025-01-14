@@ -33,6 +33,8 @@ func NewFromEntityMetric(entityMetric *entity.Metric) (*Metric, error) {
 		MType: entityMetric.Type,
 	}
 
+	// [ДЛЯ РЕВЬЮ]: Чёт с этими type assertion и преобразованиями сложновато выходит...
+	// [ДЛЯ РЕВЬЮ]: Но в целом не стал выносить, потому что нужно только тут. Хз, правильный подход или нет.
 	switch entityMetric.Type {
 	case entity.MetricTypeCounter:
 		if v, ok := entityMetric.Value.(int64); ok {

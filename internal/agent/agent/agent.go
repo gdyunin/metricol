@@ -95,6 +95,7 @@ func (a *Agent) Start(ctx context.Context) {
 		case <-collectTicker.C:
 			a.collect()
 		case t := <-sendTicker.C:
+			// [ДЛЯ РЕВЬЮ]: Дедлайн контекста произойдет примерно в то же время, когда снова тикнет sendTicker.
 			senderCtx, cancel := context.WithDeadline(ctx, t.Add(a.reportInterval))
 			a.sendByBatch(senderCtx)
 			cancel()
@@ -103,6 +104,7 @@ func (a *Agent) Start(ctx context.Context) {
 }
 
 // collect triggers the collection of metrics using the Collector interface.
+// TODO: Подумать, нужен ли вообще. Используется только в 1 месте и просто проксирует другой метод без доп логики.
 func (a *Agent) collect() {
 	a.collector.Collect()
 }

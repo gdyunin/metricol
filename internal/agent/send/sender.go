@@ -22,7 +22,7 @@ const (
 	// UpdateBatchEndpoint defines the API endpoint for updating a batch of metrics.
 	UpdateBatchEndpoint = "/updates"
 	// AttemptsDefaultCount defines default count of attempts for retry calls.
-	AttemptsDefaultCount = 3
+	AttemptsDefaultCount = 4
 )
 
 // MetricsSender provides functionality for sending metrics to a remote server.
@@ -42,6 +42,7 @@ type MetricsSender struct {
 // Returns:
 //   - *MetricsSender: A new instance of MetricsSender with pre-configured settings.
 func NewMetricsSender(serverAddress string, logger *zap.SugaredLogger) *MetricsSender {
+	// [ДЛЯ РЕВЬЮ]: Это должно быть в отдельной функции и гораздо сложнее. Но для текущих нужд пока так сойдет)).
 	if !strings.HasPrefix(serverAddress, "http://") && !strings.HasPrefix(serverAddress, "https://") {
 		serverAddress = "http://" + strings.TrimPrefix(serverAddress, "/")
 	}

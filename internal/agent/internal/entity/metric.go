@@ -36,12 +36,12 @@ func (m *Metrics) Length() int {
 	return len(*m)
 }
 
-// ToString converts the collection of metrics to a string representation.
+// String converts the collection of metrics to a string representation.
 // Each metric is formatted as <Name=..., Type=..., Value=...>.
 //
 // Returns:
 //   - string: The string representation of the metrics collection.
-func (m *Metrics) ToString() string {
+func (m *Metrics) String() string {
 	if m == nil {
 		return ""
 	}
@@ -49,7 +49,12 @@ func (m *Metrics) ToString() string {
 	strData := make([]string, 0, m.Length())
 	for _, metric := range *m {
 		if metric != nil {
-			strData = append(strData, fmt.Sprintf("<Name=%s Type=%s Value=%v>", metric.Name, metric.Type, metric.Value))
+			strData = append(strData, fmt.Sprintf(
+				"<Name=%s Type=%s Value=%v>",
+				metric.Name,
+				metric.Type,
+				metric.Value,
+			))
 		} else {
 			strData = append(strData, "<nil>")
 		}

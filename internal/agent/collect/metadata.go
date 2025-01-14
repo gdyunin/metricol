@@ -27,6 +27,8 @@ func NewMetadata() *Metadata {
 
 // Update increments the poll count and generates a new random seed.
 func (m *Metadata) Update() {
+	// [ДЛЯ РЕВЬЮ]: Здесь и дальше через мютекс, а не атомик, потому что в будущем может что-то еще добавиться в мету.
+	// [ДЛЯ РЕВЬЮ]: В геттерах ниже тоже через мьютексы скорее для общей консистентности кода.
 	m.mu.Lock()
 	defer m.mu.Unlock()
 

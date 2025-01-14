@@ -29,6 +29,7 @@ func FromJSON(updater MetricsUpdater) echo.HandlerFunc {
 			return c.String(http.StatusBadRequest, "Invalid parameters provided in the request.")
 		}
 
+		// TODO: Не самое оптимальное с точки зрения bigO и аллокаций. Нужно оптимизировать.
 		for _, m := range models {
 			if !isValidMetric(m) {
 				return c.String(http.StatusBadRequest, "Invalid parameters provided in the request.")
@@ -37,6 +38,9 @@ func FromJSON(updater MetricsUpdater) echo.HandlerFunc {
 		}
 
 		updatedMetrics := entity.Metrics{}
+		// [ДЛЯ РЕВЬЮ]: Да, это полный бред кидать по одной метрике, надо кидать пачкой. Не успел реализовать((.
+		// TODO: Нужно у контроллера сделать ручку на обновление пачки метрик и дёргать ее сразу, без циклов.
+		// TODO: она должна работать с контекстом и принимать *model.Metrics.
 		for _, m := range metrics {
 			updated, err := updater.PushMetric(m)
 			if err != nil {

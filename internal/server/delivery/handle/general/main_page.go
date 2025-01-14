@@ -29,7 +29,8 @@ type PullerAll interface {
 //   - An echo.HandlerFunc that handles HTTP requests for the main page.
 func MainPage(puller PullerAll) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		// Attempt to fetch all metrics. If an error occurs or the result is nil, respond with 500 Internal Server Error.
+		// Attempt to fetch all metrics.
+		// If an error occurs or the result is nil, respond with 500 Internal Server Error.
 		allMetrics, err := puller.PullAll()
 		if err != nil || allMetrics == nil {
 			return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))

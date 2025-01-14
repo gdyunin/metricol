@@ -29,6 +29,7 @@ func FromJSON(updater MetricsUpdater) echo.HandlerFunc {
 			return c.String(http.StatusBadRequest, "Invalid JSON payload provided.")
 		}
 
+		// TODO: Передавать в updater.PushMetric(...) контекст с тайм-аутом.
 		updated, err := updater.PushMetric(m.ToEntityMetric())
 		if err != nil {
 			return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
@@ -58,6 +59,7 @@ func FromURI(updater MetricsUpdater) echo.HandlerFunc {
 			return c.String(err.(*echo.HTTPError).Code, err.Error()) //nolint
 		}
 
+		// TODO: Передавать в updater.PushMetric(...) контекст с тайм-аутом.
 		_, err := updater.PushMetric(m.ToEntityMetric())
 		if err != nil {
 			return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))

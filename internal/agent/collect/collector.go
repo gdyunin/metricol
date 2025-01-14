@@ -56,11 +56,11 @@ func (c *Collector) Collect() {
 func (c *Collector) Export() (*entity.Metrics, chan bool) {
 	c.mu.RLock()
 	metrics := append(c.exportMemoryMetrics(), c.exportMetadataMetrics()...)
-	c.mu.RUnlock()
+	c.mu.RUnlock() // [ДЛЯ РЕВЬЮ]: Ровно ноль смысла держать его дальше, поэтому сразу тут, без defer.
 
 	go c.waitResetConfirmation()
 
-	c.logger.Infof("Exporting metrics: Count=%d, Metrics=[%s]", metrics.Length(), metrics.ToString())
+	c.logger.Infof("Exporting metrics: Count=%d, Metrics=[%s]", metrics.Length(), metrics.String())
 	return &metrics, c.resetMetaConfirmCh
 }
 
@@ -114,6 +114,14 @@ func (c *Collector) exportMetadataMetrics() entity.Metrics {
 // waitResetConfirmation waits for a confirmation signal to reset metadata.
 // Resets the metadata if the signal is received, otherwise logs cancellation.
 func (c *Collector) waitResetConfirmation() {
+	// [ДЛЯ РЕВЬЮ]: Да, блокируем структуру, пока ждем триггер сброса.
+	// [ДЛЯ РЕВЬЮ]: Работает так: вешаем мьютекс, ждем подтверждения сброса меты (булево значение),
+	// [ДЛЯ РЕВЬЮ]: пока ждем, новые метрики не пишем и мету не обновляем.
+	// [ДЛЯ РЕВЬЮ]: Сделано так, потому что проще подождать триггер и в случае неуспеха просто отменить сброс,
+	// [ДЛЯ РЕВЬЮ]: Чем выполнить сброс сразу и в случае неуспеха отправки метрик как-то пытаться вернуть всё обратно,
+	// [ДЛЯ РЕВЬЮ]: сохранив при этом то, что успеет накопиться за время между сбросом и решением вернуть обратно.
+	// [ДЛЯ РЕВЬЮ]: Единственное, что тут нужно поддержать работу с контекстом, что бы не зависнуть.
+	// TODO: Поддержать контекст, чтобы поддержать таймаут/дедлайн и не зависнуть с заблокированным мьютексом.
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
