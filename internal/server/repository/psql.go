@@ -11,6 +11,7 @@ import (
 	"github.com/gdyunin/metricol.git/internal/server/internal/entity"
 	"github.com/gdyunin/metricol.git/pkg/retry"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"go.uber.org/zap"
 )
 
 // PSQLDefaultConnectionCheckTimeout specifies the duration to wait for a connection check before timing out.
@@ -30,7 +31,8 @@ var (
 // PostgreSQL represents the PostgreSQL repository. It holds the database connection and provides methods
 // to interact with the metrics data stored in the PostgreSQL database.
 type PostgreSQL struct {
-	db *sql.DB
+	db     *sql.DB
+	logger *zap.SugaredLogger
 }
 
 // NewPostgreSQL creates a new PostgreSQL repository instance by establishing a connection to the database
@@ -38,17 +40,18 @@ type PostgreSQL struct {
 //
 // Parameters:
 //   - connString: the connection string to establish the database connection.
+//   - logger: Logger for repository operations.
 //
 // Returns:
 //   - *PostgreSQL: the initialized repository instance.
 //   - error: an error if the database connection fails.
-func NewPostgreSQL(connString string) (*PostgreSQL, error) {
+func NewPostgreSQL(logger *zap.SugaredLogger, connString string) (*PostgreSQL, error) {
 	db, err := sql.Open("pgx", connString)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
-	psql := PostgreSQL{db: db}
+	psql := PostgreSQL{db: db, logger: logger}
 	return psql.mustBuild(), nil
 }
 
@@ -214,7 +217,7 @@ func (p *PostgreSQL) CheckConnection(ctx context.Context) error {
 // Returns:
 //   - error: an error if the connection cannot be established within the retry limit.
 func (p *PostgreSQL) CheckConnectionWithRetry(ctx context.Context, attempts int, attemptTimeout time.Duration) error {
-	if err := retry.WithRetry(ctx, attempts, func() error {
+	if err := retry.WithRetry(ctx, p.logger, "check connection to postgre db", attempts, func() error {
 		checkCtx, cancel := context.WithTimeout(ctx, attemptTimeout)
 		defer cancel()
 		if err := p.CheckConnection(checkCtx); err != nil {

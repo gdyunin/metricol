@@ -129,7 +129,7 @@ func initRepo(cfg *config.Config, logger *zap.SugaredLogger) (*repoWithShutdown,
 	var doNothing = func() {}
 
 	if cfg.DatabaseDSN != "" {
-		r, err := repository.NewPostgreSQL(cfg.DatabaseDSN)
+		r, err := repository.NewPostgreSQL(logger, cfg.DatabaseDSN)
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize PostgreSQL repository: %w", err)
 		}

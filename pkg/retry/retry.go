@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 const DefaultLinearCoefficientScaling = 2
@@ -38,7 +40,13 @@ func CalcByLinear(attempt int, k int, b int) time.Duration {
 //
 // Returns:
 //   - error: The last encountered error if all attempts fail, wrapped with context.
-func WithRetry(ctx context.Context, attempts int, fn func() error) (err error) {
+func WithRetry(
+	ctx context.Context,
+	logger *zap.SugaredLogger,
+	actMsg string,
+	attempts int,
+	fn func() error,
+) (err error) {
 	for i := range attempts {
 		if i > 0 {
 			time.Sleep(CalcByLinear(i, DefaultLinearCoefficientScaling, -1))
@@ -51,8 +59,12 @@ func WithRetry(ctx context.Context, attempts int, fn func() error) (err error) {
 			if err = fn(); err == nil {
 				return nil
 			}
+			logger.Infof(
+				"Attempt %d for action <%s> ended in error, move on to the next attempt...",
+				i,
+				actMsg,
+			)
 		}
-		// TODO: Подумать, как логгировать каждую попытку.
 	}
 	return fmt.Errorf("operation failed after %d attempts: last error: %w", attempts, err)
 }

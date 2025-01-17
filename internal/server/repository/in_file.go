@@ -173,9 +173,15 @@ func (r *InFileRepository) mustMakeDir() {
 	ctx, cancel := context.WithTimeout(context.Background(), MakeDirTimeout)
 	defer cancel()
 
-	if err := retry.WithRetry(ctx, AttemptsDefaultCount, func() error {
-		return os.MkdirAll(filepath.Dir(r.filepath), DirDefaultPerm)
-	}); err != nil {
+	if err := retry.WithRetry(
+		ctx,
+		r.logger,
+		"making dirs for persistent storage",
+		AttemptsDefaultCount,
+		func() error {
+			return os.MkdirAll(filepath.Dir(r.filepath), DirDefaultPerm)
+		},
+	); err != nil {
 		panic(fmt.Sprintf(
 			"failed to create directory after retries: path=%s, error=%v",
 			filepath.Dir(r.filepath),
@@ -190,17 +196,23 @@ func (r *InFileRepository) mustMakeFile() {
 	ctx, cancel := context.WithTimeout(context.Background(), MakeFileTimeout)
 	defer cancel()
 
-	if err := retry.WithRetry(ctx, AttemptsDefaultCount, func() error {
-		file, err := os.OpenFile(r.filepath, os.O_CREATE|os.O_EXCL, FileDefaultPerm)
-		if err != nil {
-			if os.IsExist(err) {
-				return nil
+	if err := retry.WithRetry(
+		ctx,
+		r.logger,
+		"create file for persistent storage",
+		AttemptsDefaultCount,
+		func() error {
+			file, err := os.OpenFile(r.filepath, os.O_CREATE|os.O_EXCL, FileDefaultPerm)
+			if err != nil {
+				if os.IsExist(err) {
+					return nil
+				}
+				return fmt.Errorf("failed to create file: path=%s, error=%w", r.filepath, err)
 			}
-			return fmt.Errorf("failed to create file: path=%s, error=%w", r.filepath, err)
-		}
-		_ = file.Close()
-		return nil
-	}); err != nil {
+			_ = file.Close()
+			return nil
+		},
+	); err != nil {
 		panic(fmt.Sprintf("unable to create file after retries: path=%s, error=%v", r.filepath, err))
 	}
 }
