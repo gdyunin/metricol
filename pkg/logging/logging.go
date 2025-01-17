@@ -33,11 +33,18 @@ var (
 
 // init initializes the default logger used as a fallback.
 func init() {
-	zl, err := zap.NewProduction()
-	// TODO: А точно ли хочется паниковать здесь? Хз, подумать.
+	var zl *zap.Logger
+	var err error
+
+	zl, err = zap.NewProduction()
 	if err != nil {
-		panic(fmt.Sprintf("Initialization error: failed to initialize default logger: %v", err))
+		zl = zap.NewExample()
+		zl.Error(
+			"Error initializing default logger. Falling back default logger to example logger.",
+			zap.Error(err),
+		)
 	}
+
 	defaultLogger = zl.Sugar()
 }
 
