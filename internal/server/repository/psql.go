@@ -214,7 +214,7 @@ func (p *PostgreSQL) CheckConnection(ctx context.Context) error {
 // Returns:
 //   - error: an error if the connection cannot be established within the retry limit.
 func (p *PostgreSQL) CheckConnectionWithRetry(ctx context.Context, attempts int, attemptTimeout time.Duration) error {
-	if err := retry.WithRetry(attempts, func() error {
+	if err := retry.WithRetry(ctx, attempts, func() error {
 		checkCtx, cancel := context.WithTimeout(ctx, attemptTimeout)
 		defer cancel()
 		if err := p.CheckConnection(checkCtx); err != nil {

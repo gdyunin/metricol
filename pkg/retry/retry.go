@@ -1,6 +1,7 @@
 package retry
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
@@ -37,16 +38,19 @@ func CalcByLinear(attempt int, k int, b int) time.Duration {
 //
 // Returns:
 //   - error: The last encountered error if all attempts fail, wrapped with context.
-func WithRetry(attempts int, fn func() error) (err error) {
-	// TODO: Начать принимать и работать с контекстом.
+func WithRetry(ctx context.Context, attempts int, fn func() error) (err error) {
 	for i := range attempts {
 		if i > 0 {
-			time.Sleep(CalcByLinear(i, DefaultLinearCoefficientScaling, 1))
+			time.Sleep(CalcByLinear(i, DefaultLinearCoefficientScaling, -1))
 		}
 
-		err = fn()
-		if err == nil {
-			return nil
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("the retring process was interrupted at attempt %d: the context has expired", i)
+		default:
+			if err = fn(); err == nil {
+				return nil
+			}
 		}
 		// TODO: Подумать, как логгировать каждую попытку.
 	}

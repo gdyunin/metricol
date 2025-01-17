@@ -3,6 +3,7 @@ package repository
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -16,8 +17,10 @@ import (
 )
 
 const (
-	FileDefaultPerm = 0o600 // Default file permissions.
-	DirDefaultPerm  = 0o750 // Default directory permissions.
+	FileDefaultPerm = 0o600           // Default file permissions.
+	DirDefaultPerm  = 0o750           // Default directory permissions.
+	MakeDirTimeout  = 2 * time.Second // Timeout for make dir.
+	MakeFileTimeout = 2 * time.Second // Timeout for make new file.
 )
 
 // InFileRepository represents a file-backed repository for metrics storage.
@@ -167,7 +170,10 @@ func (r *InFileRepository) shouldRestore() error {
 // mustMakeDir ensures the directory for the storage file exists.
 // Panics if the directory cannot be created after retries.
 func (r *InFileRepository) mustMakeDir() {
-	if err := retry.WithRetry(AttemptsDefaultCount, func() error {
+	ctx, cancel := context.WithTimeout(context.Background(), MakeDirTimeout)
+	defer cancel()
+
+	if err := retry.WithRetry(ctx, AttemptsDefaultCount, func() error {
 		return os.MkdirAll(filepath.Dir(r.filepath), DirDefaultPerm)
 	}); err != nil {
 		panic(fmt.Sprintf(
@@ -181,7 +187,10 @@ func (r *InFileRepository) mustMakeDir() {
 // mustMakeFile ensures the storage file exists.
 // Panics if the file cannot be created after retries.
 func (r *InFileRepository) mustMakeFile() {
-	if err := retry.WithRetry(AttemptsDefaultCount, func() error {
+	ctx, cancel := context.WithTimeout(context.Background(), MakeFileTimeout)
+	defer cancel()
+
+	if err := retry.WithRetry(ctx, AttemptsDefaultCount, func() error {
 		file, err := os.OpenFile(r.filepath, os.O_CREATE|os.O_EXCL, FileDefaultPerm)
 		if err != nil {
 			if os.IsExist(err) {
