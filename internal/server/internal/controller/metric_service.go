@@ -103,7 +103,7 @@ func (s *MetricService) Pull(ctx context.Context, metricType, name string) (*ent
 //   - A collection of all metrics.
 //   - An error if the repository operation fails.
 func (s *MetricService) PullAll(ctx context.Context) (*entity.Metrics, error) {
-	pullCtx, cancel := context.WithTimeout(ctx, PullTimeout)
+	pullCtx, cancel := context.WithTimeout(ctx, PullAllTimeout)
 	defer cancel()
 
 	metrics, err := s.repo.All(pullCtx)
