@@ -93,7 +93,7 @@ func (a *Agent) Start(ctx context.Context) {
 			a.logger.Info("Context canceled: stopping agent")
 			return
 		case <-collectTicker.C:
-			a.collect()
+			a.collector.Collect()
 		case t := <-sendTicker.C:
 			// [ДЛЯ РЕВЬЮ]: Дедлайн контекста произойдет примерно в то же время, когда снова тикнет sendTicker.
 			senderCtx, cancel := context.WithDeadline(ctx, t.Add(a.reportInterval))
@@ -101,12 +101,6 @@ func (a *Agent) Start(ctx context.Context) {
 			cancel()
 		}
 	}
-}
-
-// collect triggers the collection of metrics using the Collector interface.
-// TODO: Подумать, нужен ли вообще. Используется только в 1 месте и просто проксирует другой метод без доп логики.
-func (a *Agent) collect() {
-	a.collector.Collect()
 }
 
 // sendBySingle sends collected metrics one by one to the server.
