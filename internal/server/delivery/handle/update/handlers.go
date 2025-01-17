@@ -1,8 +1,10 @@
 package update
 
 import (
+	"context"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gdyunin/metricol.git/internal/server/delivery/model"
 	"github.com/gdyunin/metricol.git/internal/server/internal/entity"
@@ -10,9 +12,11 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+const MetricUpdateTimeout = 5 * time.Second
+
 // MetricsUpdater defines the interface for pushing metric updates.
 type MetricsUpdater interface {
-	PushMetric(*entity.Metric) (*entity.Metric, error)
+	PushMetric(context.Context, *entity.Metric) (*entity.Metric, error)
 }
 
 // FromJSON handles metric updates from JSON payloads.
@@ -29,8 +33,10 @@ func FromJSON(updater MetricsUpdater) echo.HandlerFunc {
 			return c.String(http.StatusBadRequest, "Invalid JSON payload provided.")
 		}
 
-		// TODO: Передавать в updater.PushMetric(...) контекст с тайм-аутом.
-		updated, err := updater.PushMetric(m.ToEntityMetric())
+		ctx, cancel := context.WithTimeout(c.Request().Context(), MetricUpdateTimeout)
+		defer cancel()
+
+		updated, err := updater.PushMetric(ctx, m.ToEntityMetric())
 		if err != nil {
 			return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		}
@@ -59,8 +65,10 @@ func FromURI(updater MetricsUpdater) echo.HandlerFunc {
 			return c.String(err.(*echo.HTTPError).Code, err.Error()) //nolint
 		}
 
-		// TODO: Передавать в updater.PushMetric(...) контекст с тайм-аутом.
-		_, err := updater.PushMetric(m.ToEntityMetric())
+		ctx, cancel := context.WithTimeout(c.Request().Context(), MetricUpdateTimeout)
+		defer cancel()
+
+		_, err := updater.PushMetric(ctx, m.ToEntityMetric())
 		if err != nil {
 			return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		}

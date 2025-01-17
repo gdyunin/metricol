@@ -1,16 +1,20 @@
 package updates
 
 import (
+	"context"
 	"net/http"
+	"time"
 
 	"github.com/gdyunin/metricol.git/internal/server/delivery/model"
 	"github.com/gdyunin/metricol.git/internal/server/internal/entity"
 	"github.com/labstack/echo/v4"
 )
 
+const MetricUpdateTimeout = 5 * time.Second
+
 // MetricsUpdater defines the interface for pushing metric updates.
 type MetricsUpdater interface {
-	PushMetric(*entity.Metric) (*entity.Metric, error)
+	PushMetric(context.Context, *entity.Metric) (*entity.Metric, error)
 }
 
 // FromJSON handles incoming JSON requests to update metrics.
@@ -42,7 +46,9 @@ func FromJSON(updater MetricsUpdater) echo.HandlerFunc {
 		// TODO: Нужно у контроллера сделать ручку на обновление пачки метрик и дёргать ее сразу, без циклов.
 		// TODO: она должна работать с контекстом и принимать *model.Metrics.
 		for _, m := range metrics {
-			updated, err := updater.PushMetric(m)
+			ctx, cancel := context.WithTimeout(c.Request().Context(), MetricUpdateTimeout)
+			updated, err := updater.PushMetric(ctx, m)
+			cancel()
 			if err != nil {
 				return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 			}
