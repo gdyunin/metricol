@@ -67,6 +67,10 @@ func NewPostgreSQL(logger *zap.SugaredLogger, connString string) (*PostgreSQL, e
 // Returns:
 //   - error: an error if the query execution or JSON marshaling fails.
 func (p *PostgreSQL) Update(ctx context.Context, metric *entity.Metric) error {
+	if metric == nil {
+		return errors.New("metric should be non-nil, but got nil")
+	}
+
 	query := `
 		INSERT INTO public.metrics (m_type, m_name, m_value)
 		VALUES ($1, $2, $3)
@@ -83,6 +87,46 @@ func (p *PostgreSQL) Update(ctx context.Context, metric *entity.Metric) error {
 		return fmt.Errorf(QueryErrFmt, ErrQueryExecuteFailed, err)
 	}
 
+	return nil
+}
+
+func (p *PostgreSQL) UpdateBatch(ctx context.Context, metrics *entity.Metrics) error {
+	if metrics == nil {
+		return errors.New("metrics should be non-nil, but got nil")
+	}
+
+	query := `
+		INSERT INTO public.metrics (m_type, m_name, m_value)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (m_type, m_name)
+		DO UPDATE SET m_value = EXCLUDED.m_value;
+	`
+
+	tx, err := p.db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed at begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	for _, m := range *metrics {
+		if m == nil {
+			return errors.New("metric should be non-nil, but got nil")
+		}
+
+		mValue, err := json.Marshal(m.Value)
+		if err != nil {
+			return fmt.Errorf("failed to marshal metric value: %w", err)
+		}
+
+		_, err = tx.ExecContext(ctx, query, m.Type, m.Name, mValue)
+		if err != nil {
+			return fmt.Errorf(QueryErrFmt, ErrQueryExecuteFailed, err)
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("failed at commit transaction: %w", err)
+	}
 	return nil
 }
 

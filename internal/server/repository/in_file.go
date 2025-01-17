@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -86,6 +87,23 @@ func (r *InFileRepository) Update(ctx context.Context, metric *entity.Metric) er
 	if r.synchronized {
 		r.flush(ctx)
 	}
+	return nil
+}
+
+func (r *InFileRepository) UpdateBatch(ctx context.Context, metrics *entity.Metrics) error {
+	if metrics == nil {
+		return errors.New("metrics should be non-nil, but got nil")
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for _, m := range *metrics {
+		if err := r.Update(ctx, m); err != nil {
+			return fmt.Errorf("failed update one of metrics: %w", err)
+		}
+	}
+
 	return nil
 }
 

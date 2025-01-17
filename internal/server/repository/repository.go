@@ -22,6 +22,15 @@ type Repository interface {
 	//   - An error if the operation fails.
 	Update(context.Context, *entity.Metric) error
 
+	// UpdateBatch adds or updates a metrics batch in the repository.
+	//
+	// Parameters:
+	//   - metrics: Pointer to the Metrics to be added or updated.
+	//
+	// Returns:
+	//   - An error if the operation fails.
+	UpdateBatch(ctx context.Context, metrics *entity.Metrics) error
+
 	// IsExist checks if a metric exists in the repository.
 	//
 	// Parameters:
