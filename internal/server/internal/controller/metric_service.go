@@ -4,10 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/gdyunin/metricol.git/internal/server/internal/entity"
 	"github.com/gdyunin/metricol.git/internal/server/repository"
 	"github.com/gdyunin/metricol.git/pkg/convert"
+)
+
+const (
+	PushTimeout    = 3 * time.Second
+	PullTimeout    = 3 * time.Second
+	PullAllTimeout = 3 * time.Second
 )
 
 var ErrNotFoundInRepository = errors.New("not found in repository")
@@ -36,17 +43,19 @@ func NewMetricService(repo repository.Repository) *MetricService {
 // Returns:
 //   - The stored metric if successful.
 //   - An error if the metric is invalid or the repository operation fails.
-func (s *MetricService) PushMetric(metric *entity.Metric) (*entity.Metric, error) {
-	// TODO: Добавить работу с контекстом для контроля времени выполнения. Передавать контекст при вызове слоя репо.
+func (s *MetricService) PushMetric(ctx context.Context, metric *entity.Metric) (*entity.Metric, error) {
+	pushCtx, cancel := context.WithTimeout(ctx, PushTimeout)
+	defer cancel()
+
 	if err := s.validate(metric); err != nil {
 		return nil, fmt.Errorf("invalid metric: %w", err)
 	}
 
 	switch metric.Type {
 	case entity.MetricTypeCounter:
-		return s.handleCounter(metric)
+		return s.handleCounter(pushCtx, metric)
 	default:
-		return s.saveMetric(metric)
+		return s.saveMetric(pushCtx, metric)
 	}
 }
 
@@ -60,13 +69,14 @@ func (s *MetricService) PushMetric(metric *entity.Metric) (*entity.Metric, error
 //   - The retrieved metric if found.
 //   - Nil if the metric does not exist.
 //   - An error if the repository operation fails.
-func (s *MetricService) Pull(metricType, name string) (*entity.Metric, error) {
-	// TODO: Добавить работу с контекстом для контроля времени выполнения. Передавать контекст при вызове слоя репо.
+func (s *MetricService) Pull(ctx context.Context, metricType, name string) (*entity.Metric, error) {
+	pullCtx, cancel := context.WithTimeout(ctx, PullTimeout)
+	defer cancel()
 
 	// TODO: Оооочень спорно дробить на две операции: проверка существования и только потом получение.
 	// TODO: Подумать и скорее всего убрать отсюда вызов isExist и генерировать какую-то "типизированную" ошибку
 	// TODO: Сразу при попытке получения метрики.
-	exists, err := s.repo.IsExist(metricType, name)
+	exists, err := s.repo.IsExist(ctx, metricType, name)
 	if err != nil {
 		return nil, fmt.Errorf("repository check failed for type '%s', name '%s': %w", metricType, name, err)
 	}
@@ -80,7 +90,7 @@ func (s *MetricService) Pull(metricType, name string) (*entity.Metric, error) {
 		)
 	}
 
-	metric, err := s.repo.Find(metricType, name)
+	metric, err := s.repo.Find(pullCtx, metricType, name)
 	if err != nil {
 		return nil, fmt.Errorf("retrieval failed for type '%s', name '%s': %w", metricType, name, err)
 	}
@@ -92,9 +102,11 @@ func (s *MetricService) Pull(metricType, name string) (*entity.Metric, error) {
 // Returns:
 //   - A collection of all metrics.
 //   - An error if the repository operation fails.
-func (s *MetricService) PullAll() (*entity.Metrics, error) {
-	// TODO: Добавить работу с контекстом для контроля времени выполнения. Передавать контекст при вызове слоя репо.
-	metrics, err := s.repo.All()
+func (s *MetricService) PullAll(ctx context.Context) (*entity.Metrics, error) {
+	pullCtx, cancel := context.WithTimeout(ctx, PullTimeout)
+	defer cancel()
+
+	metrics, err := s.repo.All(pullCtx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve all metrics: %w", err)
 	}
@@ -164,9 +176,9 @@ func (s *MetricService) toInt64(metric *entity.Metric) (int64, error) {
 // Returns:
 //   - The stored metric.
 //   - An error if the repository operation fails.
-func (s *MetricService) saveMetric(metric *entity.Metric) (*entity.Metric, error) {
+func (s *MetricService) saveMetric(ctx context.Context, metric *entity.Metric) (*entity.Metric, error) {
 	// TODO: Добавить работу с контекстом для контроля времени выполнения. Передавать контекст при вызове слоя репо.
-	if err := s.repo.Update(metric); err != nil {
+	if err := s.repo.Update(ctx, metric); err != nil {
 		return nil, fmt.Errorf("storage failed for '%s': %w", metric.Name, err)
 	}
 	return metric, nil
@@ -181,14 +193,13 @@ func (s *MetricService) saveMetric(metric *entity.Metric) (*entity.Metric, error
 // Returns:
 //   - The created counter metric.
 //   - An error if the repository operation fails.
-func (s *MetricService) createCounter(metric *entity.Metric, value int64) (*entity.Metric, error) {
-	// TODO: Добавить работу с контекстом для контроля времени выполнения. Передавать контекст при вызове слоя репо.
+func (s *MetricService) createCounter(ctx context.Context, metric *entity.Metric, value int64) (*entity.Metric, error) {
 	newMetric := &entity.Metric{
 		Value: value,
 		Name:  metric.Name,
 		Type:  entity.MetricTypeCounter,
 	}
-	storedMetric, err := s.saveMetric(newMetric)
+	storedMetric, err := s.saveMetric(ctx, newMetric)
 	if err != nil {
 		return nil, fmt.Errorf("creation failed for counter '%s': %w", metric.Name, err)
 	}
@@ -204,9 +215,8 @@ func (s *MetricService) createCounter(metric *entity.Metric, value int64) (*enti
 // Returns:
 //   - The updated counter metric.
 //   - An error if the repository operation fails.
-func (s *MetricService) updateCounter(metric *entity.Metric, value int64) (*entity.Metric, error) {
-	// TODO: Добавить работу с контекстом для контроля времени выполнения. Передавать контекст при вызове слоя репо.
-	existingMetric, err := s.repo.Find(metric.Type, metric.Name)
+func (s *MetricService) updateCounter(ctx context.Context, metric *entity.Metric, value int64) (*entity.Metric, error) {
+	existingMetric, err := s.repo.Find(ctx, metric.Type, metric.Name)
 	if err != nil {
 		return nil, fmt.Errorf("retrieval failed for counter '%s': %w", metric.Name, err)
 	}
@@ -222,7 +232,7 @@ func (s *MetricService) updateCounter(metric *entity.Metric, value int64) (*enti
 		Type:  entity.MetricTypeCounter,
 	}
 
-	storedMetric, err := s.saveMetric(updatedMetric)
+	storedMetric, err := s.saveMetric(ctx, updatedMetric)
 	if err != nil {
 		return nil, fmt.Errorf("update failed for counter '%s': %w", metric.Name, err)
 	}
@@ -238,22 +248,21 @@ func (s *MetricService) updateCounter(metric *entity.Metric, value int64) (*enti
 // Returns:
 //   - The processed counter metric.
 //   - An error if any validation or repository operation fails.
-func (s *MetricService) handleCounter(metric *entity.Metric) (*entity.Metric, error) {
-	// TODO: Добавить работу с контекстом для контроля времени выполнения. Передавать контекст при вызове слоя репо.
+func (s *MetricService) handleCounter(ctx context.Context, metric *entity.Metric) (*entity.Metric, error) {
 	value, err := s.toInt64(metric)
 	if err != nil {
 		return nil, fmt.Errorf("validation failed for counter '%s': %w", metric.Name, err)
 	}
 
 	// TODO: Подумать, как уйти от использования IsExist.
-	exists, err := s.repo.IsExist(metric.Type, metric.Name)
+	exists, err := s.repo.IsExist(ctx, metric.Type, metric.Name)
 	if err != nil {
 		return nil, fmt.Errorf("existence check failed for counter '%s': %w", metric.Name, err)
 	}
 
 	if !exists {
-		return s.createCounter(metric, value)
+		return s.createCounter(ctx, metric, value)
 	}
 
-	return s.updateCounter(metric, value)
+	return s.updateCounter(ctx, metric, value)
 }

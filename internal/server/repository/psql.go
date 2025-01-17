@@ -14,8 +14,11 @@ import (
 	"go.uber.org/zap"
 )
 
-// PSQLDefaultConnectionCheckTimeout specifies the duration to wait for a connection check before timing out.
-const PSQLDefaultConnectionCheckTimeout = time.Second
+const (
+	// PSQLDefaultConnectionCheckTimeout specifies the duration to wait for a connection check before timing out.
+	PSQLDefaultConnectionCheckTimeout = time.Second
+	PSQLCreateTablesTimeout           = 3 * time.Second
+)
 
 var (
 	// ErrQueryExecuteFailed is a predefined error for handling failures during query execution.
@@ -63,7 +66,7 @@ func NewPostgreSQL(logger *zap.SugaredLogger, connString string) (*PostgreSQL, e
 //
 // Returns:
 //   - error: an error if the query execution or JSON marshaling fails.
-func (p *PostgreSQL) Update(metric *entity.Metric) error {
+func (p *PostgreSQL) Update(ctx context.Context, metric *entity.Metric) error {
 	query := `
 		INSERT INTO public.metrics (m_type, m_name, m_value)
 		VALUES ($1, $2, $3)
@@ -75,9 +78,7 @@ func (p *PostgreSQL) Update(metric *entity.Metric) error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal metric value: %w", err)
 	}
-	// TODO: Заменить context.TODO() на контекст, который будет в аргументах функции.
-	// TODO: Соответственно добавить контекст в сигнатуру метода.
-	_, err = p.db.ExecContext(context.TODO(), query, metric.Type, metric.Name, mValue)
+	_, err = p.db.ExecContext(ctx, query, metric.Type, metric.Name, mValue)
 	if err != nil {
 		return fmt.Errorf(QueryErrFmt, ErrQueryExecuteFailed, err)
 	}
@@ -94,7 +95,7 @@ func (p *PostgreSQL) Update(metric *entity.Metric) error {
 // Returns:
 //   - exist: a boolean indicating whether the metric exists.
 //   - error: an error if the query execution fails.
-func (p *PostgreSQL) IsExist(metricType string, metricName string) (exist bool, err error) {
+func (p *PostgreSQL) IsExist(ctx context.Context, metricType string, metricName string) (exist bool, err error) {
 	query := `
 		SELECT EXISTS (
 			SELECT 1
@@ -104,9 +105,7 @@ func (p *PostgreSQL) IsExist(metricType string, metricName string) (exist bool, 
 		) AS is_exist;
 	`
 
-	// TODO: Заменить context.TODO() на контекст, который будет в аргументах функции.
-	// TODO: Соответственно добавить контекст в сигнатуру метода.
-	if err = p.db.QueryRowContext(context.TODO(), query, metricType, metricName).Scan(&exist); err != nil {
+	if err = p.db.QueryRowContext(ctx, query, metricType, metricName).Scan(&exist); err != nil {
 		err = fmt.Errorf(QueryErrFmt, ErrQueryExecuteFailed, err)
 	}
 	return
@@ -121,7 +120,7 @@ func (p *PostgreSQL) IsExist(metricType string, metricName string) (exist bool, 
 // Returns:
 //   - *entity.Metric: the retrieved metric object.
 //   - error: an error if the metric is not found or the query execution fails.
-func (p *PostgreSQL) Find(metricType string, metricName string) (*entity.Metric, error) {
+func (p *PostgreSQL) Find(ctx context.Context, metricType string, metricName string) (*entity.Metric, error) {
 	query := `
 		SELECT m_name, m_type, m_value 
 		FROM metrics
@@ -132,9 +131,7 @@ func (p *PostgreSQL) Find(metricType string, metricName string) (*entity.Metric,
 	m := entity.Metric{}
 	var rawValue []byte
 
-	// TODO: Заменить context.TODO() на контекст, который будет в аргументах функции.
-	// TODO: Соответственно добавить контекст в сигнатуру метода.
-	err := p.db.QueryRowContext(context.TODO(), query, metricType, metricName).Scan(&m.Name, &m.Type, &rawValue)
+	err := p.db.QueryRowContext(ctx, query, metricType, metricName).Scan(&m.Name, &m.Type, &rawValue)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("metric not found: type=%s, name=%s", metricType, metricName)
@@ -156,13 +153,11 @@ func (p *PostgreSQL) Find(metricType string, metricName string) (*entity.Metric,
 // Returns:
 //   - *entity.Metrics: a collection of all metrics stored in the database.
 //   - error: an error if the query execution or row processing fails.
-func (p *PostgreSQL) All() (*entity.Metrics, error) {
+func (p *PostgreSQL) All(ctx context.Context) (*entity.Metrics, error) {
 	metrics := make(entity.Metrics, 0)
 	query := `SELECT m_name, m_type, m_value FROM metrics;`
 
-	// TODO: Заменить context.TODO() на контекст, который будет в аргументах функции.
-	// TODO: Соответственно добавить контекст в сигнатуру метода.
-	rows, err := p.db.QueryContext(context.TODO(), query)
+	rows, err := p.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf(QueryErrFmt, ErrQueryExecuteFailed, err)
 	}
@@ -257,7 +252,10 @@ func (p *PostgreSQL) mustBuild() *PostgreSQL {
 		panic(fmt.Sprintf("failed to check connection to the repository: %v", err))
 	}
 
-	err = p.createTables()
+	ctx, cancel := context.WithTimeout(context.TODO(), PSQLCreateTablesTimeout)
+	defer cancel()
+
+	err = p.createTables(ctx)
 	if err != nil {
 		panic(fmt.Sprintf("failed to create tables in the repository: %v", err))
 	}
@@ -269,7 +267,7 @@ func (p *PostgreSQL) mustBuild() *PostgreSQL {
 //
 // Returns:
 //   - error: an error if the table creation query fails.
-func (p *PostgreSQL) createTables() error {
+func (p *PostgreSQL) createTables(ctx context.Context) error {
 	// [ДЛЯ РЕВЬЮ]: Для простоты в рамках обучения выбрана плоская таблица, без других таблиц и отношений.
 	// [ДЛЯ РЕВЬЮ]: В реальных условиях так делать не стоит, я понимаю. Здесь ради обучения
 	// [ДЛЯ РЕВЬЮ]: производительность в угоду простоте.
@@ -286,9 +284,7 @@ func (p *PostgreSQL) createTables() error {
 		CONSTRAINT unique_type_name UNIQUE (m_type, m_name)
 	);`
 
-	// TODO: Заменить context.TODO() на контекст, который будет в аргументах функции.
-	// TODO: Соответственно добавить контекст в сигнатуру метода.
-	_, err := p.db.ExecContext(context.TODO(), mainTableCreateSQL)
+	_, err := p.db.ExecContext(ctx, mainTableCreateSQL)
 	if err != nil {
 		return fmt.Errorf("failed to create metrics table: %w", err)
 	}

@@ -39,7 +39,7 @@ func NewInMemoryRepository(logger *zap.SugaredLogger) *InMemoryRepository {
 //
 // Returns:
 //   - An error if the operation fails.
-func (r *InMemoryRepository) Update(metric *entity.Metric) error {
+func (r *InMemoryRepository) Update(_ context.Context, metric *entity.Metric) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -60,7 +60,7 @@ func (r *InMemoryRepository) Update(metric *entity.Metric) error {
 // Returns:
 //   - A boolean indicating whether the metric exists.
 //   - An error if the operation fails.
-func (r *InMemoryRepository) IsExist(metricType string, name string) (bool, error) {
+func (r *InMemoryRepository) IsExist(_ context.Context, metricType string, name string) (bool, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -77,7 +77,7 @@ func (r *InMemoryRepository) IsExist(metricType string, name string) (bool, erro
 // Returns:
 //   - A pointer to the Metric entity if found.
 //   - An error if the metric does not exist or another issue occurs.
-func (r *InMemoryRepository) Find(metricType string, name string) (*entity.Metric, error) {
+func (r *InMemoryRepository) Find(_ context.Context, metricType string, name string) (*entity.Metric, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -98,7 +98,7 @@ func (r *InMemoryRepository) Find(metricType string, name string) (*entity.Metri
 // Returns:
 //   - A pointer to a Metrics slice containing all metrics.
 //   - An error if the operation fails.
-func (r *InMemoryRepository) All() (*entity.Metrics, error) {
+func (r *InMemoryRepository) All(_ context.Context) (*entity.Metrics, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 

@@ -72,9 +72,8 @@ func NewInFileRepository(
 //
 // Returns:
 //   - An error if the operation fails.
-func (r *InFileRepository) Update(metric *entity.Metric) error {
-	// TODO: Добавить работу с контекстом для контроля времени выполнения. Добавить контекст в сигнатуру метода.
-	if err := r.InMemoryRepository.Update(metric); err != nil {
+func (r *InFileRepository) Update(ctx context.Context, metric *entity.Metric) error {
+	if err := r.InMemoryRepository.Update(ctx, metric); err != nil {
 		return fmt.Errorf(
 			"failed to update metric in memory: type=%s, name=%s, value=%v, error: %w",
 			metric.Type,
@@ -85,7 +84,7 @@ func (r *InFileRepository) Update(metric *entity.Metric) error {
 	}
 
 	if r.synchronized {
-		r.flush()
+		r.flush(ctx)
 	}
 	return nil
 }
@@ -96,9 +95,8 @@ func (r *InFileRepository) Shutdown() {
 }
 
 // flush writes all metrics to the storage file.
-func (r *InFileRepository) flush() {
-	// TODO: Добавить работу с контекстом для контроля времени выполнения. Добавить контекст в сигнатуру метода.
-	metrics, err := r.All()
+func (r *InFileRepository) flush(ctx context.Context) {
+	metrics, err := r.All(ctx)
 	if err != nil || metrics == nil {
 		r.logger.Warnf("failed to retrieve metrics for flushing: error=%v", err)
 		return
@@ -238,7 +236,7 @@ func (r *InFileRepository) restore() error {
 			continue
 		}
 
-		if err = r.InMemoryRepository.Update(&metric); err != nil {
+		if err = r.InMemoryRepository.Update(context.TODO(), &metric); err != nil {
 			r.logger.Warnf(
 				"failed to load metric into memory: type=%s, name=%s, value=%v, error=%v",
 				metric.Type,
@@ -261,9 +259,11 @@ func (r *InFileRepository) startAutoFlush() {
 	for {
 		select {
 		case <-ticker.C:
-			r.flush()
+			ctx, cancel := context.WithTimeout(context.Background(), r.autoFlushInterval)
+			r.flush(ctx)
+			cancel()
 		case <-r.stopCh:
-			r.flush()
+			r.flush(context.TODO())
 			return
 		}
 	}

@@ -1,13 +1,17 @@
 package general
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/gdyunin/metricol.git/internal/server/internal/entity"
 
 	"github.com/labstack/echo/v4"
 )
+
+const PullAllTimeout = 5 * time.Second
 
 // tr represents a table row with a metric name and value.
 type tr struct {
@@ -17,7 +21,8 @@ type tr struct {
 
 // PullerAll defines an interface for retrieving all metrics.
 type PullerAll interface {
-	PullAll() (*entity.Metrics, error) // PullAll retrieves all metrics from the repository or other storage.
+	// PullAll retrieves all metrics from the repository or other storage.
+	PullAll(context.Context) (*entity.Metrics, error)
 }
 
 // MainPage returns an HTTP handler function that renders the main page with metrics.
@@ -31,7 +36,11 @@ func MainPage(puller PullerAll) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		// Attempt to fetch all metrics.
 		// If an error occurs or the result is nil, respond with 500 Internal Server Error.
-		allMetrics, err := puller.PullAll()
+
+		ctx, cancel := context.WithTimeout(c.Request().Context(), PullAllTimeout)
+		defer cancel()
+
+		allMetrics, err := puller.PullAll(ctx)
 		if err != nil || allMetrics == nil {
 			return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		}

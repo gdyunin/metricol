@@ -20,7 +20,7 @@ type Repository interface {
 	//
 	// Returns:
 	//   - An error if the operation fails.
-	Update(*entity.Metric) error
+	Update(context.Context, *entity.Metric) error
 
 	// IsExist checks if a metric exists in the repository.
 	//
@@ -31,7 +31,7 @@ type Repository interface {
 	// Returns:
 	//   - A boolean indicating whether the metric exists.
 	//   - An error if the operation fails.
-	IsExist(metricType string, metricName string) (bool, error)
+	IsExist(ctx context.Context, metricType string, metricName string) (bool, error)
 
 	// Find retrieves a metric from the repository by type and name.
 	//
@@ -42,14 +42,14 @@ type Repository interface {
 	// Returns:
 	//   - A pointer to the Metric entity if found.
 	//   - An error if the metric is not found or another issue occurs.
-	Find(metricType string, metricName string) (*entity.Metric, error)
+	Find(ctx context.Context, metricType string, metricName string) (*entity.Metric, error)
 
 	// All retrieves all metrics from the repository.
 	//
 	// Returns:
 	//   - A pointer to a Metrics slice containing all metrics.
 	//   - An error if the operation fails.
-	All() (*entity.Metrics, error)
+	All(context.Context) (*entity.Metrics, error)
 
 	// CheckConnection verifies the repository's connection.
 	//
