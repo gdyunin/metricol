@@ -19,8 +19,6 @@ type Collector interface {
 
 // Sender defines an interface for sending metrics to a remote server.
 type Sender interface {
-	// SendSingle sends a single metric to the server.
-	SendSingle(context.Context, *entity.Metric) error
 	// SendBatch sends a batch of metrics to the server.
 	SendBatch(context.Context, *entity.Metrics) error
 }
@@ -99,38 +97,6 @@ func (a *Agent) Start(ctx context.Context) {
 			senderCtx, cancel := context.WithDeadline(ctx, t.Add(a.reportInterval))
 			a.sendByBatch(senderCtx)
 			cancel()
-		}
-	}
-}
-
-// sendBySingle sends collected metrics one by one to the server.
-//
-// Parameters:
-//   - ctx: Context for managing the lifecycle of the operation.
-func (a *Agent) sendBySingle(ctx context.Context) {
-	metrics, resetCh := a.collector.Export()
-	reset := true
-	defer func() { resetCh <- reset }()
-
-	if metrics.Length() == 0 {
-		a.logger.Info("No metrics to send")
-		return
-	}
-
-	a.logger.Infof("Preparing to send %d metrics individually", metrics.Length())
-
-	for _, m := range *metrics {
-		if ctx.Err() != nil {
-			reset = false
-			a.logger.Warn("Context canceled or deadline exceeded during sendBySingle, stopping")
-			return
-		}
-
-		if err := a.sender.SendSingle(ctx, m); err != nil {
-			reset = !m.IsMetadata
-			a.logger.Warnf("Failed to send metric: name=%s, error=%v, metadataReset=%t", m.Name, err, reset)
-		} else {
-			a.logger.Infof("Successfully sent metric: name=%s", m.Name)
 		}
 	}
 }

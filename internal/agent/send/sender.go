@@ -17,8 +17,6 @@ import (
 )
 
 const (
-	// UpdateSingleEndpoint defines the API endpoint for updating a single metric.
-	updateSingleEndpoint = "/update"
 	// UpdateBatchEndpoint defines the API endpoint for updating a batch of metrics.
 	updateBatchEndpoint = "/updates"
 	// AttemptsDefaultCount defines default count of attempts for retry calls.
@@ -78,27 +76,6 @@ func NewMetricsSender(serverAddress string, logger *zap.SugaredLogger) *MetricsS
 		requestBuilder: requestBuilder,
 		logger:         logger,
 	}
-}
-
-// SendSingle sends a single metric to the server using gzip compression.
-//
-// Parameters:
-//   - ctx: The context for the HTTP request.
-//   - metric: A pointer to the Metric entity to be sent.
-//
-// Returns:
-//   - error: An error if the operation fails, or nil if successful.
-func (s *MetricsSender) SendSingle(ctx context.Context, metric *entity.Metric) error {
-	modelMetric, err := model.NewFromEntityMetric(metric)
-	if err != nil {
-		return fmt.Errorf("conversion of metric to model failed: %w", err)
-	}
-
-	if err = s.prepareAndSend(ctx, modelMetric, updateSingleEndpoint); err != nil {
-		return fmt.Errorf("error during preparation or sending of request: %w", err)
-	}
-
-	return nil
 }
 
 // SendBatch sends a batch of metrics to the server using gzip compression.
