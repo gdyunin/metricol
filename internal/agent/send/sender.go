@@ -18,11 +18,11 @@ import (
 
 const (
 	// UpdateSingleEndpoint defines the API endpoint for updating a single metric.
-	UpdateSingleEndpoint = "/update"
+	updateSingleEndpoint = "/update"
 	// UpdateBatchEndpoint defines the API endpoint for updating a batch of metrics.
-	UpdateBatchEndpoint = "/updates"
+	updateBatchEndpoint = "/updates"
 	// AttemptsDefaultCount defines default count of attempts for retry calls.
-	AttemptsDefaultCount = 4
+	attemptsDefaultCount = 4
 )
 
 // MetricsSender provides functionality for sending metrics to a remote server.
@@ -54,7 +54,7 @@ func NewMetricsSender(serverAddress string, logger *zap.SugaredLogger) *MetricsS
 		AddRetryCondition(func(r *resty.Response, err error) bool {
 			return err != nil || r.StatusCode() >= 500 && r.StatusCode() <= 599
 		}).
-		SetRetryCount(AttemptsDefaultCount).
+		SetRetryCount(attemptsDefaultCount).
 		SetRetryAfter(func(client *resty.Client, response *resty.Response) (time.Duration, error) {
 			currentAttempt := response.Request.Attempt
 			if currentAttempt > client.RetryCount {
@@ -94,7 +94,7 @@ func (s *MetricsSender) SendSingle(ctx context.Context, metric *entity.Metric) e
 		return fmt.Errorf("conversion of metric to model failed: %w", err)
 	}
 
-	if err = s.prepareAndSend(ctx, modelMetric, UpdateSingleEndpoint); err != nil {
+	if err = s.prepareAndSend(ctx, modelMetric, updateSingleEndpoint); err != nil {
 		return fmt.Errorf("error during preparation or sending of request: %w", err)
 	}
 
@@ -115,7 +115,7 @@ func (s *MetricsSender) SendBatch(ctx context.Context, metrics *entity.Metrics) 
 		return fmt.Errorf("conversion of metrics to models failed: %w", err)
 	}
 
-	if err = s.prepareAndSend(ctx, modelsMetric, UpdateBatchEndpoint); err != nil {
+	if err = s.prepareAndSend(ctx, modelsMetric, updateBatchEndpoint); err != nil {
 		return fmt.Errorf("error during preparation or sending of batch request: %w", err)
 	}
 

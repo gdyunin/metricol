@@ -19,15 +19,15 @@ import (
 
 const (
 	// LoggerNameDelivery is the logger name for the delivery layer.
-	LoggerNameDelivery = "delivery"
+	loggerNameDelivery = "delivery"
 	// LoggerNameRepository is the logger name for the repository layer.
-	LoggerNameRepository = "repository"
+	loggerNameRepository = "repository"
 	// LoggerNameGracefulShutdown is the logger name for the graceful shutdown events.
-	LoggerNameGracefulShutdown = "graceful_shutdown"
+	loggerNameGracefulShutdown = "graceful_shutdown"
 	// GracefulShutdownTimeout is the time to wait for ongoing tasks to complete during shutdown.
-	GracefulShutdownTimeout = 5 * time.Second
+	gracefulShutdownTimeout = 5 * time.Second
 	// DefaultBackupFileName is the name of the default backup file.
-	DefaultBackupFileName = "backup.txt"
+	defaultBackupFileName = "backup.txt"
 )
 
 // mainContext initializes the main application context with a cancel function.
@@ -88,7 +88,7 @@ func initComponentsWithShutdownActs(
 ) (*deliveryWithShutdown, error) {
 	shutdownActions := make([]func(), 0)
 
-	repoWithShutdownFunc, err := initRepo(cfg, logger.Named(LoggerNameRepository))
+	repoWithShutdownFunc, err := initRepo(cfg, logger.Named(loggerNameRepository))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create repository: %w", err)
 	}
@@ -97,7 +97,7 @@ func initComponentsWithShutdownActs(
 	echoDelivery := delivery.NewEchoServer(
 		cfg.ServerAddress,
 		repoWithShutdownFunc.repository,
-		logger.Named(LoggerNameDelivery),
+		logger.Named(loggerNameDelivery),
 	)
 
 	return &deliveryWithShutdown{
@@ -140,7 +140,7 @@ func initRepo(cfg *config.Config, logger *zap.SugaredLogger) (*repoWithShutdown,
 		r := repository.NewInFileRepository(
 			logger,
 			cfg.FileStoragePath,
-			DefaultBackupFileName,
+			defaultBackupFileName,
 			convert.IntegerToSeconds(cfg.StoreInterval),
 			cfg.Restore,
 		)
@@ -176,9 +176,9 @@ func setupGracefulShutdown(ctxCancel context.CancelFunc, logger *zap.SugaredLogg
 
 		logger.Infof(
 			"Context canceled. Allowing %d seconds for cleanup operations before forced application exit...",
-			GracefulShutdownTimeout/time.Second,
+			gracefulShutdownTimeout/time.Second,
 		)
-		time.Sleep(GracefulShutdownTimeout) // Wait for a graceful shutdown.
+		time.Sleep(gracefulShutdownTimeout) // Wait for a graceful shutdown.
 		logger.Warn("Timeout reached. Forcing application to exit.")
 		os.Exit(0) // Exit the application.
 	}()

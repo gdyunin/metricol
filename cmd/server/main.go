@@ -19,7 +19,7 @@ func main() {
 
 	setupGracefulShutdown(
 		mainCtxCancel,
-		logger.Named(LoggerNameGracefulShutdown),
+		logger.Named(loggerNameGracefulShutdown),
 		deliveryWithShutdownActs.shutdownActions...,
 	)
 	deliveryWithShutdownActs.server.Start(mainCtx)

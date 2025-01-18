@@ -14,7 +14,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-const MetricUpdateTimeout = 5 * time.Second
+const metricUpdateTimeout = 5 * time.Second
 
 // MetricsPuller defines the interface for retrieving metrics.
 type MetricsPuller interface {
@@ -35,7 +35,7 @@ func FromJSON(puller MetricsPuller) echo.HandlerFunc {
 			return c.String(http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 		}
 
-		ctx, cancel := context.WithTimeout(c.Request().Context(), MetricUpdateTimeout)
+		ctx, cancel := context.WithTimeout(c.Request().Context(), metricUpdateTimeout)
 		defer cancel()
 
 		metric, err := pullMetric(ctx, puller, m)
@@ -62,7 +62,7 @@ func FromURI(puller MetricsPuller) echo.HandlerFunc {
 			return c.String(http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 		}
 
-		ctx, cancel := context.WithTimeout(c.Request().Context(), MetricUpdateTimeout)
+		ctx, cancel := context.WithTimeout(c.Request().Context(), metricUpdateTimeout)
 		defer cancel()
 
 		metric, err := pullMetric(ctx, puller, m)

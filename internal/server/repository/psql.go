@@ -16,8 +16,8 @@ import (
 
 const (
 	// PSQLDefaultConnectionCheckTimeout specifies the duration to wait for a connection check before timing out.
-	PSQLDefaultConnectionCheckTimeout = time.Second
-	PSQLCreateTablesTimeout           = 3 * time.Second
+	defaultPSQLConnectionCheckTimeout = time.Second
+	defaultPSQLCreateTablesTimeout    = 3 * time.Second
 )
 
 var (
@@ -291,12 +291,12 @@ func (p *PostgreSQL) close() {
 func (p *PostgreSQL) mustBuild() *PostgreSQL {
 	var err error
 
-	err = p.CheckConnectionWithRetry(context.Background(), AttemptsDefaultCount, PSQLDefaultConnectionCheckTimeout)
+	err = p.CheckConnectionWithRetry(context.Background(), defaultAttemptsDefaultCount, defaultPSQLConnectionCheckTimeout)
 	if err != nil {
 		panic(fmt.Sprintf("failed to check connection to the repository: %v", err))
 	}
 
-	ctx, cancel := context.WithTimeout(context.TODO(), PSQLCreateTablesTimeout)
+	ctx, cancel := context.WithTimeout(context.TODO(), defaultPSQLCreateTablesTimeout)
 	defer cancel()
 
 	err = p.createTables(ctx)

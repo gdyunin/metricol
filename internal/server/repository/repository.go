@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	AttemptsDefaultCount = 4 // Default count of attempts for retry calls.
+	defaultAttemptsDefaultCount = 4 // Default count of attempts for retry calls.
 )
 
 // Repository defines the interface for a metric storage repository.

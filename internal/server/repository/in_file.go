@@ -18,10 +18,10 @@ import (
 )
 
 const (
-	FileDefaultPerm = 0o600           // Default file permissions.
-	DirDefaultPerm  = 0o750           // Default directory permissions.
-	MakeDirTimeout  = 2 * time.Second // Timeout for make dir.
-	MakeFileTimeout = 2 * time.Second // Timeout for make new file.
+	fileDefaultPerm = 0o600           // Default file permissions.
+	dirDefaultPerm  = 0o750           // Default directory permissions.
+	makeDirTimeout  = 2 * time.Second // Timeout for make dir.
+	makeFileTimeout = 2 * time.Second // Timeout for make new file.
 )
 
 // InFileRepository represents a file-backed repository for metrics storage.
@@ -120,7 +120,7 @@ func (r *InFileRepository) flush(ctx context.Context) {
 		return
 	}
 
-	file, err := os.OpenFile(r.filepath, os.O_WRONLY, FileDefaultPerm)
+	file, err := os.OpenFile(r.filepath, os.O_WRONLY, fileDefaultPerm)
 	if err != nil {
 		r.logger.Errorf("unable to open file for writing: path=%s, error=%v", r.filepath, err)
 		return
@@ -186,16 +186,16 @@ func (r *InFileRepository) shouldRestore() error {
 // mustMakeDir ensures the directory for the storage file exists.
 // Panics if the directory cannot be created after retries.
 func (r *InFileRepository) mustMakeDir() {
-	ctx, cancel := context.WithTimeout(context.Background(), MakeDirTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), makeDirTimeout)
 	defer cancel()
 
 	if err := retry.WithRetry(
 		ctx,
 		r.logger,
 		"making dirs for persistent storage",
-		AttemptsDefaultCount,
+		defaultAttemptsDefaultCount,
 		func() error {
-			return os.MkdirAll(filepath.Dir(r.filepath), DirDefaultPerm)
+			return os.MkdirAll(filepath.Dir(r.filepath), dirDefaultPerm)
 		},
 	); err != nil {
 		panic(fmt.Sprintf(
@@ -209,16 +209,16 @@ func (r *InFileRepository) mustMakeDir() {
 // mustMakeFile ensures the storage file exists.
 // Panics if the file cannot be created after retries.
 func (r *InFileRepository) mustMakeFile() {
-	ctx, cancel := context.WithTimeout(context.Background(), MakeFileTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), makeFileTimeout)
 	defer cancel()
 
 	if err := retry.WithRetry(
 		ctx,
 		r.logger,
 		"create file for persistent storage",
-		AttemptsDefaultCount,
+		defaultAttemptsDefaultCount,
 		func() error {
-			file, err := os.OpenFile(r.filepath, os.O_CREATE|os.O_EXCL, FileDefaultPerm)
+			file, err := os.OpenFile(r.filepath, os.O_CREATE|os.O_EXCL, fileDefaultPerm)
 			if err != nil {
 				if os.IsExist(err) {
 					return nil

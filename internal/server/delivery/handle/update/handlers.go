@@ -12,7 +12,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-const MetricUpdateTimeout = 5 * time.Second
+const metricUpdateTimeout = 5 * time.Second
 
 // MetricsUpdater defines the interface for pushing metric updates.
 type MetricsUpdater interface {
@@ -33,7 +33,7 @@ func FromJSON(updater MetricsUpdater) echo.HandlerFunc {
 			return c.String(http.StatusBadRequest, "Invalid JSON payload provided.")
 		}
 
-		ctx, cancel := context.WithTimeout(c.Request().Context(), MetricUpdateTimeout)
+		ctx, cancel := context.WithTimeout(c.Request().Context(), metricUpdateTimeout)
 		defer cancel()
 
 		updated, err := updater.PushMetric(ctx, m.ToEntityMetric())
@@ -65,7 +65,7 @@ func FromURI(updater MetricsUpdater) echo.HandlerFunc {
 			return c.String(err.(*echo.HTTPError).Code, err.Error()) //nolint
 		}
 
-		ctx, cancel := context.WithTimeout(c.Request().Context(), MetricUpdateTimeout)
+		ctx, cancel := context.WithTimeout(c.Request().Context(), metricUpdateTimeout)
 		defer cancel()
 
 		_, err := updater.PushMetric(ctx, m.ToEntityMetric())

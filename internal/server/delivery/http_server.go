@@ -23,9 +23,9 @@ import (
 )
 
 const (
-	DefaultTemplatesPath = "web/templates/"
+	defaultTemplatesPath = "web/templates/"
 	// GracefulShutdownTimeout is the time to wait for ongoing tasks to complete during shutdown.
-	GracefulShutdownTimeout = 5 * time.Second
+	gracefulShutdownTimeout = 5 * time.Second
 )
 
 // EchoServer defines the HTTP server powered by Echo framework.
@@ -51,7 +51,7 @@ func NewEchoServer(serverAddress string, repo repository.Repository, logger *zap
 		echo:        echo.New(),
 		logger:      logger,
 		addr:        serverAddress,
-		tmplPath:    DefaultTemplatesPath,
+		tmplPath:    defaultTemplatesPath,
 		metricsCtrl: controller.NewMetricService(repo),
 	}
 
@@ -85,7 +85,7 @@ func (s *EchoServer) handleShutdown(ctx context.Context) {
 	<-ctx.Done()
 	s.logger.Info("Received shutdown signal")
 
-	shutdownCtx, cancel := context.WithTimeout(ctx, GracefulShutdownTimeout)
+	shutdownCtx, cancel := context.WithTimeout(ctx, gracefulShutdownTimeout)
 	defer cancel()
 
 	if err := s.echo.Shutdown(shutdownCtx); err != nil {

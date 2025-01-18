@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	PushTimeout    = 3 * time.Second
-	PullTimeout    = 3 * time.Second
-	PullAllTimeout = 3 * time.Second
+	pushTimeout    = 3 * time.Second
+	pullTimeout    = 3 * time.Second
+	pullAllTimeout = 3 * time.Second
 )
 
 var ErrNotFoundInRepository = errors.New("not found in repository")
@@ -44,7 +44,7 @@ func NewMetricService(repo repository.Repository) *MetricService {
 //   - The stored metric if successful.
 //   - An error if the metric is invalid or the repository operation fails.
 func (s *MetricService) PushMetric(ctx context.Context, metric *entity.Metric) (*entity.Metric, error) {
-	pushCtx, cancel := context.WithTimeout(ctx, PushTimeout)
+	pushCtx, cancel := context.WithTimeout(ctx, pushTimeout)
 	defer cancel()
 
 	if err := s.validate(metric); err != nil {
@@ -70,7 +70,7 @@ func (s *MetricService) PushMetric(ctx context.Context, metric *entity.Metric) (
 //   - Nil if the metric does not exist.
 //   - An error if the repository operation fails.
 func (s *MetricService) Pull(ctx context.Context, metricType, name string) (*entity.Metric, error) {
-	pullCtx, cancel := context.WithTimeout(ctx, PullTimeout)
+	pullCtx, cancel := context.WithTimeout(ctx, pullTimeout)
 	defer cancel()
 
 	// TODO: Оооочень спорно дробить на две операции: проверка существования и только потом получение.
@@ -103,7 +103,7 @@ func (s *MetricService) Pull(ctx context.Context, metricType, name string) (*ent
 //   - A collection of all metrics.
 //   - An error if the repository operation fails.
 func (s *MetricService) PullAll(ctx context.Context) (*entity.Metrics, error) {
-	pullCtx, cancel := context.WithTimeout(ctx, PullAllTimeout)
+	pullCtx, cancel := context.WithTimeout(ctx, pullAllTimeout)
 	defer cancel()
 
 	metrics, err := s.repo.All(pullCtx)

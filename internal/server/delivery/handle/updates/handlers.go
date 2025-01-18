@@ -10,7 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-const MetricUpdateTimeout = 5 * time.Second
+const metricUpdateTimeout = 5 * time.Second
 
 // MetricsUpdater defines the interface for pushing metric updates.
 type MetricsUpdater interface {
@@ -46,7 +46,7 @@ func FromJSON(updater MetricsUpdater) echo.HandlerFunc {
 		// TODO: Нужно у контроллера сделать ручку на обновление пачки метрик и дёргать ее сразу, без циклов.
 		// TODO: она должна работать с контекстом и принимать *model.Metrics.
 		for _, m := range metrics {
-			ctx, cancel := context.WithTimeout(c.Request().Context(), MetricUpdateTimeout)
+			ctx, cancel := context.WithTimeout(c.Request().Context(), metricUpdateTimeout)
 			updated, err := updater.PushMetric(ctx, m)
 			cancel()
 			if err != nil {

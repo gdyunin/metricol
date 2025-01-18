@@ -20,15 +20,15 @@ import (
 
 const (
 	// LoggerNameCollector is the logger name for the metrics collector.
-	LoggerNameCollector = "collector"
+	loggerNameCollector = "collector"
 	// LoggerNameSender is the logger name for the metrics sender.
-	LoggerNameSender = "sender"
+	loggerNameSender = "sender"
 	// LoggerNameAgent is the logger name for the main agent.
-	LoggerNameAgent = "agent"
+	loggerNameAgent = "agent"
 	// LoggerNameGracefulShutdown is the logger name for the graceful shutdown events.
-	LoggerNameGracefulShutdown = "graceful_shutdown"
+	loggerNameGracefulShutdown = "graceful_shutdown"
 	// GracefulShutdownTimeout is the time to wait for ongoing tasks to complete during shutdown.
-	GracefulShutdownTimeout = 5 * time.Second
+	gracefulShutdownTimeout = 5 * time.Second
 )
 
 // mainContext initializes the main application context with a cancel function.
@@ -60,15 +60,15 @@ func loadConfig() (*config.Config, error) {
 // initComponents initializes the main components of the agent, including the
 // metrics collector, metrics sender, and the agent itself.
 func initComponents(cfg *config.Config, logger *zap.SugaredLogger) *agent.Agent {
-	collector := collect.NewCollector(logger.Named(LoggerNameCollector))
-	sender := send.NewMetricsSender(cfg.ServerAddress, logger.Named(LoggerNameSender))
+	collector := collect.NewCollector(logger.Named(loggerNameCollector))
+	sender := send.NewMetricsSender(cfg.ServerAddress, logger.Named(loggerNameSender))
 
 	return agent.NewAgent(
 		collector,
 		sender,
 		convert.IntegerToSeconds(cfg.PollInterval),
 		convert.IntegerToSeconds(cfg.ReportInterval),
-		logger.Named(LoggerNameAgent),
+		logger.Named(loggerNameAgent),
 	)
 }
 
@@ -90,9 +90,9 @@ func setupGracefulShutdown(ctxCancel context.CancelFunc, logger *zap.SugaredLogg
 		ctxCancel() // Cancel the application context.
 		logger.Infof(
 			"Context canceled. Allowing %d seconds for cleanup operations before forced application exit...",
-			GracefulShutdownTimeout/time.Second,
+			gracefulShutdownTimeout/time.Second,
 		)
-		time.Sleep(GracefulShutdownTimeout) // Wait for a graceful shutdown.
+		time.Sleep(gracefulShutdownTimeout) // Wait for a graceful shutdown.
 		logger.Warn("Timeout reached. Forcing application to exit.")
 		os.Exit(0) // Exit the application.
 	}()

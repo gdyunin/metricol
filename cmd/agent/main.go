@@ -7,7 +7,7 @@ func main() {
 	logger, loggerSync := loggerWithSyncFunc()
 	defer loggerSync()
 
-	setupGracefulShutdown(mainCtxCancel, logger.Named(LoggerNameGracefulShutdown))
+	setupGracefulShutdown(mainCtxCancel, logger.Named(loggerNameGracefulShutdown))
 
 	appCfg, err := loadConfig()
 	if err != nil {

@@ -11,7 +11,7 @@ import (
 // ConnectionCheckTimeout specifies the duration to wait for a connection check
 // before timing out. This constant is used in the Ping handler to ensure that
 // health checks complete within a reasonable timeframe.
-const ConnectionCheckTimeout = 3 * time.Second
+const connectionCheckTimeout = 3 * time.Second
 
 // ConnectChecker defines an interface for checking connectivity.
 //
@@ -37,7 +37,7 @@ type ConnectChecker interface {
 //   - A 500 Internal Server Error status if the connection check fails.
 func Ping(checker ConnectChecker) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		ctx, cancel := context.WithTimeout(context.Background(), ConnectionCheckTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), connectionCheckTimeout)
 		defer cancel()
 
 		if err := checker.CheckConnection(ctx); err != nil {
