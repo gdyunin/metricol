@@ -131,16 +131,6 @@ func (s *EchoServer) setupGeneralMiddlewares() {
 	s.echo.Use(
 		custMiddleware.Log(s.logger.Named("request")),
 		echoMiddleware.Decompress(),
-		echoMiddleware.Gzip(),
-		// [ДЛЯ РЕВЬЮ]: Тут немного не по ТЗ, а именно, гзиппим всё, а по ТЗ только то,
-		// [ДЛЯ РЕВЬЮ]: что с некоторыми контент-тайпами (application/json и text/html вроде).
-		// [ДЛЯ РЕВЬЮ]: Через эховский миддлвари так нельзя, нужно кастомное.
-		// [ДЛЯ РЕВЬЮ]: Я его сделал и так оно страшно и чужеродно было без супер видимого преимущества,
-		// [ДЛЯ РЕВЬЮ]: Что я по итогу кастомное убрал и оставил эховский middleware.Gzip().
-		// [ДЛЯ РЕВЬЮ]: Могу вернуть кастомное, если оно задумывалось не просто как поучиться перехватывать
-		// [ДЛЯ РЕВЬЮ]: байты и писать их через кастомный райтер со встроенным дефолтным (существующем) райтером.
-		// [ДЛЯ РЕВЬЮ]: А так автотесты проходят, значит не супер критично :D
-		// [ДЛЯ РЕВЬЮ]: В общем, скажи как быть, так и поступим.
 	)
 }
 
@@ -156,16 +146,16 @@ func (s *EchoServer) setupRenderers() {
 func (s *EchoServer) setupRouters() {
 	s.logger.Info("Setting up routes")
 	updateGroup := s.echo.Group("/update")
-	updateGroup.POST("", update.FromJSON(s.metricsCtrl))
+	updateGroup.POST("", update.FromJSON(s.metricsCtrl), echoMiddleware.Gzip())
 	updateGroup.POST("/:type/:id/:value", update.FromURI(s.metricsCtrl))
 
 	updatesGroup := s.echo.Group("/updates")
-	updatesGroup.POST("", updates.FromJSON(s.metricsCtrl))
+	updatesGroup.POST("", updates.FromJSON(s.metricsCtrl), echoMiddleware.Gzip())
 
 	valueGroup := s.echo.Group("/value")
-	valueGroup.POST("", value.FromJSON(s.metricsCtrl))
+	valueGroup.POST("", value.FromJSON(s.metricsCtrl), echoMiddleware.Gzip())
 	valueGroup.GET("/:type/:id", value.FromURI(s.metricsCtrl))
 
-	s.echo.GET("/", general.MainPage(s.metricsCtrl))
+	s.echo.GET("/", general.MainPage(s.metricsCtrl), echoMiddleware.Gzip())
 	s.echo.GET("/ping", general.Ping(s.metricsCtrl))
 }
