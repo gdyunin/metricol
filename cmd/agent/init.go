@@ -33,7 +33,7 @@ const (
 
 // mainContext initializes the main application context with a cancel function.
 func mainContext() (context.Context, context.CancelFunc) {
-	return context.WithCancel(context.Background())
+	return signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 }
 
 // baseLogger initializes and returns a SugaredLogger instance
@@ -70,28 +70,26 @@ func initComponents(cfg *config.Config, logger *zap.SugaredLogger) *agent.Agent 
 	)
 }
 
-// setupGracefulShutdown sets up a graceful shutdown mechanism for the
-// application. It listens for system interrupt and termination signals (e.g.,
-// SIGTERM or SIGINT). When a signal is received, it cancels the provided context
-// and waits for the graceful shutdown timeout before exiting.
+// setupGracefulShutdown establishes a mechanism to gracefully shut down the
+// application. This function reacts to the cancellation of the provided
+// context, which can be triggered by external components handling system
+// interrupt and termination signals such as SIGTERM or SIGINT. It allows a
+// configured timeout for cleanup operations before forcefully terminating the
+// application.
 //
 // Parameters:
-//   - ctxCancel: The cancel function associated with the application context.
+//   - ctx: The context representing the application's lifecycle. Cancellation
+//     of this context initiates the shutdown process.
 //     This function will be called to signal the application to shut down.
-func setupGracefulShutdown(ctxCancel context.CancelFunc, logger *zap.SugaredLogger) {
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
-
+func setupGracefulShutdown(ctx context.Context, logger *zap.SugaredLogger) {
 	go func() {
-		<-signalChan
-		logger.Info("Received termination signal (SIGTERM or SIGINT). Initiating graceful shutdown...")
-		ctxCancel() // Cancel the application context.
+		<-ctx.Done()
 		logger.Infof(
 			"Context canceled. Allowing %d seconds for cleanup operations before forced application exit...",
 			gracefulShutdownTimeout/time.Second,
 		)
 		time.Sleep(gracefulShutdownTimeout) // Wait for a graceful shutdown.
 		logger.Warn("Timeout reached. Forcing application to exit.")
-		os.Exit(0) // Exit the application.
+		os.Exit(1) // Exit the application.
 	}()
 }
