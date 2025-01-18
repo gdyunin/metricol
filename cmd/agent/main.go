@@ -4,8 +4,8 @@ func main() {
 	mainCtx, mainCtxCancel := mainContext()
 	defer mainCtxCancel()
 
-	logger, loggerSync := loggerWithSyncFunc()
-	defer loggerSync()
+	logger := baseLogger()
+	defer func() { _ = logger.Sync() }()
 
 	setupGracefulShutdown(mainCtxCancel, logger.Named(loggerNameGracefulShutdown))
 

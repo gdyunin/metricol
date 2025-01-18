@@ -36,12 +36,10 @@ func mainContext() (context.Context, context.CancelFunc) {
 	return context.WithCancel(context.Background())
 }
 
-// loggerWithSyncFunc initializes and returns a SugaredLogger instance
+// baseLogger initializes and returns a SugaredLogger instance
 // along with a function to flush buffered logs.
-func loggerWithSyncFunc() (*zap.SugaredLogger, func()) {
-	l := logging.Logger(logging.LevelINFO)
-	syncFunc := func() { _ = l.Sync() }
-	return l, syncFunc
+func baseLogger() *zap.SugaredLogger {
+	return logging.Logger(logging.LevelINFO)
 }
 
 // loadConfig parses the application's configuration file.

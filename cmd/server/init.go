@@ -39,15 +39,13 @@ func mainContext() (context.Context, context.CancelFunc) {
 	return context.WithCancel(context.Background())
 }
 
-// loggerWithSyncFunc initializes a structured logger for the application.
+// baseLogger initializes a structured logger for the application.
 //
 // Returns:
 //   - *zap.SugaredLogger: A configured logger instance.
 //   - func(): A function to flush any buffered logs.
-func loggerWithSyncFunc() (*zap.SugaredLogger, func()) {
-	l := logging.Logger(logging.LevelINFO)
-	syncFunc := func() { _ = l.Sync() }
-	return l, syncFunc
+func baseLogger() *zap.SugaredLogger {
+	return logging.Logger(logging.LevelINFO)
 }
 
 // loadConfig parses the application's configuration file.
