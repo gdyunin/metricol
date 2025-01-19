@@ -109,7 +109,7 @@ func (p *PostgreSQL) UpdateBatch(ctx context.Context, metrics *entity.Metrics) e
 	}
 	defer func() {
 		if err := tx.Rollback(); err != nil {
-			log.Errorf("SQL transaction rollback failed: %v", err)
+			p.logger.Errorf("SQL transaction rollback failed: %v", err)
 		}
 	}()
 
