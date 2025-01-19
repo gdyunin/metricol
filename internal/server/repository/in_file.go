@@ -13,6 +13,7 @@ import (
 
 	"github.com/gdyunin/metricol.git/internal/server/internal/entity"
 	"github.com/gdyunin/metricol.git/pkg/retry"
+	"github.com/labstack/gommon/log"
 
 	"go.uber.org/zap"
 )
@@ -125,7 +126,11 @@ func (r *InFileRepository) flush(ctx context.Context) {
 		r.logger.Errorf("unable to open file for writing: path=%s, error=%v", r.filepath, err)
 		return
 	}
-	defer func() { _ = file.Close() }()
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Errorf("File close error: %v", err)
+		}
+	}()
 
 	var buf bytes.Buffer
 	for _, m := range *metrics {
@@ -242,7 +247,11 @@ func (r *InFileRepository) restore() error {
 	if err != nil {
 		return fmt.Errorf("failed to open file for restoration: path=%s, error=%w", r.filepath, err)
 	}
-	defer func() { _ = file.Close() }()
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Errorf("File close error: %v", err)
+		}
+	}()
 
 	reader := bufio.NewScanner(file)
 	for reader.Scan() {

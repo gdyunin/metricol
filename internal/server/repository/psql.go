@@ -11,6 +11,7 @@ import (
 	"github.com/gdyunin/metricol.git/internal/server/internal/entity"
 	"github.com/gdyunin/metricol.git/pkg/retry"
 	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/labstack/gommon/log"
 	"go.uber.org/zap"
 )
 
@@ -106,7 +107,11 @@ func (p *PostgreSQL) UpdateBatch(ctx context.Context, metrics *entity.Metrics) e
 	if err != nil {
 		return fmt.Errorf("failed at begin transaction: %w", err)
 	}
-	defer func() { _ = tx.Rollback() }()
+	defer func() {
+		if err := tx.Rollback(); err != nil {
+			log.Errorf("SQL transaction rollback failed: %v", err)
+		}
+	}()
 
 	for _, m := range *metrics {
 		if m == nil {
@@ -205,7 +210,11 @@ func (p *PostgreSQL) All(ctx context.Context) (*entity.Metrics, error) {
 	if err != nil {
 		return nil, fmt.Errorf(QueryErrFmt, ErrQueryExecuteFailed, err)
 	}
-	defer func() { _ = rows.Close() }()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Errorf("SQL rows result close error: %v", err)
+		}
+	}()
 
 	for rows.Next() {
 		m := entity.Metric{}
