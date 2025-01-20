@@ -14,7 +14,7 @@ const metricUpdateTimeout = 5 * time.Second
 
 // MetricsUpdater defines the interface for pushing metric updates.
 type MetricsUpdater interface {
-	PushMetric(context.Context, *entity.Metric) (*entity.Metric, error)
+	PushMetrics(context.Context, *entity.Metrics) (*entity.Metrics, error)
 }
 
 // FromJSON handles incoming JSON requests to update metrics.
@@ -41,22 +41,16 @@ func FromJSON(updater MetricsUpdater) echo.HandlerFunc {
 			metrics = append(metrics, m.ToEntityMetric())
 		}
 
-		updatedMetrics := entity.Metrics{}
-		// [ДЛЯ РЕВЬЮ]: Да, это полный бред кидать по одной метрике, надо кидать пачкой. Не успел реализовать((.
-		// TODO: Нужно у контроллера сделать ручку на обновление пачки метрик и дёргать ее сразу, без циклов.
-		// TODO: она должна работать с контекстом и принимать *model.Metrics.
-		for _, m := range metrics {
-			ctx, cancel := context.WithTimeout(c.Request().Context(), metricUpdateTimeout)
-			updated, err := updater.PushMetric(ctx, m)
-			cancel()
-			if err != nil {
-				return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
-			}
-			updatedMetrics = append(updatedMetrics, updated)
+		ctx, cancel := context.WithTimeout(c.Request().Context(), metricUpdateTimeout)
+		defer cancel()
+
+		updatedMetrics, err := updater.PushMetrics(ctx, &metrics)
+		if err != nil {
+			return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		}
 
 		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-		return c.JSON(http.StatusOK, model.FromEntityMetrics(&updatedMetrics))
+		return c.JSON(http.StatusOK, model.FromEntityMetrics(updatedMetrics))
 	}
 }
 
