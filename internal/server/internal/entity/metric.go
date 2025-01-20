@@ -57,6 +57,14 @@ func (m *Metrics) Length() int {
 	return len(*m)
 }
 
+// First returns the first metric in the collection or nil if the collection is empty or nil.
+func (m *Metrics) First() *Metric {
+	if m == nil || len(*m) == 0 {
+		return nil
+	}
+	return (*m)[0]
+}
+
 // String returns a string representation of the metrics collection.
 func (m *Metrics) String() string {
 	if m == nil {

@@ -44,19 +44,76 @@ func NewMetricService(repo repository.Repository) *MetricService {
 //   - The stored metric if successful.
 //   - An error if the metric is invalid or the repository operation fails.
 func (s *MetricService) PushMetric(ctx context.Context, metric *entity.Metric) (*entity.Metric, error) {
+	batch := entity.Metrics{metric}
+	updated, err := s.PushMetrics(ctx, &batch)
+	if err != nil {
+		return nil, fmt.Errorf("error while update: %w", err)
+	}
+	return updated.First(), nil
+}
+
+func (s *MetricService) PushMetrics(ctx context.Context, metrics *entity.Metrics) (*entity.Metrics, error) {
+	if metrics == nil {
+		return nil, errors.New("metrics batch is nil")
+	}
+
 	pushCtx, cancel := context.WithTimeout(ctx, pushTimeout)
 	defer cancel()
 
-	if err := s.validate(metric); err != nil {
-		return nil, fmt.Errorf("invalid metric: %w", err)
+	preparedMetricsBatch := make(entity.Metrics, metrics.Length())
+	for _, m := range *metrics {
+		if err := s.validate(m); err != nil {
+			return nil, fmt.Errorf("invalid metric: %w", err)
+		}
+
+		if m.Type != entity.MetricTypeCounter {
+			preparedMetricsBatch = append(preparedMetricsBatch, m)
+		}
+
+		preparedMetric, err := s.prepareCounter(pushCtx, m)
+		if err != nil {
+			return nil, fmt.Errorf("failed prepare counter %s: %w", m.Name, err)
+		}
+		preparedMetricsBatch = append(preparedMetricsBatch, preparedMetric)
 	}
 
-	switch metric.Type {
-	case entity.MetricTypeCounter:
-		return s.handleCounter(pushCtx, metric)
-	default:
-		return s.saveMetric(pushCtx, metric)
+	if err := s.repo.UpdateBatch(pushCtx, &preparedMetricsBatch); err != nil {
+		return nil, fmt.Errorf("failed store metrics batch: %w", err)
 	}
+	return &preparedMetricsBatch, nil
+}
+
+func (s *MetricService) prepareCounter(ctx context.Context, metric *entity.Metric) (*entity.Metric, error) {
+	exist, err := s.repo.IsExist(ctx, metric.Type, metric.Name)
+	if err != nil {
+		return nil, fmt.Errorf("error occurred while check metric %s exist in repo: %w", metric.Name, err)
+	}
+
+	if !exist {
+		return metric, nil
+	}
+
+	existingMetric, err := s.repo.Find(ctx, metric.Type, metric.Name)
+	if err != nil {
+		return nil, fmt.Errorf("retrieval failed for counter '%s': %w", metric.Name, err)
+	}
+
+	existingValue, err := convert.AnyToInt64(existingMetric.Value)
+	if err != nil {
+		return nil, fmt.Errorf("conversion failed for counter '%s': %w", metric.Name, err)
+	}
+
+	newValue, err := convert.AnyToInt64(metric.Value)
+	if err != nil {
+		return nil, fmt.Errorf("conversion failed for counter '%s': %w", metric.Name, err)
+	}
+
+	updatedMetric := &entity.Metric{
+		Value: existingValue + newValue,
+		Name:  metric.Name,
+		Type:  entity.MetricTypeCounter,
+	}
+	return updatedMetric, nil
 }
 
 // Pull retrieves a metric by its type and name from the repository.
