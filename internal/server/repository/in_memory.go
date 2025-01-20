@@ -61,9 +61,6 @@ func (r *InMemoryRepository) UpdateBatch(ctx context.Context, metrics *entity.Me
 		return errors.New("metrics should be non-nil, but got nil")
 	}
 
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
 	for _, m := range *metrics {
 		if err := r.Update(ctx, m); err != nil {
 			return fmt.Errorf("failed update one of metrics: %w", err)

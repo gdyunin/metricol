@@ -60,7 +60,7 @@ func (s *MetricService) PushMetrics(ctx context.Context, metrics *entity.Metrics
 	pushCtx, cancel := context.WithTimeout(ctx, pushTimeout)
 	defer cancel()
 
-	preparedMetricsBatch := make(entity.Metrics, metrics.Length())
+	preparedMetricsBatch := make(entity.Metrics, 0, metrics.Length())
 	for _, m := range *metrics {
 		if err := s.validate(m); err != nil {
 			return nil, fmt.Errorf("invalid metric: %w", err)
