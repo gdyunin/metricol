@@ -87,3 +87,38 @@ func (m *Metrics) String() string {
 
 	return strings.Join(strData, ", ")
 }
+
+// MergeDuplicates merges duplicate metrics in the collection by name and type, aggregating their values.
+func (m *Metrics) MergeDuplicates() {
+	if m == nil || len(*m) == 0 {
+		return
+	}
+
+	merged := make(map[string]*Metric)
+
+	for _, metric := range *m {
+		if metric == nil {
+			continue
+		}
+
+		key := metric.Name + "|" + metric.Type
+		if existing, found := merged[key]; found {
+			if metric.Type == MetricTypeCounter {
+				existingVal, _ := convert.AnyToInt64(existing.Value)
+				repeatVal, _ := convert.AnyToInt64(metric.Value)
+				existing.Value = existingVal + repeatVal
+			} else {
+				existing.Value = metric.Value // For gauge, simply replace the value.
+			}
+		} else {
+			merged[key] = metric
+		}
+	}
+
+	result := make(Metrics, 0, len(merged))
+	for _, metric := range merged {
+		result = append(result, metric)
+	}
+
+	*m = result
+}

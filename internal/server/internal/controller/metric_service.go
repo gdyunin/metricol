@@ -76,6 +76,7 @@ func (s *MetricService) PushMetrics(ctx context.Context, metrics *entity.Metrics
 		}
 		preparedMetricsBatch = append(preparedMetricsBatch, preparedMetric)
 	}
+	preparedMetricsBatch.MergeDuplicates()
 
 	if err := s.repo.UpdateBatch(pushCtx, &preparedMetricsBatch); err != nil {
 		return nil, fmt.Errorf("failed store metrics batch: %w", err)
