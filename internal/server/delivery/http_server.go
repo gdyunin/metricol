@@ -158,7 +158,7 @@ func (s *EchoServer) setupRouters() {
 	updateGroup.POST("", update.FromJSON(s.metricsCtrl), echoMiddleware.Gzip())
 	updateGroup.POST("/:type/:id/:value", update.FromURI(s.metricsCtrl))
 
-	updatesGroup := s.echo.Group("/updates")
+	updatesGroup := s.echo.Group("/updates", custMiddleware.Auth(s.signingKey), custMiddleware.Sign(s.signingKey))
 	updatesGroup.POST("", updates.FromJSON(s.metricsCtrl), echoMiddleware.Gzip())
 
 	valueGroup := s.echo.Group("/value")
