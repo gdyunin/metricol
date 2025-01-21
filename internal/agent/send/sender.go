@@ -117,12 +117,6 @@ func (s *MetricsSender) prepareAndSend(ctx context.Context, v any, endpoint stri
 	}
 	req.SetContext(ctx)
 
-	if s.signingKey != "" {
-		if err = s.requestBuilder.SignRequest(req, s.signingKey); err != nil {
-			return fmt.Errorf("request signing failed: %w", err)
-		}
-	}
-
 	if _, err = s.doRequest(req); err != nil {
 		return fmt.Errorf("request execution failed: %w", err)
 	}
@@ -145,7 +139,7 @@ func (s *MetricsSender) prepareRequest(v any, endpoint string) (*resty.Request, 
 		return nil, fmt.Errorf("serialization of metrics to JSON failed: %w", err)
 	}
 
-	req, err := s.requestBuilder.BuildWithGzip(http.MethodPost, endpoint, data)
+	req, err := s.requestBuilder.BuildWithGzip(http.MethodPost, endpoint, data, s.signingKey)
 	if err != nil {
 		return nil, fmt.Errorf("gzip-compressed request build failed: %w", err)
 	}

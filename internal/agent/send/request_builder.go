@@ -1,14 +1,11 @@
 package send
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
-	"io"
 
 	"github.com/gdyunin/metricol.git/internal/agent/send/compress"
-	"github.com/labstack/gommon/log"
-
+	"github.com/gdyunin/metricol.git/pkg/sign"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -59,7 +56,15 @@ func (b *RequestBuilder) Build(method string, endpoint string, body []byte) *res
 // Returns:
 //   - *resty.Request: The constructed HTTP request with gzip-compressed body.
 //   - error: An error if compression fails.
-func (b *RequestBuilder) BuildWithGzip(method string, endpoint string, body []byte) (*resty.Request, error) {
+func (b *RequestBuilder) BuildWithGzip(method string, endpoint string, body []byte, signingKey string) (
+	*resty.Request,
+	error,
+) {
+	var s string
+	if signingKey != "" {
+		s = hex.EncodeToString(sign.MakeSign(body, signingKey))
+	}
+
 	body, err := b.compressor.Compress(body)
 	if err != nil {
 		return nil, fmt.Errorf("gzip compression failed for request body: %w", err)
@@ -67,68 +72,9 @@ func (b *RequestBuilder) BuildWithGzip(method string, endpoint string, body []by
 
 	req := b.Build(method, endpoint, body)
 	req.SetHeader("Content-Encoding", "gzip")
+	if s != "" {
+		req.SetHeader("HashSHA256", s)
+	}
 
 	return req, nil
-}
-
-// SignRequest signs a given resty.Request using a specified key.
-//
-// Parameters:
-//   - req: The HTTP request to be signed.
-//   - key: The secret key used to generate the HMAC-SHA256 signature.
-//
-// Returns:
-//   - error: An error if the signing process fails; otherwise, nil.
-func (b *RequestBuilder) SignRequest(req *resty.Request, key string) error {
-	rawBody, err := b.getRawBody(req)
-	if err != nil {
-		return fmt.Errorf("failed get raw body: %w", err)
-	}
-
-	sign := b.makeSign(rawBody, key)
-
-	req.SetBody(rawBody)
-	req.SetHeader("HashSHA256", string(sign))
-
-	return nil
-}
-
-// getRawBody retrieves the raw body of a resty.Request.
-//
-// Parameters:
-//   - req: The HTTP request whose body needs to be read.
-//
-// Returns:
-//   - []byte: The raw body of the request as a byte slice.
-//   - error: An error if the body retrieval or reading fails; otherwise, nil.
-func (b *RequestBuilder) getRawBody(req *resty.Request) ([]byte, error) {
-	bodyReader, err := req.RawRequest.GetBody()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get body: %w", err)
-	}
-	defer func() {
-		if err = bodyReader.Close(); err != nil {
-			log.Errorf("failed close body: %v", err)
-		}
-	}()
-
-	bodyBytes, err := io.ReadAll(bodyReader)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read body: %w", err)
-	}
-	return bodyBytes, nil
-}
-
-// makeSign generates an HMAC-SHA256 signature for a given body and key.
-//
-// Parameters:
-//   - body: The message to be signed.
-//   - key: The secret key used to generate the signature.
-//
-// Returns:
-//   - []byte: The generated HMAC-SHA256 signature.
-func (b *RequestBuilder) makeSign(body []byte, key string) []byte {
-	h := hmac.New(sha256.New, []byte(key))
-	h.Write(body)
-	return h.Sum(nil)
 }

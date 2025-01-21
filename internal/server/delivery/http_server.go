@@ -35,6 +35,7 @@ type EchoServer struct {
 	metricsCtrl *controller.MetricService
 	addr        string
 	tmplPath    string
+	signingKey  string
 }
 
 // NewEchoServer creates and configures a new EchoServer instance.
@@ -46,11 +47,17 @@ type EchoServer struct {
 //
 // Returns:
 //   - A pointer to the configured EchoServer.
-func NewEchoServer(serverAddress string, repo repository.Repository, logger *zap.SugaredLogger) *EchoServer {
+func NewEchoServer(
+	serverAddress string,
+	signingKey string,
+	repo repository.Repository,
+	logger *zap.SugaredLogger,
+) *EchoServer {
 	echoServer := EchoServer{
 		echo:        echo.New(),
 		logger:      logger,
 		addr:        serverAddress,
+		signingKey:  signingKey,
 		tmplPath:    defaultTemplatesPath,
 		metricsCtrl: controller.NewMetricService(repo),
 	}
@@ -131,6 +138,8 @@ func (s *EchoServer) setupGeneralMiddlewares() {
 	s.echo.Use(
 		custMiddleware.Log(s.logger.Named("request")),
 		echoMiddleware.Decompress(),
+		custMiddleware.Auth(s.signingKey),
+		custMiddleware.Sign(s.signingKey),
 	)
 }
 

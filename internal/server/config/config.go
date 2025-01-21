@@ -14,6 +14,7 @@ const (
 	defaultFileStoragePath = ""
 	defaultRestoreFlag     = true
 	defaultDatabaseDSN     = ""
+	defaultSigningKey      = ""
 )
 
 // Config holds the configuration for the server, including the server address.
@@ -21,6 +22,7 @@ type Config struct {
 	ServerAddress   string `env:"ADDRESS"`
 	FileStoragePath string `env:"FILE_STORAGE_PATH"`
 	DatabaseDSN     string `env:"DATABASE_DSN"`
+	SigningKey      string `env:"KEY"`
 	StoreInterval   int    `env:"STORE_INTERVAL"`
 	Restore         bool   `env:"RESTORE"`
 }
@@ -36,6 +38,7 @@ func ParseConfig() (*Config, error) {
 		FileStoragePath: defaultFileStoragePath,
 		Restore:         defaultRestoreFlag,
 		DatabaseDSN:     defaultDatabaseDSN,
+		SigningKey:      defaultSigningKey,
 	}
 
 	// Parse command-line arguments or set default settings if no args are provided.
@@ -62,5 +65,6 @@ func parseFlagsOrSetDefault(cfg *Config) {
 	flag.StringVar(&cfg.FileStoragePath, "f", cfg.FileStoragePath, "file storage path")
 	flag.BoolVar(&cfg.Restore, "r", cfg.Restore, "is restore need")
 	flag.StringVar(&cfg.DatabaseDSN, "d", cfg.DatabaseDSN, "database dsn")
+	flag.StringVar(&cfg.SigningKey, "k", cfg.SigningKey, "Signing key used for checking request signatures.")
 	flag.Parse()
 }
