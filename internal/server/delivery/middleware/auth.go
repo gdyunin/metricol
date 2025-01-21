@@ -21,6 +21,7 @@ func Auth(key string) echo.MiddlewareFunc {
 			}
 
 			sign := c.Request().Header.Get("HashSHA256")
+			fmt.Printf("SIGN: %s", sign)
 			if sign == "" {
 				return c.String(http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
 			}
