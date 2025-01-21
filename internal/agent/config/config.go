@@ -13,13 +13,15 @@ const (
 	defaultPollInterval   = 2
 	defaultReportInterval = 10
 	defaultSigningKey     = ""
+	defaultRateLimit      = 3
 )
 
 type Config struct {
-	ServerAddress  string `env:"ADDRESS"`         // Address of the server to connect to
+	ServerAddress  string `env:"ADDRESS"`         // Address of the server to connect to.
 	SigningKey     string `env:"KEY"`             // Key used for signing requests to the server.
-	PollInterval   int    `env:"POLL_INTERVAL"`   // Interval for polling metrics
-	ReportInterval int    `env:"REPORT_INTERVAL"` // Interval for reporting metrics
+	PollInterval   int    `env:"POLL_INTERVAL"`   // Interval for polling metrics.
+	ReportInterval int    `env:"REPORT_INTERVAL"` // Interval for reporting metrics.
+	RateLimit      int    `env:"RATE_LIMIT"`      // Max rate for http-request send one time.
 }
 
 // ParseConfig initializes the Config with default values,
@@ -33,6 +35,7 @@ func ParseConfig() (*Config, error) {
 		PollInterval:   defaultPollInterval,
 		ReportInterval: defaultReportInterval,
 		SigningKey:     defaultSigningKey,
+		RateLimit:      defaultRateLimit,
 	}
 
 	// Parse command-line arguments or set default settings if no args are provided.
@@ -52,6 +55,7 @@ func parseFlagsOrSetDefault(cfg *Config) {
 	flag.IntVar(&cfg.PollInterval, "p", cfg.PollInterval, "Interval (in seconds) for collecting metrics")
 	flag.IntVar(&cfg.ReportInterval, "r", cfg.ReportInterval, "Interval (in seconds) for sending metrics")
 	flag.StringVar(&cfg.ServerAddress, "a", cfg.ServerAddress, "Address of the server to connect to")
-	flag.StringVar(&cfg.SigningKey, "k", cfg.SigningKey, "Signing key used for creating request signatures.")
+	flag.StringVar(&cfg.SigningKey, "k", cfg.SigningKey, "Signing key used for creating request signatures")
+	flag.IntVar(&cfg.RateLimit, "l", cfg.RateLimit, "Max rate for http-request send one time")
 	flag.Parse()
 }
