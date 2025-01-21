@@ -140,8 +140,6 @@ func (s *EchoServer) setupGeneralMiddlewares() {
 	s.echo.Use(
 		custMiddleware.Log(s.logger.Named("request")),
 		echoMiddleware.Decompress(),
-		custMiddleware.Auth(s.signingKey),
-		custMiddleware.Sign(s.signingKey),
 	)
 }
 
@@ -156,7 +154,7 @@ func (s *EchoServer) setupRenderers() {
 // setupRouters configures the routes for the Echo server.
 func (s *EchoServer) setupRouters() {
 	s.logger.Info("Setting up routes")
-	updateGroup := s.echo.Group("/update")
+	updateGroup := s.echo.Group("/update", custMiddleware.Auth(s.signingKey), custMiddleware.Sign(s.signingKey))
 	updateGroup.POST("", update.FromJSON(s.metricsCtrl), echoMiddleware.Gzip())
 	updateGroup.POST("/:type/:id/:value", update.FromURI(s.metricsCtrl))
 
