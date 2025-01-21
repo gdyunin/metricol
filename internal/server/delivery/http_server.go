@@ -3,7 +3,6 @@ package delivery
 import (
 	"context"
 	"errors"
-	"fmt"
 	"html/template"
 	"net/http"
 	"path"
@@ -136,10 +135,11 @@ func (s *EchoServer) setupPreMiddlewares() {
 // setupGeneralMiddlewares configures the general middleware for the Echo server.
 func (s *EchoServer) setupGeneralMiddlewares() {
 	s.logger.Info("Setting up general middlewares")
-	fmt.Printf("SIGNKEY: %s", s.signingKey)
 	s.echo.Use(
 		custMiddleware.Log(s.logger.Named("request")),
 		echoMiddleware.Decompress(),
+		custMiddleware.Auth(s.signingKey),
+		custMiddleware.Sign(s.signingKey),
 	)
 }
 
@@ -154,11 +154,11 @@ func (s *EchoServer) setupRenderers() {
 // setupRouters configures the routes for the Echo server.
 func (s *EchoServer) setupRouters() {
 	s.logger.Info("Setting up routes")
-	updateGroup := s.echo.Group("/update", custMiddleware.Auth(s.signingKey), custMiddleware.Sign(s.signingKey))
+	updateGroup := s.echo.Group("/update")
 	updateGroup.POST("", update.FromJSON(s.metricsCtrl), echoMiddleware.Gzip())
 	updateGroup.POST("/:type/:id/:value", update.FromURI(s.metricsCtrl))
 
-	updatesGroup := s.echo.Group("/updates", custMiddleware.Auth(s.signingKey), custMiddleware.Sign(s.signingKey))
+	updatesGroup := s.echo.Group("/updates")
 	updatesGroup.POST("", updates.FromJSON(s.metricsCtrl), echoMiddleware.Gzip())
 
 	valueGroup := s.echo.Group("/value")

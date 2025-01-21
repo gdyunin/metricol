@@ -21,9 +21,8 @@ func Auth(key string) echo.MiddlewareFunc {
 			}
 
 			sign := c.Request().Header.Get("HashSHA256")
-			fmt.Printf("SIGN: %s", sign)
 			if sign == "" {
-				return c.String(http.StatusBadRequest, http.StatusText(http.StatusBadRequest))
+				return next(c) // https://app.pachca.com/chats?thread_message_id=419958556
 			}
 
 			rawBody, err := getRawBody(c.Request())
