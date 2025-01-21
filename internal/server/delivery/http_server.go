@@ -3,6 +3,7 @@ package delivery
 import (
 	"context"
 	"errors"
+	"fmt"
 	"html/template"
 	"net/http"
 	"path"
@@ -135,6 +136,7 @@ func (s *EchoServer) setupPreMiddlewares() {
 // setupGeneralMiddlewares configures the general middleware for the Echo server.
 func (s *EchoServer) setupGeneralMiddlewares() {
 	s.logger.Info("Setting up general middlewares")
+	fmt.Printf("SIGNKEY: %s", s.signingKey)
 	s.echo.Use(
 		custMiddleware.Log(s.logger.Named("request")),
 		echoMiddleware.Decompress(),
