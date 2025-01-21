@@ -1,9 +1,13 @@
 package send
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
 	"fmt"
+	"io"
 
 	"github.com/gdyunin/metricol.git/internal/agent/send/compress"
+	"github.com/labstack/gommon/log"
 
 	"github.com/go-resty/resty/v2"
 )
@@ -65,4 +69,66 @@ func (b *RequestBuilder) BuildWithGzip(method string, endpoint string, body []by
 	req.SetHeader("Content-Encoding", "gzip")
 
 	return req, nil
+}
+
+// SignRequest signs a given resty.Request using a specified key.
+//
+// Parameters:
+//   - req: The HTTP request to be signed.
+//   - key: The secret key used to generate the HMAC-SHA256 signature.
+//
+// Returns:
+//   - error: An error if the signing process fails; otherwise, nil.
+func (b *RequestBuilder) SignRequest(req *resty.Request, key string) error {
+	rawBody, err := b.getRawBody(req)
+	if err != nil {
+		return fmt.Errorf("failed get raw body: %w", err)
+	}
+
+	sign := b.makeSign(rawBody, key)
+
+	req.SetBody(rawBody)
+	req.SetHeader("HashSHA256", string(sign))
+
+	return nil
+}
+
+// getRawBody retrieves the raw body of a resty.Request.
+//
+// Parameters:
+//   - req: The HTTP request whose body needs to be read.
+//
+// Returns:
+//   - []byte: The raw body of the request as a byte slice.
+//   - error: An error if the body retrieval or reading fails; otherwise, nil.
+func (b *RequestBuilder) getRawBody(req *resty.Request) ([]byte, error) {
+	bodyReader, err := req.RawRequest.GetBody()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get body: %w", err)
+	}
+	defer func() {
+		if err = bodyReader.Close(); err != nil {
+			log.Errorf("failed close body: %v", err)
+		}
+	}()
+
+	bodyBytes, err := io.ReadAll(bodyReader)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read body: %w", err)
+	}
+	return bodyBytes, nil
+}
+
+// makeSign generates an HMAC-SHA256 signature for a given body and key.
+//
+// Parameters:
+//   - body: The message to be signed.
+//   - key: The secret key used to generate the signature.
+//
+// Returns:
+//   - []byte: The generated HMAC-SHA256 signature.
+func (b *RequestBuilder) makeSign(body []byte, key string) []byte {
+	h := hmac.New(sha256.New, []byte(key))
+	h.Write(body)
+	return h.Sum(nil)
 }

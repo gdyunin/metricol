@@ -11,10 +11,10 @@ import (
 
 func TestParseConfig(t *testing.T) {
 	tests := []struct {
-		name        string
 		envVars     map[string]string
-		args        []string
 		expected    Config
+		name        string
+		args        []string
 		expectError bool
 	}{
 		{

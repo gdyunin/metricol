@@ -29,6 +29,7 @@ type MetricsSender struct {
 	httpClient     *resty.Client      // HTTP client configured with retry and logging.
 	requestBuilder *RequestBuilder    // Helper for building HTTP requests.
 	logger         *zap.SugaredLogger // Logger for structured logging.
+	signingKey     string             // Key used for signing requests to the server.
 }
 
 // NewMetricsSender creates and initializes a new MetricsSender instance.
@@ -39,7 +40,7 @@ type MetricsSender struct {
 //
 // Returns:
 //   - *MetricsSender: A new instance of MetricsSender with pre-configured settings.
-func NewMetricsSender(serverAddress string, logger *zap.SugaredLogger) *MetricsSender {
+func NewMetricsSender(serverAddress string, signingKey string, logger *zap.SugaredLogger) *MetricsSender {
 	// [ДЛЯ РЕВЬЮ]: Это должно быть в отдельной функции и гораздо сложнее. Но для текущих нужд пока так сойдет)).
 	if !strings.HasPrefix(serverAddress, "http://") && !strings.HasPrefix(serverAddress, "https://") {
 		serverAddress = "http://" + strings.TrimPrefix(serverAddress, "/")
@@ -75,6 +76,7 @@ func NewMetricsSender(serverAddress string, logger *zap.SugaredLogger) *MetricsS
 		httpClient:     httpClient,
 		requestBuilder: requestBuilder,
 		logger:         logger,
+		signingKey:     signingKey,
 	}
 }
 
@@ -114,6 +116,12 @@ func (s *MetricsSender) prepareAndSend(ctx context.Context, v any, endpoint stri
 		return fmt.Errorf("request preparation failed: %w", err)
 	}
 	req.SetContext(ctx)
+
+	if s.signingKey != "" {
+		if err = s.requestBuilder.SignRequest(req, s.signingKey); err != nil {
+			return fmt.Errorf("request signing failed: %w", err)
+		}
+	}
 
 	if _, err = s.doRequest(req); err != nil {
 		return fmt.Errorf("request execution failed: %w", err)

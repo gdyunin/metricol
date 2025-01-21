@@ -59,7 +59,7 @@ func loadConfig() (*config.Config, error) {
 // metrics collector, metrics sender, and the agent itself.
 func initComponents(cfg *config.Config, logger *zap.SugaredLogger) *agent.Agent {
 	collector := collect.NewCollector(logger.Named(loggerNameCollector))
-	sender := send.NewMetricsSender(cfg.ServerAddress, logger.Named(loggerNameSender))
+	sender := send.NewMetricsSender(cfg.ServerAddress, cfg.SigningKey, logger.Named(loggerNameSender))
 
 	return agent.NewAgent(
 		collector,
