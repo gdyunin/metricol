@@ -2,12 +2,18 @@ package agent
 
 import (
 	"context"
+	"sync"
 	"time"
 
+	"github.com/gdyunin/metricol.git/internal/agent/collect"
+	"github.com/gdyunin/metricol.git/internal/agent/collect/stategies"
 	"github.com/gdyunin/metricol.git/internal/agent/internal/entity"
+	"github.com/gdyunin/metricol.git/internal/agent/send"
 
 	"go.uber.org/zap"
 )
+
+const sendQueueSizeCoefficient = 5
 
 // Collector defines an interface for collecting and exporting metrics.
 type Collector interface {
@@ -25,11 +31,13 @@ type Sender interface {
 
 // Agent manages the collection and sending of metrics at specified intervals.
 type Agent struct {
-	collector      Collector
-	sender         Sender
 	logger         *zap.SugaredLogger
+	sendQueue      chan *entity.Metrics
+	serverAddress  string
+	signKey        string
 	pollInterval   time.Duration
 	reportInterval time.Duration
+	maxSendRate    int
 }
 
 // NewAgent creates and initializes a new Agent.
@@ -44,11 +52,12 @@ type Agent struct {
 // Returns:
 //   - *Agent: A pointer to the initialized Agent.
 func NewAgent(
-	collector Collector,
-	sender Sender,
 	pollInterval time.Duration,
 	reportInterval time.Duration,
 	logger *zap.SugaredLogger,
+	maxSendRate int,
+	serverAddress string,
+	signKey string,
 ) *Agent {
 	logger.Infof(
 		"Initializing Agent: pollInterval=%ds, reportInterval=%ds",
@@ -56,11 +65,13 @@ func NewAgent(
 		reportInterval/time.Second,
 	)
 	return &Agent{
-		collector:      collector,
-		sender:         sender,
 		pollInterval:   pollInterval,
 		reportInterval: reportInterval,
 		logger:         logger,
+		sendQueue:      make(chan *entity.Metrics, maxSendRate*sendQueueSizeCoefficient),
+		maxSendRate:    maxSendRate,
+		serverAddress:  serverAddress,
+		signKey:        signKey,
 	}
 }
 
@@ -79,59 +90,38 @@ func (a *Agent) Start(ctx context.Context) {
 		a.reportInterval/time.Second,
 	)
 
-	collectTicker := time.NewTicker(a.pollInterval)
-	defer collectTicker.Stop()
+	memCollectStrategy := stategies.NewMemStatsCollectStrategy(a.logger.Named("mem_strategy"))
+	memCollectLogger := a.logger.Named("mem_collector")
+	memCollector := collect.NewStreamCollector(a.sendQueue, a.pollInterval, memCollectStrategy, memCollectLogger)
 
-	sendTicker := time.NewTicker(a.reportInterval)
-	defer sendTicker.Stop()
+	gopsCollectStrategy := stategies.GopsMemStatsCollectStrategy(a.logger.Named("gops_strategy"))
+	gopsCollectLogger := a.logger.Named("gops_collector")
+	gopsCollector := collect.NewStreamCollector(a.sendQueue, a.pollInterval, gopsCollectStrategy, gopsCollectLogger)
 
-	for {
-		select {
-		case <-ctx.Done():
-			a.logger.Info("Context canceled: stopping agent")
-			return
-		case <-collectTicker.C:
-			a.collector.Collect()
-		case t := <-sendTicker.C:
-			// [ДЛЯ РЕВЬЮ]: Дедлайн контекста произойдет примерно в то же время, когда снова тикнет sendTicker.
-			senderCtx, cancel := context.WithDeadline(ctx, t.Add(a.reportInterval))
-			a.sendByBatch(senderCtx)
-			cancel()
-		}
-	}
-}
+	streamSenderLogger := a.logger.Named("stream_sender")
+	streamSender := send.NewStreamSender(
+		a.sendQueue,
+		a.reportInterval,
+		a.maxSendRate,
+		a.serverAddress,
+		a.signKey,
+		streamSenderLogger,
+	)
 
-// sendByBatch sends collected metrics in a batch to the server.
-//
-// Parameters:
-//   - ctx: Context for managing the lifecycle of the operation.
-func (a *Agent) sendByBatch(ctx context.Context) {
-	metrics, resetCh := a.collector.Export()
-	reset := true
-	defer func() { resetCh <- reset }()
-
-	if metrics.Length() == 0 {
-		a.logger.Info("No metrics to send in batch")
-		return
+	workers := []func(context.Context){
+		memCollector.StartStreaming,
+		gopsCollector.StartStreaming,
+		streamSender.StartStreaming,
 	}
 
-	a.logger.Infof("Preparing to send %d metrics in batch", metrics.Length())
-
-	if ctx.Err() != nil {
-		reset = false
-		a.logger.Warn("Context canceled or deadline exceeded during sendByBatch, stopping")
-		return
+	var wg sync.WaitGroup
+	for _, worker := range workers {
+		wg.Add(1)
+		go func(w func(context.Context)) {
+			defer wg.Done()
+			w(ctx)
+		}(worker)
 	}
 
-	if err := a.sender.SendBatch(ctx, metrics); err != nil {
-		reset = false
-		a.logger.Warnf(
-			"Failed to send metrics batch: count=%d, error=%v, metadataReset=%t",
-			metrics.Length(),
-			err,
-			reset,
-		)
-	} else {
-		a.logger.Infof("Successfully sent batch of metrics: count=%d", metrics.Length())
-	}
+	wg.Wait()
 }

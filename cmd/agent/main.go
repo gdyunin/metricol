@@ -20,7 +20,7 @@ func main() {
 		logger.Fatalf("Error occurred while parsing the application configuration: %v", err)
 	}
 
-	metricsAgent := initComponents(appCfg, logger)
+	metricsAgent := initAgent(appCfg, logger)
 
 	metricsAgent.Start(mainCtx)
 }
