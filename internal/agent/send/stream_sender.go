@@ -23,6 +23,7 @@ const (
 	updateBatchEndpoint = "/updates"
 	// AttemptsDefaultCount defines default count of attempts for retry calls.
 	attemptsDefaultCount = 4
+	retryCalcContextKey  = "retryCalculator"
 )
 
 // StreamSender provides functionality for sending metrics to a remote server.
@@ -69,16 +70,21 @@ func NewStreamSender(
 		SetRetryCount(attemptsDefaultCount).
 		SetRetryAfter(func(client *resty.Client, response *resty.Response) (time.Duration, error) {
 			currentAttempt := response.Request.Attempt
-			if currentAttempt > client.RetryCount {
+
+			retryCalculator, ok := response.Request.Context().Value(retryCalcContextKey).(*retry.LinearRetryIterator)
+			if !ok {
+				logger.Warn("Retry interval calculator not found in request context, retry cancelled")
 				return 0, nil
 			}
-			// Linear retry delay: y = 2x - 1, where x is the attempt number.
-			// For example, the delays for the first three attempts are:
-			// Attempt 1: 2*1 - 1 = 1 second.
-			// Attempt 2: 2*2 - 1 = 3 seconds.
-			// Attempt 3: 2*3 - 1 = 5 seconds.
-			// This logic is a requirement of the technical specification.
-			return retry.CalcByLinear(currentAttempt, retry.DefaultLinearCoefficientScaling, -1), nil
+
+			switch currentAttempt {
+			case 1:
+				retryCalculator.SetCurrentAttempt(1)
+			case client.RetryCount + 1:
+				return 0, nil
+			}
+
+			return retryCalculator.Next(), nil
 		}).
 		SetLogger(logger.Named("http_client"))
 
@@ -215,6 +221,9 @@ func (s *StreamSender) prepareRequest(v any, endpoint string) (*resty.Request, e
 	if err != nil {
 		return nil, fmt.Errorf("gzip-compressed request build failed: %w", err)
 	}
+
+	retryCalculator := retry.NewLinearRetryIterator(retry.DefaultLinearCoefficientScaling, -1)
+	req.SetContext(context.WithValue(req.Context(), retryCalcContextKey, retryCalculator))
 
 	return req, nil
 }
