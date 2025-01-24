@@ -18,12 +18,14 @@ import (
 	"go.uber.org/zap"
 )
 
+type contextKey string
+
 const (
 	// UpdateBatchEndpoint defines the API endpoint for updating a batch of metrics.
 	updateBatchEndpoint = "/updates"
 	// AttemptsDefaultCount defines default count of attempts for retry calls.
-	attemptsDefaultCount = 4
-	retryCalcContextKey  = "retryCalculator"
+	attemptsDefaultCount            = 4
+	retryCalcContextKey  contextKey = "retryCalculator"
 )
 
 // StreamSender provides functionality for sending metrics to a remote server.
