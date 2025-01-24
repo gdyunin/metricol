@@ -135,31 +135,6 @@ func (p *PostgreSQL) UpdateBatch(ctx context.Context, metrics *entity.Metrics) e
 	return nil
 }
 
-// IsExist checks if a metric with the specified type and name exists in the database.
-//
-// Parameters:
-//   - metricType: the type of the metric (e.g., "counter", "gauge").
-//   - metricName: the name of the metric to check.
-//
-// Returns:
-//   - exist: a boolean indicating whether the metric exists.
-//   - error: an error if the query execution fails.
-func (p *PostgreSQL) IsExist(ctx context.Context, metricType string, metricName string) (exist bool, err error) {
-	query := `
-		SELECT EXISTS (
-			SELECT 1
-			FROM metrics
-			WHERE m_type = $1
-			  AND m_name = $2
-		) AS is_exist;
-	`
-
-	if err = p.db.QueryRowContext(ctx, query, metricType, metricName).Scan(&exist); err != nil {
-		err = fmt.Errorf(QueryErrFmt, ErrQueryExecuteFailed, err)
-	}
-	return
-}
-
 // Find retrieves a metric from the database based on its type and name.
 //
 // Parameters:
@@ -183,7 +158,7 @@ func (p *PostgreSQL) Find(ctx context.Context, metricType string, metricName str
 	err := p.db.QueryRowContext(ctx, query, metricType, metricName).Scan(&m.Name, &m.Type, &rawValue)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("metric not found: type=%s, name=%s", metricType, metricName)
+			return nil, fmt.Errorf("%w: type=%s, name=%s", ErrNotFoundInRepo, metricType, metricName)
 		}
 		return nil, fmt.Errorf(QueryErrFmt, ErrQueryExecuteFailed, err)
 	}

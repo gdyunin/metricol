@@ -85,17 +85,11 @@ func (s *MetricService) PushMetrics(ctx context.Context, metrics *entity.Metrics
 }
 
 func (s *MetricService) prepareCounter(ctx context.Context, metric *entity.Metric) (*entity.Metric, error) {
-	exist, err := s.repo.IsExist(ctx, metric.Type, metric.Name)
-	if err != nil {
-		return nil, fmt.Errorf("error occurred while check metric %s exist in repo: %w", metric.Name, err)
-	}
-
-	if !exist {
-		return metric, nil
-	}
-
 	existingMetric, err := s.repo.Find(ctx, metric.Type, metric.Name)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFoundInRepo) {
+			return metric, nil
+		}
 		return nil, fmt.Errorf("retrieval failed for counter '%s': %w", metric.Name, err)
 	}
 
@@ -131,25 +125,16 @@ func (s *MetricService) Pull(ctx context.Context, metricType, name string) (*ent
 	pullCtx, cancel := context.WithTimeout(ctx, pullTimeout)
 	defer cancel()
 
-	// TODO: Оооочень спорно дробить на две операции: проверка существования и только потом получение.
-	// TODO: Подумать и скорее всего убрать отсюда вызов isExist и генерировать какую-то "типизированную" ошибку
-	// TODO: Сразу при попытке получения метрики.
-	exists, err := s.repo.IsExist(ctx, metricType, name)
-	if err != nil {
-		return nil, fmt.Errorf("repository check failed for type '%s', name '%s': %w", metricType, name, err)
-	}
-	// TODO: Вот эту часть заменить "типизированной" ошибкой.
-	if !exists {
-		return nil, fmt.Errorf(
-			"%w: metric with type=%s and name=%s not exist",
-			ErrNotFoundInRepository,
-			metricType,
-			name,
-		)
-	}
-
 	metric, err := s.repo.Find(pullCtx, metricType, name)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFoundInRepo) {
+			return nil, fmt.Errorf(
+				"%w: metric with type=%s and name=%s not exist",
+				ErrNotFoundInRepository,
+				metricType,
+				name,
+			)
+		}
 		return nil, fmt.Errorf("retrieval failed for type '%s', name '%s': %w", metricType, name, err)
 	}
 	return metric, nil

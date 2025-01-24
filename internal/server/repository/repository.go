@@ -2,12 +2,17 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"github.com/gdyunin/metricol.git/internal/server/internal/entity"
 )
 
 const (
 	defaultAttemptsDefaultCount = 4 // Default count of attempts for retry calls.
+)
+
+var (
+	ErrNotFoundInRepo = errors.New("not found in repository")
 )
 
 // Repository defines the interface for a metric storage repository.
@@ -30,17 +35,6 @@ type Repository interface {
 	// Returns:
 	//   - An error if the operation fails.
 	UpdateBatch(ctx context.Context, metrics *entity.Metrics) error
-
-	// IsExist checks if a metric exists in the repository.
-	//
-	// Parameters:
-	//   - metricType: The type of the metric (e.g., counter, gauge).
-	//   - metricName: The name of the metric.
-	//
-	// Returns:
-	//   - A boolean indicating whether the metric exists.
-	//   - An error if the operation fails.
-	IsExist(ctx context.Context, metricType string, metricName string) (bool, error)
 
 	// Find retrieves a metric from the repository by type and name.
 	//
