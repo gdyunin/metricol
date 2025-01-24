@@ -327,7 +327,6 @@ func (p *PostgreSQL) createTables(ctx context.Context) error {
 	// [ДЛЯ РЕВЬЮ]: Значение храним не в типизированном поле, а в JSONB, чтобы что угодно туда можно было класть.
 	// [ДЛЯ РЕВЬЮ]: Опять таки жертвуем производительностью для простоты. Хотя я видел подобное и на проде.
 	// [ДЛЯ РЕВЬЮ]: CONSTRAINT unique_type_name UNIQUE (m_type, m_name) как гарантия уникальности имени в типе.
-	// TODO: Индексы.
 	mainTableCreateSQL := `
 	CREATE TABLE IF NOT EXISTS metrics (
 		id SERIAL PRIMARY KEY,
@@ -335,7 +334,9 @@ func (p *PostgreSQL) createTables(ctx context.Context) error {
 		m_name TEXT NOT NULL,
 		m_value JSONB NOT NULL,
 		CONSTRAINT unique_type_name UNIQUE (m_type, m_name)
-	);`
+	);
+	CREATE INDEX idx_metrics_type_name ON metrics (m_type, m_name);
+	`
 
 	_, err := p.db.ExecContext(ctx, mainTableCreateSQL)
 	if err != nil {
