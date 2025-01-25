@@ -51,7 +51,10 @@ func Gzip(logger *zap.SugaredLogger) echo.MiddlewareFunc {
 				})
 			}
 
-			return next(c)
+			if err = next(c); err != nil {
+				c.Error(err)
+			}
+			return err
 		}
 	}
 }
