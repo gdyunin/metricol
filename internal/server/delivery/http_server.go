@@ -135,11 +135,14 @@ func (s *EchoServer) setupPreMiddlewares() {
 // setupGeneralMiddlewares configures the general middleware for the Echo server.
 func (s *EchoServer) setupGeneralMiddlewares() {
 	s.logger.Info("Setting up general middlewares")
+	requestLogger := s.logger.Named("request")
+
 	s.echo.Use(
-		custMiddleware.Log(s.logger.Named("request")),
+		custMiddleware.Log(requestLogger),
 		echoMiddleware.Decompress(),
 		custMiddleware.Auth(s.signingKey),
 		custMiddleware.Sign(s.signingKey),
+		custMiddleware.Gzip(requestLogger.Named("gzip_writer")),
 	)
 }
 
@@ -155,16 +158,16 @@ func (s *EchoServer) setupRenderers() {
 func (s *EchoServer) setupRouters() {
 	s.logger.Info("Setting up routes")
 	updateGroup := s.echo.Group("/update")
-	updateGroup.POST("", update.FromJSON(s.metricsCtrl), echoMiddleware.Gzip())
+	updateGroup.POST("", update.FromJSON(s.metricsCtrl))
 	updateGroup.POST("/:type/:id/:value", update.FromURI(s.metricsCtrl))
 
 	updatesGroup := s.echo.Group("/updates")
-	updatesGroup.POST("", updates.FromJSON(s.metricsCtrl), echoMiddleware.Gzip())
+	updatesGroup.POST("", updates.FromJSON(s.metricsCtrl))
 
 	valueGroup := s.echo.Group("/value")
-	valueGroup.POST("", value.FromJSON(s.metricsCtrl), echoMiddleware.Gzip())
+	valueGroup.POST("", value.FromJSON(s.metricsCtrl))
 	valueGroup.GET("/:type/:id", value.FromURI(s.metricsCtrl))
 
-	s.echo.GET("/", general.MainPage(s.metricsCtrl), echoMiddleware.Gzip())
+	s.echo.GET("/", general.MainPage(s.metricsCtrl))
 	s.echo.GET("/ping", general.Ping(s.metricsCtrl))
 }
