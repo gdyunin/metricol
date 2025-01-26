@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,9 @@ import (
 
 	"github.com/gdyunin/metricol.git/internal/server/internal/entity"
 	"github.com/gdyunin/metricol.git/pkg/retry"
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/labstack/gommon/log"
 	"go.uber.org/zap"
@@ -37,6 +41,7 @@ var (
 type PostgreSQL struct {
 	db     *sql.DB
 	logger *zap.SugaredLogger
+	dsn    string
 }
 
 // NewPostgreSQL creates a new PostgreSQL repository instance by establishing a connection to the database
@@ -55,7 +60,11 @@ func NewPostgreSQL(logger *zap.SugaredLogger, connString string) (*PostgreSQL, e
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
-	psql := PostgreSQL{db: db, logger: logger}
+	psql := PostgreSQL{
+		db:     db,
+		dsn:    connString,
+		logger: logger,
+	}
 	return psql.mustBuild(), nil
 }
 
@@ -163,7 +172,7 @@ func (p *PostgreSQL) Find(ctx context.Context, metricType string, metricName str
 		return nil, fmt.Errorf(QueryErrFmt, ErrQueryExecuteFailed, err)
 	}
 
-	// [ДЛЯ РЕВЬЮ]: Храним значение как JSONB. Подробнее в комментах к func (p *PostgreSQL) createTables() error.
+	// [ДЛЯ РЕВЬЮ]: Храним значение как JSONB. Подробнее в комментах к func (p *PostgreSQL) runMigrations() error.
 	err = json.Unmarshal(rawValue, &m.Value)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode JSON value: %w", err)
@@ -200,7 +209,7 @@ func (p *PostgreSQL) All(ctx context.Context) (*entity.Metrics, error) {
 			return nil, fmt.Errorf("failed to process database response: %w", err)
 		}
 
-		// [ДЛЯ РЕВЬЮ]: Храним значение как JSONB. Подробнее в комментах к func (p *PostgreSQL) createTables() error.
+		// [ДЛЯ РЕВЬЮ]: Храним значение как JSONB. Подробнее в комментах к func (p *PostgreSQL) runMigrations() error.
 		err = json.Unmarshal(rawValue, &m.Value)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode JSON value: %w", err)
@@ -280,53 +289,36 @@ func (p *PostgreSQL) mustBuild() *PostgreSQL {
 		panic(fmt.Sprintf("failed to check connection to the repository: %v", err))
 	}
 
-	ctx, cancel := context.WithTimeout(context.TODO(), defaultPSQLCreateTablesTimeout)
-	defer cancel()
-
-	err = p.createTables(ctx)
+	err = p.runMigrations()
 	if err != nil {
-		panic(fmt.Sprintf("failed to create tables in the repository: %v", err))
+		panic(fmt.Sprintf("failed to execute migrations: %v", err))
 	}
 
 	return p
 }
 
-// createTables ensures that the necessary database tables exist. If the tables are missing, it creates them.
+//go:embed migrations/psql/*.sql
+var migrationsDir embed.FS
+
+// runMigrations ensures that the necessary database tables exist. If the tables are missing, it creates them.
 //
 // Returns:
 //   - error: an error if the table creation query fails.
-func (p *PostgreSQL) createTables(ctx context.Context) error {
-	// [ДЛЯ РЕВЬЮ]: Для простоты в рамках обучения выбрана плоская таблица, без других таблиц и отношений.
-	// [ДЛЯ РЕВЬЮ]: В реальных условиях так делать не стоит, я понимаю. Здесь ради обучения
-	// [ДЛЯ РЕВЬЮ]: производительность в угоду простоте.
-	// [ДЛЯ РЕВЬЮ]: Значение храним не в типизированном поле, а в JSONB, чтобы что угодно туда можно было класть.
-	// [ДЛЯ РЕВЬЮ]: Опять таки жертвуем производительностью для простоты. Хотя я видел подобное и на проде.
-	// [ДЛЯ РЕВЬЮ]: CONSTRAINT unique_type_name UNIQUE (m_type, m_name) как гарантия уникальности имени в типе.
-	mainTableCreateSQL := `
-		CREATE TABLE IF NOT EXISTS metrics (
-			id SERIAL PRIMARY KEY,
-			m_type TEXT NOT NULL,
-			m_name TEXT NOT NULL,
-			m_value JSONB NOT NULL,
-			CONSTRAINT unique_type_name UNIQUE (m_type, m_name)
-		);
-		
-		DO $$
-		BEGIN
-			IF NOT EXISTS (
-				SELECT 1
-				FROM pg_indexes
-				WHERE schemaname = 'public' AND indexname = 'idx_metrics_type_name'
-			) THEN
-				CREATE INDEX idx_metrics_type_name ON metrics (m_type, m_name);
-			END IF;
-		END $$;
-	`
-
-	_, err := p.db.ExecContext(ctx, mainTableCreateSQL)
+func (p *PostgreSQL) runMigrations() error {
+	d, err := iofs.New(migrationsDir, "migrations/psql")
 	if err != nil {
-		return fmt.Errorf("failed to create metrics table: %w", err)
+		return fmt.Errorf("failed to return an iofs driver: %w", err)
 	}
 
+	m, err := migrate.NewWithSourceInstance("iofs", d, p.dsn)
+	if err != nil {
+		return fmt.Errorf("failed to get a new migrate instance: %w", err)
+	}
+
+	if err := m.Up(); err != nil {
+		if !errors.Is(err, migrate.ErrNoChange) {
+			return fmt.Errorf("failed to apply migrations to the DB: %w", err)
+		}
+	}
 	return nil
 }
