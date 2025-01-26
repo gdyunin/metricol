@@ -90,13 +90,16 @@ func (a *Agent) Start(ctx context.Context) {
 		a.reportInterval/time.Second,
 	)
 
-	memCollectStrategy := stategies.NewMemStatsCollectStrategy(a.logger.Named("mem_strategy"))
-	memCollectLogger := a.logger.Named("mem_collector")
-	memCollector := collect.NewStreamCollector(a.sendQueue, a.pollInterval, memCollectStrategy, memCollectLogger)
-
-	gopsCollectStrategy := stategies.GopsMemStatsCollectStrategy(a.logger.Named("gops_strategy"))
-	gopsCollectLogger := a.logger.Named("gops_collector")
-	gopsCollector := collect.NewStreamCollector(a.sendQueue, a.pollInterval, gopsCollectStrategy, gopsCollectLogger)
+	collectStrategies := []collect.Strategy{
+		stategies.NewMemStatsCollectStrategy(a.logger.Named("mem_strategy")),
+		stategies.GopsMemStatsCollectStrategy(a.logger.Named("gops_strategy")),
+	}
+	streamCollector := collect.NewStreamCollector(
+		a.sendQueue,
+		a.pollInterval,
+		collectStrategies,
+		a.logger.Named("collector"),
+	)
 
 	streamSenderLogger := a.logger.Named("stream_sender")
 	streamSender := send.NewStreamSender(
@@ -109,8 +112,7 @@ func (a *Agent) Start(ctx context.Context) {
 	)
 
 	workers := []func(context.Context){
-		memCollector.StartStreaming,
-		gopsCollector.StartStreaming,
+		streamCollector.StartStreaming,
 		streamSender.StartStreaming,
 	}
 
