@@ -3,7 +3,6 @@ package send
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -35,7 +34,6 @@ type StreamSender struct {
 	requestBuilder *RequestBuilder
 	logger         *zap.SugaredLogger
 	streamFrom     chan *entity.Metrics
-	doneCh         chan struct{}
 	signingKey     string
 	interval       time.Duration
 	maxPoolSize    int
@@ -101,7 +99,6 @@ func NewStreamSender(
 		streamFrom:     streamFrom,
 		interval:       interval,
 		maxPoolSize:    maxPoolSize,
-		doneCh:         make(chan struct{}),
 	}
 }
 
@@ -115,23 +112,19 @@ func (s *StreamSender) StartStreaming(ctx context.Context) {
 			s.logger.Info("Context canceled: stopping stream")
 			return
 		case <-ticker.C:
-			if err := s.sendWithPool(ctx); err != nil {
-				return
-			}
+			s.sendWithPool(ctx)
 		}
 	}
 }
 
-func (s *StreamSender) sendWithPool(ctx context.Context) error {
+func (s *StreamSender) sendWithPool(ctx context.Context) {
 	var wg sync.WaitGroup
 
 	for range s.maxPoolSize {
 		select {
 		case <-ctx.Done():
 			s.logger.Info("Context canceled: cancel send")
-			return nil
-		case <-s.doneCh:
-			return errors.New("StreamFrom channel")
+			return
 		default:
 			wg.Add(1)
 			go func() {
@@ -139,7 +132,6 @@ func (s *StreamSender) sendWithPool(ctx context.Context) error {
 				metrics, ok := <-s.streamFrom
 				if !ok {
 					s.logger.Info("StreamFrom channel was closed, stop sending")
-					s.doneCh <- struct{}{}
 					return
 				}
 				if metrics == nil || metrics.Length() == 0 {
@@ -157,7 +149,6 @@ func (s *StreamSender) sendWithPool(ctx context.Context) error {
 	}
 
 	wg.Wait()
-	return nil
 }
 
 // SendBatch sends a batch of metrics to the server using gzip compression.
