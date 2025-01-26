@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/hex"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"net/http"
@@ -76,7 +76,7 @@ func checkSign(body []byte, sign string, key string) bool {
 	h := hmac.New(sha256.New, []byte(key))
 	h.Write(body)
 
-	gotSign, err := hex.DecodeString(sign)
+	gotSign, err := base64.StdEncoding.DecodeString(sign)
 	if err != nil {
 		return false
 	}

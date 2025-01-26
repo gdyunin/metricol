@@ -1,7 +1,7 @@
 package send
 
 import (
-	"encoding/hex"
+	"encoding/base64"
 	"fmt"
 
 	"github.com/gdyunin/metricol.git/internal/agent/send/compress"
@@ -62,7 +62,7 @@ func (b *RequestBuilder) BuildWithGzip(method string, endpoint string, body []by
 ) {
 	var s string
 	if signingKey != "" {
-		s = hex.EncodeToString(sign.MakeSign(body, signingKey))
+		s = base64.StdEncoding.EncodeToString(sign.MakeSign(body, signingKey))
 	}
 
 	body, err := b.compressor.Compress(body)
