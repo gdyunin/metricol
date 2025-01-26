@@ -22,27 +22,26 @@ func Gzip(logger *zap.SugaredLogger) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
 			acceptEncoding := c.Request().Header.Get(echo.HeaderAcceptEncoding)
-
 			originalWriter := c.Response().Writer
-			newWriter := gzip.NewWriter(originalWriter)
-			defer func() {
-				if closeErr := newWriter.Close(); closeErr != nil {
-					logger.Warnf("Error closing gzip writer: %v", closeErr)
-				}
-			}()
 
 			if strings.Contains(acceptEncoding, gzipHeaderValue) {
+				newWriter := gzip.NewWriter(originalWriter)
+				defer func() {
+					if closeErr := newWriter.Close(); closeErr != nil {
+						logger.Warnf("Error closing gzip writer: %v", closeErr)
+					}
+				}()
+
 				writer := &gzipWriter{
 					ResponseWriter: originalWriter,
 					gzipWriter:     newWriter,
 				}
 
-				c.Response().Writer = writer
-
 				c.Response().Before(func() {
 					contentType := c.Response().Header().Get(echo.HeaderContentType)
 					for _, ct := range contentTypesForGzip {
 						if strings.HasPrefix(contentType, ct) {
+							c.Response().Writer = writer
 							c.Response().Header().Set(echo.HeaderContentEncoding, gzipHeaderValue)
 							writer.withGzip = true
 							break
