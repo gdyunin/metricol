@@ -94,6 +94,7 @@ func initComponentsWithShutdownActs(
 
 	echoDelivery := delivery.NewEchoServer(
 		cfg.ServerAddress,
+		cfg.SigningKey,
 		repoWithShutdownFunc.repository,
 		logger.Named(loggerNameDelivery),
 	)

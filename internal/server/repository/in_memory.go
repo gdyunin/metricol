@@ -70,23 +70,6 @@ func (r *InMemoryRepository) UpdateBatch(ctx context.Context, metrics *entity.Me
 	return nil
 }
 
-// IsExist checks if a metric exists in the repository.
-//
-// Parameters:
-//   - metricType: The type of the metric.
-//   - name: The name of the metric.
-//
-// Returns:
-//   - A boolean indicating whether the metric exists.
-//   - An error if the operation fails.
-func (r *InMemoryRepository) IsExist(_ context.Context, metricType string, name string) (bool, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	_, exist := r.storage[metricType][name]
-	return exist, nil
-}
-
 // Find retrieves a metric from the repository by type and name.
 //
 // Parameters:
@@ -102,7 +85,7 @@ func (r *InMemoryRepository) Find(_ context.Context, metricType string, name str
 
 	value, exist := r.storage[metricType][name]
 	if !exist {
-		return nil, fmt.Errorf("metric not found: type=%s, name=%s", metricType, name)
+		return nil, fmt.Errorf("%w: type=%s, name=%s", ErrNotFoundInRepo, metricType, name)
 	}
 
 	return &entity.Metric{

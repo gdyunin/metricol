@@ -1,10 +1,11 @@
 package send
 
 import (
+	"encoding/base64"
 	"fmt"
 
 	"github.com/gdyunin/metricol.git/internal/agent/send/compress"
-
+	"github.com/gdyunin/metricol.git/pkg/sign"
 	"github.com/go-resty/resty/v2"
 )
 
@@ -55,7 +56,15 @@ func (b *RequestBuilder) Build(method string, endpoint string, body []byte) *res
 // Returns:
 //   - *resty.Request: The constructed HTTP request with gzip-compressed body.
 //   - error: An error if compression fails.
-func (b *RequestBuilder) BuildWithGzip(method string, endpoint string, body []byte) (*resty.Request, error) {
+func (b *RequestBuilder) BuildWithGzip(method string, endpoint string, body []byte, signingKey string) (
+	*resty.Request,
+	error,
+) {
+	var s string
+	if signingKey != "" {
+		s = base64.StdEncoding.EncodeToString(sign.MakeSign(body, signingKey))
+	}
+
 	body, err := b.compressor.Compress(body)
 	if err != nil {
 		return nil, fmt.Errorf("gzip compression failed for request body: %w", err)
@@ -63,6 +72,9 @@ func (b *RequestBuilder) BuildWithGzip(method string, endpoint string, body []by
 
 	req := b.Build(method, endpoint, body)
 	req.SetHeader("Content-Encoding", "gzip")
+	if s != "" {
+		req.SetHeader("HashSHA256", s)
+	}
 
 	return req, nil
 }

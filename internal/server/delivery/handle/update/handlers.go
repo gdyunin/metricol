@@ -73,7 +73,7 @@ func FromURI(updater MetricsUpdater) echo.HandlerFunc {
 			return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		}
 
-		c.Response().Header().Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+		c.Response().Header().Set(echo.HeaderContentType, echo.MIMETextPlain)
 		return c.String(http.StatusOK, "Metric update successful.")
 	}
 }

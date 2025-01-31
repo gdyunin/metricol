@@ -4,10 +4,12 @@ import (
 	"bytes"
 	"compress/gzip"
 	"fmt"
+	"sync"
 )
 
 // Compressor provides methods for compressing data using gzip.
 type Compressor struct {
+	mu     *sync.Mutex
 	buf    *bytes.Buffer // Buffer to hold compressed data.
 	writer *gzip.Writer  // Gzip writer for compression.
 }
@@ -21,6 +23,7 @@ func NewCompressor() *Compressor {
 	writer := gzip.NewWriter(buf)
 
 	return &Compressor{
+		mu:     &sync.Mutex{},
 		buf:    buf,
 		writer: writer,
 	}
@@ -35,6 +38,9 @@ func NewCompressor() *Compressor {
 //   - []byte: The compressed data.
 //   - error: An error if compression fails.
 func (c *Compressor) Compress(data []byte) ([]byte, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	defer c.buf.Reset()
 	defer c.writer.Reset(c.buf)
 

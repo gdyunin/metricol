@@ -33,7 +33,6 @@ func FromJSON(updater MetricsUpdater) echo.HandlerFunc {
 			return c.String(http.StatusBadRequest, "Invalid parameters provided in the request.")
 		}
 
-		// TODO: Не самое оптимальное с точки зрения bigO и аллокаций. Нужно оптимизировать.
 		for _, m := range models {
 			if !isValidMetric(m) {
 				return c.String(http.StatusBadRequest, "Invalid parameters provided in the request.")

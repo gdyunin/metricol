@@ -9,9 +9,7 @@ import (
 	"time"
 
 	"github.com/gdyunin/metricol.git/internal/agent/agent"
-	"github.com/gdyunin/metricol.git/internal/agent/collect"
 	"github.com/gdyunin/metricol.git/internal/agent/config"
-	"github.com/gdyunin/metricol.git/internal/agent/send"
 	"github.com/gdyunin/metricol.git/pkg/convert"
 	"github.com/gdyunin/metricol.git/pkg/logging"
 
@@ -19,10 +17,6 @@ import (
 )
 
 const (
-	// LoggerNameCollector is the logger name for the metrics collector.
-	loggerNameCollector = "collector"
-	// LoggerNameSender is the logger name for the metrics sender.
-	loggerNameSender = "sender"
 	// LoggerNameAgent is the logger name for the main agent.
 	loggerNameAgent = "agent"
 	// LoggerNameGracefulShutdown is the logger name for the graceful shutdown events.
@@ -55,18 +49,16 @@ func loadConfig() (*config.Config, error) {
 	return cfg, nil
 }
 
-// initComponents initializes the main components of the agent, including the
-// metrics collector, metrics sender, and the agent itself.
-func initComponents(cfg *config.Config, logger *zap.SugaredLogger) *agent.Agent {
-	collector := collect.NewCollector(logger.Named(loggerNameCollector))
-	sender := send.NewMetricsSender(cfg.ServerAddress, logger.Named(loggerNameSender))
-
+// initAgent initializes the agent, including the
+// metrics collectors, metrics senders.
+func initAgent(cfg *config.Config, logger *zap.SugaredLogger) *agent.Agent {
 	return agent.NewAgent(
-		collector,
-		sender,
 		convert.IntegerToSeconds(cfg.PollInterval),
 		convert.IntegerToSeconds(cfg.ReportInterval),
 		logger.Named(loggerNameAgent),
+		cfg.RateLimit,
+		cfg.ServerAddress,
+		cfg.SigningKey,
 	)
 }
 
