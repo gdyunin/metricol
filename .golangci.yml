@@ -161,7 +161,7 @@ linters-settings:
       - stringXbytes
       # - switchTrue
       - timeExprSimplify
-      - todoCommentWithoutDetail
+      # - todoCommentWithoutDetail
       - typeAssertChain
       # - typeSwitchVar
       - typeUnparen
@@ -172,7 +172,7 @@ linters-settings:
       # - unslice
       # - valSwap
       - weakCond
-      #      - whyNoLint
+      # - whyNoLint
       # - wrapperFunc
       - yodaStyleExpr
 
