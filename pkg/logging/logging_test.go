@@ -12,14 +12,14 @@ func TestLogger(t *testing.T) {
 		level     string
 		expectErr bool
 	}{
-		{"Valid DEBUG level", LevelDEBUG, false},
-		{"Valid INFO level", LevelINFO, false},
-		{"Valid WARN level", LevelWARN, false},
-		{"Valid ERROR level", LevelERROR, false},
-		{"Valid DPANIC level", LevelDPANIC, false},
-		{"Valid PANIC level", LevelPANIC, false},
-		{"Valid FATAL level", LevelFATAL, false},
-		{"Invalid log level", "INVALID", true},
+		{name: "Valid DEBUG level", level: LevelDEBUG},
+		{name: "Valid INFO level", level: LevelINFO},
+		{name: "Valid WARN level", level: LevelWARN},
+		{name: "Valid ERROR level", level: LevelERROR},
+		{name: "Valid DPANIC level", level: LevelDPANIC},
+		{name: "Valid PANIC level", level: LevelPANIC},
+		{name: "Valid FATAL level", level: LevelFATAL},
+		{name: "Invalid log level", level: "INVALID", expectErr: true},
 	}
 
 	for _, tt := range tests {
@@ -39,7 +39,12 @@ func TestLogger(t *testing.T) {
 	t.Run("Logger caching", func(t *testing.T) {
 		logger1 := Logger(LevelINFO)
 		logger2 := Logger(LevelINFO)
-		assert.Equal(t, logger1, logger2, "Logger should be cached and return the same instance for the same level")
+		assert.Equal(
+			t,
+			logger1,
+			logger2,
+			"Logger should be cached and return the same instance for the same level",
+		)
 	})
 }
 
@@ -49,9 +54,9 @@ func TestCreateLogger(t *testing.T) {
 		level     string
 		expectErr bool
 	}{
-		{"Valid DEBUG level", LevelDEBUG, false},
-		{"Valid INFO level", LevelINFO, false},
-		{"Invalid log level", "INVALID", true},
+		{name: "Valid DEBUG level", level: LevelDEBUG},
+		{name: "Valid INFO level", level: LevelINFO},
+		{name: "Invalid log level", level: "INVALID", expectErr: true},
 	}
 
 	for _, tt := range tests {

@@ -21,16 +21,16 @@ func TestBuild(t *testing.T) {
 		body     []byte
 	}{
 		{
-			"Simple GET request",
-			"GET",
-			"https://example.com",
-			[]byte("test"),
+			name:     "Simple GET request",
+			method:   "GET",
+			endpoint: "https://example.com",
+			body:     []byte("test"),
 		},
 		{
-			"Simple POST request",
-			"POST",
-			"https://example.com/data",
-			[]byte(`{"key": "value"}`),
+			name:     "Simple POST request",
+			method:   "POST",
+			endpoint: "https://example.com/data",
+			body:     []byte(`{"key": "value"}`),
 		},
 	}
 
@@ -53,25 +53,22 @@ func TestBuildWithGzip(t *testing.T) {
 		name       string
 		method     string
 		endpoint   string
-		body       []byte
 		signingKey string
+		body       []byte
 		expectErr  bool
 	}{
 		{
-			"Gzip compressed POST request with signing",
-			"POST",
-			"https://example.com/data",
-			[]byte(`{"key": "value"}`),
-			"secretKey",
-			false,
+			name:       "Gzip compressed POST request with signing",
+			method:     "POST",
+			endpoint:   "https://example.com/data",
+			body:       []byte(`{"key": "value"}`),
+			signingKey: "secretKey",
 		},
 		{
-			"Gzip compressed POST request without signing",
-			"POST",
-			"https://example.com/data",
-			[]byte(`{"key": "value"}`),
-			"",
-			false,
+			name:     "Gzip compressed POST request without signing",
+			method:   "POST",
+			endpoint: "https://example.com/data",
+			body:     []byte(`{"key": "value"}`),
 		},
 	}
 

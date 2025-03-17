@@ -13,10 +13,10 @@ func TestIntegerToSeconds(t *testing.T) {
 		input    int
 		expected time.Duration
 	}{
-		{"Zero seconds", 0, 0},
-		{"One second", 1, 1 * time.Second},
-		{"Ten seconds", 10, 10 * time.Second},
-		{"Negative value", -5, -5 * time.Second},
+		{name: "Zero seconds"},
+		{name: "One second", input: 1, expected: 1 * time.Second},
+		{name: "Ten seconds", input: 10, expected: 10 * time.Second},
+		{name: "Negative value", input: -5, expected: -5 * time.Second},
 	}
 
 	for _, tt := range tests {
@@ -29,17 +29,17 @@ func TestIntegerToSeconds(t *testing.T) {
 
 func TestAnyToInt64(t *testing.T) {
 	tests := []struct {
-		name      string
 		input     interface{}
+		name      string
 		expected  int64
 		expectErr bool
 	}{
-		{"Valid int64", int64(42), 42, false},
-		{"Valid float64", float64(42.9), 42, false},
-		{"Valid int", int(10), 10, false},
-		{"Valid uint", uint(20), 20, false},
-		{"Invalid string", "invalid", 0, true},
-		{"Invalid struct", struct{}{}, 0, true},
+		{name: "Valid int64", input: int64(42), expected: 42},
+		{name: "Valid float64", input: float64(42.9), expected: 42},
+		{name: "Valid int", input: int(10), expected: 10},
+		{name: "Valid uint", input: uint(20), expected: 20},
+		{name: "Invalid string", input: "invalid", expectErr: true},
+		{name: "Invalid struct", input: struct{}{}, expectErr: true},
 	}
 
 	for _, tt := range tests {

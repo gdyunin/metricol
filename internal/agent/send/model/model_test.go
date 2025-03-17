@@ -9,46 +9,39 @@ import (
 
 func TestNewFromEntityMetric(t *testing.T) {
 	tests := []struct {
-		name        string
 		input       *entity.Metric
-		expectError bool
 		expected    *Metric
+		name        string
+		expectError bool
 	}{
 		{
-			"Valid counter metric",
-			&entity.Metric{Name: "test_counter", Type: "counter", Value: int64(42)},
-			false,
-			&Metric{ID: "test_counter", MType: "counter", Delta: int64Ptr(42)},
+			name:     "Valid counter metric",
+			input:    &entity.Metric{Name: "test_counter", Type: "counter", Value: int64(42)},
+			expected: &Metric{ID: "test_counter", MType: "counter", Delta: int64Ptr(42)},
 		},
 		{
-			"Valid gauge metric",
-			&entity.Metric{Name: "test_gauge", Type: "gauge", Value: float64(3.14)},
-			false,
-			&Metric{ID: "test_gauge", MType: "gauge", Value: float64Ptr(3.14)},
+			name:     "Valid gauge metric",
+			input:    &entity.Metric{Name: "test_gauge", Type: "gauge", Value: float64(3.14)},
+			expected: &Metric{ID: "test_gauge", MType: "gauge", Value: float64Ptr(3.14)},
 		},
 		{
-			"Invalid counter metric type",
-			&entity.Metric{Name: "invalid_counter", Type: "counter", Value: "string"},
-			true,
-			nil,
+			name:        "Invalid counter metric type",
+			input:       &entity.Metric{Name: "invalid_counter", Type: "counter", Value: "string"},
+			expectError: true,
 		},
 		{
-			"Invalid gauge metric type",
-			&entity.Metric{Name: "invalid_gauge", Type: "gauge", Value: "string"},
-			true,
-			nil,
+			name:        "Invalid gauge metric type",
+			input:       &entity.Metric{Name: "invalid_gauge", Type: "gauge", Value: "string"},
+			expectError: true,
 		},
 		{
-			"Unsupported metric type",
-			&entity.Metric{Name: "unsupported", Type: "unknown", Value: 100},
-			true,
-			nil,
+			name:        "Unsupported metric type",
+			input:       &entity.Metric{Name: "unsupported", Type: "unknown", Value: 100},
+			expectError: true,
 		},
 		{
-			"Nil entity metric",
-			nil,
-			true,
-			nil,
+			name:        "Nil entity metric",
+			expectError: true,
 		},
 	}
 

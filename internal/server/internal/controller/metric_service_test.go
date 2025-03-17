@@ -16,12 +16,12 @@ type MockRepository struct {
 
 func (m *MockRepository) Update(ctx context.Context, metric *entity.Metric) error {
 	args := m.Called(ctx, metric)
-	return args.Error(0)
+	return args.Error(0) //nolint:wrapcheck // for tests
 }
 
 func (m *MockRepository) UpdateBatch(ctx context.Context, metrics *entity.Metrics) error {
 	args := m.Called(ctx, metrics)
-	return args.Error(0)
+	return args.Error(0) //nolint:wrapcheck // for tests
 }
 
 func (m *MockRepository) Find(ctx context.Context, metricType, name string) (*entity.Metric, error) {
@@ -30,7 +30,7 @@ func (m *MockRepository) Find(ctx context.Context, metricType, name string) (*en
 	if !ok && args.Get(0) != nil {
 		panic("unexpected type returned from mock")
 	}
-	return metric, args.Error(1)
+	return metric, args.Error(1) //nolint:wrapcheck // for tests
 }
 
 func (m *MockRepository) All(ctx context.Context) (*entity.Metrics, error) {
@@ -39,12 +39,12 @@ func (m *MockRepository) All(ctx context.Context) (*entity.Metrics, error) {
 	if !ok && args.Get(0) != nil {
 		panic("unexpected type returned from mock")
 	}
-	return metrics, args.Error(1)
+	return metrics, args.Error(1) //nolint:wrapcheck // for tests
 }
 
 func (m *MockRepository) CheckConnection(ctx context.Context) error {
 	args := m.Called(ctx)
-	return args.Error(0)
+	return args.Error(0) //nolint:wrapcheck // for tests
 }
 
 func TestPushMetric(t *testing.T) {
@@ -53,16 +53,17 @@ func TestPushMetric(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name      string
 		metric    *entity.Metric
+		name      string
 		expectErr bool
 	}{
-		{"Push valid metric", &entity.Metric{Name: "test", Type: "counter", Value: 10}, false},
+		{name: "Push valid metric", metric: &entity.Metric{Name: "test", Type: "counter", Value: 10}},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			repo.On("Find", mock.Anything, tt.metric.Type, tt.metric.Name).Return(nil, repository.ErrNotFoundInRepo)
+			repo.On("Find", mock.Anything, tt.metric.Type, tt.metric.Name).
+				Return(nil, repository.ErrNotFoundInRepo)
 			repo.On("UpdateBatch", mock.Anything, mock.Anything).Return(nil)
 			_, err := service.PushMetric(ctx, tt.metric)
 			assert.Equal(t, tt.expectErr, err != nil)
@@ -82,16 +83,22 @@ func TestPull(t *testing.T) {
 		metricName string
 		expectErr  bool
 	}{
-		{"Pull existing metric", "counter", "test", false},
-		{"Pull non-existing metric", "counter", "unknown", true},
+		{name: "Pull existing metric", metricType: "counter", metricName: "test"},
+		{name: "Pull non-existing metric", metricType: "counter", metricName: "unknown", expectErr: true},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.expectErr {
-				repo.On("Find", mock.Anything, tt.metricType, tt.metricName).Return(nil, repository.ErrNotFoundInRepo)
+				repo.On("Find", mock.Anything, tt.metricType, tt.metricName).
+					Return(nil, repository.ErrNotFoundInRepo)
 			} else {
-				repo.On("Find", mock.Anything, tt.metricType, tt.metricName).Return(&entity.Metric{Name: tt.metricName, Type: tt.metricType, Value: 10}, nil)
+				repo.On(
+					"Find",
+					mock.Anything,
+					tt.metricType,
+					tt.metricName,
+				).Return(&entity.Metric{Name: tt.metricName, Type: tt.metricType, Value: 10}, nil)
 			}
 			_, err := service.Pull(ctx, tt.metricType, tt.metricName)
 			assert.Equal(t, tt.expectErr, err != nil)
@@ -108,12 +115,13 @@ func TestPullAll(t *testing.T) {
 		name      string
 		expectErr bool
 	}{
-		{"Pull all metrics", false},
+		{name: "Pull all metrics"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			repo.On("All", mock.Anything).Return(&entity.Metrics{{Name: "test", Type: "counter", Value: 10}}, nil)
+			repo.On("All", mock.Anything).
+				Return(&entity.Metrics{{Name: "test", Type: "counter", Value: 10}}, nil)
 			_, err := service.PullAll(ctx)
 			assert.Equal(t, tt.expectErr, err != nil)
 		})
@@ -129,7 +137,7 @@ func TestCheckConnection(t *testing.T) {
 		name      string
 		expectErr bool
 	}{
-		{"Check connection", false},
+		{name: "Check connection"},
 	}
 
 	for _, tt := range tests {
@@ -144,15 +152,19 @@ func TestCheckConnection(t *testing.T) {
 func TestValidate(t *testing.T) {
 	service := NewMetricService(nil)
 	tests := []struct {
-		name      string
 		metric    *entity.Metric
+		name      string
 		expectErr bool
 	}{
-		{"Valid metric", &entity.Metric{Name: "test", Type: "counter", Value: 10}, false},
-		{"Nil metric", nil, true},
-		{"Missing name", &entity.Metric{Name: "", Type: "counter", Value: 10}, true},
-		{"Missing type", &entity.Metric{Name: "test", Type: "", Value: 10}, true},
-		{"Missing value", &entity.Metric{Name: "test", Type: "counter", Value: nil}, true},
+		{name: "Valid metric", metric: &entity.Metric{Name: "test", Type: "counter", Value: 10}},
+		{name: "Nil metric", expectErr: true},
+		{name: "Missing name", metric: &entity.Metric{Name: "", Type: "counter", Value: 10}, expectErr: true},
+		{name: "Missing type", metric: &entity.Metric{Name: "test", Type: "", Value: 10}, expectErr: true},
+		{
+			name:      "Missing value",
+			metric:    &entity.Metric{Name: "test", Type: "counter", Value: nil},
+			expectErr: true,
+		},
 	}
 
 	for _, tt := range tests {

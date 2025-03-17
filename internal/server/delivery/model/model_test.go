@@ -9,24 +9,24 @@ import (
 
 func TestToEntityMetric(t *testing.T) {
 	tests := []struct {
-		name     string
 		input    *Metric
 		expected *entity.Metric
+		name     string
 	}{
 		{
-			"Convert counter metric",
-			&Metric{ID: "test_counter", MType: "counter", Delta: int64Ptr(5)},
-			&entity.Metric{Name: "test_counter", Type: "counter", Value: int64(5)},
+			name:     "Convert counter metric",
+			input:    &Metric{ID: "test_counter", MType: "counter", Delta: int64Ptr(5)},
+			expected: &entity.Metric{Name: "test_counter", Type: "counter", Value: int64(5)},
 		},
 		{
-			"Convert gauge metric",
-			&Metric{ID: "test_gauge", MType: "gauge", Value: float64Ptr(3.14)},
-			&entity.Metric{Name: "test_gauge", Type: "gauge", Value: float64(3.14)},
+			name:     "Convert gauge metric",
+			input:    &Metric{ID: "test_gauge", MType: "gauge", Value: float64Ptr(3.14)},
+			expected: &entity.Metric{Name: "test_gauge", Type: "gauge", Value: float64(3.14)},
 		},
 		{
-			"Invalid metric type",
-			&Metric{ID: "test_invalid", MType: "invalid"},
-			&entity.Metric{Name: "test_invalid", Type: "invalid", Value: nil},
+			name:     "Invalid metric type",
+			input:    &Metric{ID: "test_invalid", MType: "invalid"},
+			expected: &entity.Metric{Name: "test_invalid", Type: "invalid", Value: nil},
 		},
 	}
 
@@ -40,24 +40,24 @@ func TestToEntityMetric(t *testing.T) {
 
 func TestFromEntityMetric(t *testing.T) {
 	tests := []struct {
-		name     string
 		input    *entity.Metric
 		expected *Metric
+		name     string
 	}{
 		{
-			"Convert entity counter metric",
-			&entity.Metric{Name: "test_counter", Type: "counter", Value: int64(10)},
-			&Metric{ID: "test_counter", MType: "counter", Delta: int64Ptr(10)},
+			name:     "Convert entity counter metric",
+			input:    &entity.Metric{Name: "test_counter", Type: "counter", Value: int64(10)},
+			expected: &Metric{ID: "test_counter", MType: "counter", Delta: int64Ptr(10)},
 		},
 		{
-			"Convert entity gauge metric",
-			&entity.Metric{Name: "test_gauge", Type: "gauge", Value: float64(2.71)},
-			&Metric{ID: "test_gauge", MType: "gauge", Value: float64Ptr(2.71)},
+			name:     "Convert entity gauge metric",
+			input:    &entity.Metric{Name: "test_gauge", Type: "gauge", Value: float64(2.71)},
+			expected: &Metric{ID: "test_gauge", MType: "gauge", Value: float64Ptr(2.71)},
 		},
 		{
-			"Invalid entity metric type",
-			&entity.Metric{Name: "test_invalid", Type: "invalid"},
-			&Metric{ID: "test_invalid", MType: "invalid"},
+			name:     "Invalid entity metric type",
+			input:    &entity.Metric{Name: "test_invalid", Type: "invalid"},
+			expected: &Metric{ID: "test_invalid", MType: "invalid"},
 		},
 	}
 

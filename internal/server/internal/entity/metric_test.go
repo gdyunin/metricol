@@ -13,10 +13,14 @@ func TestUnmarshalJSON(t *testing.T) {
 		input     string
 		expectErr bool
 	}{
-		{"Valid counter", `{"name":"metric1","type":"counter","value":10}`, false},
-		{"Valid gauge", `{"name":"metric2","type":"gauge","value":3.14}`, false},
-		{"Invalid counter value", `{"name":"metric3","type":"counter","value":"invalid"}`, true},
-		{"Invalid JSON", `{invalid json}`, true},
+		{name: "Valid counter", input: `{"name":"metric1","type":"counter","value":10}`},
+		{name: "Valid gauge", input: `{"name":"metric2","type":"gauge","value":3.14}`},
+		{
+			name:      "Invalid counter value",
+			input:     `{"name":"metric3","type":"counter","value":"invalid"}`,
+			expectErr: true,
+		},
+		{name: "Invalid JSON", input: `{invalid json}`, expectErr: true},
 	}
 
 	for _, tt := range tests {
@@ -35,22 +39,22 @@ func TestUnmarshalJSON(t *testing.T) {
 func TestMetrics_Functions(t *testing.T) {
 	tests := []struct {
 		name        string
+		firstName   string
 		metrics     Metrics
 		expectedLen int
-		firstName   string
 		firstNil    bool
 	}{
 		{
-			"Multiple metrics", Metrics{
+			name: "Multiple metrics", metrics: Metrics{
 				&Metric{Name: "metric1", Type: "gauge", Value: 1.23},
 				&Metric{Name: "metric2", Type: "counter", Value: 42},
-			}, 2, "metric1", false},
+			}, expectedLen: 2, firstName: "metric1"},
 		{
-			"Single metric", Metrics{
+			name: "Single metric", metrics: Metrics{
 				&Metric{Name: "metric1", Type: "gauge", Value: 1.23},
-			}, 1, "metric1", false},
+			}, expectedLen: 1, firstName: "metric1"},
 		{
-			"Empty metrics", Metrics{}, 0, "", true},
+			name: "Empty metrics", metrics: Metrics{}, firstNil: true},
 	}
 
 	for _, tt := range tests {
@@ -70,18 +74,17 @@ func TestMetrics_Functions(t *testing.T) {
 func TestMetrics_String(t *testing.T) {
 	tests := []struct {
 		name     string
-		metrics  Metrics
 		expected string
+		metrics  Metrics
 	}{
 		{
-			"Single metric",
-			Metrics{&Metric{Name: "metric1", Type: "gauge", Value: 1.23}},
-			"metric1",
+			name:     "Single metric",
+			metrics:  Metrics{&Metric{Name: "metric1", Type: "gauge", Value: 1.23}},
+			expected: "metric1",
 		},
 		{
-			"Empty metrics",
-			Metrics{},
-			"",
+			name:    "Empty metrics",
+			metrics: Metrics{},
 		},
 	}
 
@@ -100,19 +103,24 @@ func TestMergeDuplicates(t *testing.T) {
 		expValue int64
 	}{
 		{
-			"Merging counter duplicates",
-			Metrics{
+			name: "Merging counter duplicates",
+			metrics: Metrics{
 				&Metric{Name: "metric1", Type: "counter", Value: 1},
 				&Metric{Name: "metric1", Type: "counter", Value: 2},
 				&Metric{Name: "metric2", Type: "gauge", Value: 5},
-			}, 2, 3},
+			}, expLen: 2, expValue: 3},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.metrics.MergeDuplicates()
 			assert.Equal(t, tt.expLen, tt.metrics.Length(), "Unexpected length after merging")
-			assert.Equal(t, tt.expValue, tt.metrics.First().Value.(int64), "Unexpected value after merging")
+			assert.Equal(
+				t,
+				tt.expValue,
+				tt.metrics.First().Value.(int64), //nolint:errcheck,forcetypeassert // for tests
+				"Unexpected value after merging",
+			)
 		})
 	}
 }

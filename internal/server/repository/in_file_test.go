@@ -19,9 +19,9 @@ func TestNewInFileRepository(t *testing.T) {
 		interval time.Duration
 		restore  bool
 	}{
-		{"Default settings", "/tmp", "metrics.json", 0, false},
-		{"Auto flush enabled", "/tmp", "metrics.json", 1 * time.Second, false},
-		{"Restore on build", "/tmp", "metrics.json", 0, true},
+		{name: "Default settings", path: "/tmp", filename: "metrics.json"},
+		{name: "Auto flush enabled", path: "/tmp", filename: "metrics.json", interval: 1 * time.Second},
+		{name: "Restore on build", path: "/tmp", filename: "metrics.json", restore: true},
 	}
 
 	for _, tt := range tests {
@@ -46,7 +46,7 @@ func TestUpdateBatchInFile(t *testing.T) {
 func TestMustMakeFile(t *testing.T) {
 	logger := zap.NewNop().Sugar()
 	tempFile := "/tmp/test_metrics.json"
-	defer os.Remove(tempFile)
+	defer func() { _ = os.Remove(tempFile) }()
 
 	repo := NewInFileRepository(logger, "/tmp", "test_metrics.json", 0, false)
 	assert.NotNil(t, repo)
@@ -59,7 +59,7 @@ func TestMustMakeFile(t *testing.T) {
 func TestRestore(t *testing.T) {
 	logger := zap.NewNop().Sugar()
 	tempFile := "/tmp/test_restore.json"
-	defer os.Remove(tempFile)
+	defer func() { _ = os.Remove(tempFile) }()
 
 	repo := NewInFileRepository(logger, "/tmp", "test_restore.json", 0, true)
 	assert.NotNil(t, repo)

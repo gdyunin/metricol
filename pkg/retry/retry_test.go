@@ -13,10 +13,10 @@ import (
 func TestLinearRetryIterator_Next(t *testing.T) {
 	tests := []struct {
 		name     string
+		expected []time.Duration
 		k        int
 		b        int
 		attempts int
-		expected []time.Duration
 	}{
 		{
 			name:     "Zero attempt",
@@ -50,10 +50,10 @@ func TestWithRetry(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		attempts     int
-		errorAt      []int
-		expectErr    bool
 		expectErrMsg string
+		errorAt      []int
+		attempts     int
+		expectErr    bool
 	}{
 		{
 			name:      "Success on first attempt",

@@ -13,11 +13,11 @@ func TestRenderer_Render(t *testing.T) {
 	renderer := NewRenderer(templates)
 
 	tests := []struct {
+		data        interface{}
 		name        string
 		template    string
-		data        interface{}
-		expectError bool
 		expected    string
+		expectError bool
 	}{
 		{
 			name:        "Valid template rendering",
