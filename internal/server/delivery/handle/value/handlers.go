@@ -90,7 +90,10 @@ func pullMetric(ctx context.Context, puller MetricsPuller, m model.Metric) (*ent
 		if errors.Is(err, controller.ErrNotFoundInRepository) {
 			return nil, echo.NewHTTPError(http.StatusNotFound, "Metric not found in the repository.")
 		}
-		return nil, echo.NewHTTPError(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+		return nil, echo.NewHTTPError(
+			http.StatusInternalServerError,
+			http.StatusText(http.StatusInternalServerError),
+		)
 	}
 	return metric, nil
 }

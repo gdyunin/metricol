@@ -158,7 +158,11 @@ func initRepo(cfg *config.Config, logger *zap.SugaredLogger) (*repoWithShutdown,
 //   - ctxCancel: The cancel function to terminate the application context.
 //   - logger: The structured logger instance for shutdown events.
 //   - shutdownActions: A variadic list of functions to execute during shutdown.
-func setupGracefulShutdown(ctxCancel context.CancelFunc, logger *zap.SugaredLogger, shutdownActions ...func()) {
+func setupGracefulShutdown(
+	ctxCancel context.CancelFunc,
+	logger *zap.SugaredLogger,
+	shutdownActions ...func(),
+) {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
 

@@ -27,7 +27,10 @@ func Auth(key string) echo.MiddlewareFunc {
 
 			rawBody, err := getRawBody(c.Request())
 			if err != nil {
-				return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+				return c.String(
+					http.StatusInternalServerError,
+					http.StatusText(http.StatusInternalServerError),
+				)
 			}
 
 			if !checkSign(rawBody, sign, key) {

@@ -248,7 +248,11 @@ func (p *PostgreSQL) CheckConnection(ctx context.Context) error {
 //
 // Returns:
 //   - error: an error if the connection cannot be established within the retry limit.
-func (p *PostgreSQL) CheckConnectionWithRetry(ctx context.Context, attempts int, attemptTimeout time.Duration) error {
+func (p *PostgreSQL) CheckConnectionWithRetry(
+	ctx context.Context,
+	attempts int,
+	attemptTimeout time.Duration,
+) error {
 	if err := retry.WithRetry(ctx, p.logger, "check connection to postgre db", attempts, func() error {
 		checkCtx, cancel := context.WithTimeout(ctx, attemptTimeout)
 		defer cancel()
@@ -284,7 +288,11 @@ func (p *PostgreSQL) close() {
 func (p *PostgreSQL) mustBuild() *PostgreSQL {
 	var err error
 
-	err = p.CheckConnectionWithRetry(context.Background(), defaultAttemptsDefaultCount, defaultPSQLConnectionCheckTimeout)
+	err = p.CheckConnectionWithRetry(
+		context.Background(),
+		defaultAttemptsDefaultCount,
+		defaultPSQLConnectionCheckTimeout,
+	)
 	if err != nil {
 		panic(fmt.Sprintf("failed to check connection to the repository: %v", err))
 	}
