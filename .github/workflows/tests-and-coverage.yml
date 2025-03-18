@@ -46,7 +46,7 @@ jobs:
         with:
           script: |
             const prNumber = context.payload.pull_request.number;
-            github.issues.createComment({
+            await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: prNumber,
