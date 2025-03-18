@@ -34,7 +34,7 @@ jobs:
       - name: Run tests with coverage
         id: test
         run: |
-          go test -coverprofile=coverage.out ./...
+          go test -p=1 -coverprofile=coverage.out ./...
           go tool cover -func=coverage.out | grep total:
 
       - name: Get coverage percentage
@@ -45,8 +45,9 @@ jobs:
 
       - name: Post coverage to PR
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const prNumber = context.payload.pull_request.number;
             await github.rest.issues.createComment({
