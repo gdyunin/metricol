@@ -4,9 +4,8 @@ run:
   # Settable parameters #
   timeout: 5m
   tests: true
-  build-tags: []
+  build-tags: [ ]
   # Which files to skip: they will be analyzed, but issues from them won't be reported.
-  skip-files: []
 
   # Invariable parameters #
 
@@ -162,7 +161,7 @@ linters-settings:
       - stringXbytes
       # - switchTrue
       - timeExprSimplify
-      - todoCommentWithoutDetail
+      # - todoCommentWithoutDetail
       - typeAssertChain
       # - typeSwitchVar
       - typeUnparen
@@ -173,7 +172,7 @@ linters-settings:
       # - unslice
       # - valSwap
       - weakCond
-#      - whyNoLint
+      # - whyNoLint
       # - wrapperFunc
       - yodaStyleExpr
 
@@ -244,7 +243,6 @@ linters-settings:
     tab-width: 1
 
   loggercheck:
-    loggercheck:
     # Allow check for the github.com/go-kit/log library.
     kitlog: true
     # Allow check for the k8s.io/klog/v2 library.
@@ -372,7 +370,7 @@ linters-settings:
     # Enforce a single key naming convention.
     # Values: snake, kebab, camel, pascal
     # Default: ""
-    key-naming-case: ""
+    key-naming-case: snake
     # Enforce putting arguments on separate lines.
     args-on-sep-lines: false
 
@@ -509,7 +507,7 @@ linters:
     - musttag
     - nilerr
     - nilnil
-#    - nolintlint
+    #    - nolintlint
     - nosprintfhostport
     - perfsprint
     - prealloc
@@ -540,7 +538,7 @@ linters:
 
 # Issues configuration
 issues:
-  exclude: []
+  exclude: [ ]
   # Which dirs to exclude: issues from them won't be reported.
   # Can use regexp here: `generated.*`, regexp is applied on full path,
   # including the path prefix if one is set.

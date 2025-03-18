@@ -87,7 +87,12 @@ func (m *MemStatsCollectStrategy) exportMemoryMetrics() entity.Metrics {
 //   - entity.Metrics: A collection of metadata-related metrics.
 func (m *MemStatsCollectStrategy) exportMetadataMetrics() entity.Metrics {
 	return entity.Metrics{
-		{Name: "RandomValue", Type: entity.MetricTypeGauge, Value: m.metadata.LastPollSeed(), IsMetadata: true},
+		{
+			Name:       "RandomValue",
+			Type:       entity.MetricTypeGauge,
+			Value:      m.metadata.LastPollSeed(),
+			IsMetadata: true,
+		},
 		{Name: "PollCount", Type: entity.MetricTypeCounter, Value: m.metadata.PollsCount(), IsMetadata: true},
 	}
 }

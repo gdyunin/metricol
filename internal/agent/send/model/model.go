@@ -9,10 +9,10 @@ import (
 
 // Metric represents a single metric, including its type, ID, and value.
 type Metric struct {
-	Delta *int64   `json:"delta,omitempty"` // Delta value for counter metrics.
-	Value *float64 `json:"value,omitempty"` // Value for gauge metrics.
-	ID    string   `json:"id" uri:"id"`     // Unique identifier of the metric.
-	MType string   `json:"type" uri:"type"` // Type of the metric (e.g., counter or gauge).
+	Delta *int64   `json:"delta,omitempty"`            // Delta value for counter metrics.
+	Value *float64 `json:"value,omitempty"`            // Value for gauge metrics.
+	ID    string   `json:"id"              uri:"id"`   // Unique identifier of the metric.
+	MType string   `json:"type"            uri:"type"` // Type of the metric (e.g., counter or gauge).
 }
 
 // NewFromEntityMetric converts an entity.Metric to a model.Metric.

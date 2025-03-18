@@ -13,9 +13,9 @@ type Metric struct {
 	// Value floating-point value for Gauge metrics. Optional and used only when MType is "gauge".
 	Value *float64 `json:"value,omitempty"`
 	// ID unique identifier for the metric.
-	ID string `param:"id" json:"id"`
+	ID string `json:"id"              param:"id"`
 	// MType type of the metric, such as "counter" or "gauge".
-	MType string `param:"type" json:"type"`
+	MType string `json:"type"            param:"type"`
 }
 
 // ToEntityMetric converts a Metric model to an entity.Metric.

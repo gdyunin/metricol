@@ -38,7 +38,11 @@ func (m *Metric) UnmarshalJSON(data []byte) error {
 	if m.Type == MetricTypeCounter {
 		v, err := convert.AnyToInt64(m.Value)
 		if err != nil {
-			return fmt.Errorf("invalid value for counter metric \"%s\": expected integer, got %T", m.Name, m.Value)
+			return fmt.Errorf(
+				"invalid value for counter metric \"%s\": expected integer, got %T",
+				m.Name,
+				m.Value,
+			)
 		}
 		m.Value = v
 	}

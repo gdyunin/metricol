@@ -68,7 +68,11 @@ func Logger(level string) *zap.SugaredLogger {
 
 	newLogger, err := createLogger(level)
 	if err != nil {
-		defaultLogger.Warnf("Fallback to default logger due to error creating logger for level '%s': %v", level, err)
+		defaultLogger.Warnf(
+			"Fallback to default logger due to error creating logger for level '%s': %v",
+			level,
+			err,
+		)
 		return defaultLogger
 	}
 
