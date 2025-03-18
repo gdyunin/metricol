@@ -17,13 +17,24 @@ func Sign(key string) echo.MiddlewareFunc {
 				return next(c)
 			}
 
-			c.Response().Writer = &signerWriter{
+			w := &signerWriter{
 				ResponseWriter: c.Response().Writer,
 				key:            key,
 				body:           &bytes.Buffer{},
 			}
+			c.Response().Writer = w
 
-			return next(c)
+			err = next(c)
+			if err != nil {
+				c.Error(err)
+			}
+
+			// Ensure WriteHeader is called after the response body is populated
+			if w.body.Len() > 0 {
+				w.WriteHeader(http.StatusOK)
+			}
+
+			return nil
 		}
 	}
 }
@@ -36,6 +47,7 @@ type signerWriter struct {
 
 func (w *signerWriter) Write(data []byte) (int, error) {
 	w.body.Write(data)
+	fmt.Printf("Data being hashed: %s\n", w.body.String()) // Debugging line
 	i, err := w.ResponseWriter.Write(data)
 	if err != nil {
 		err = fmt.Errorf("error write data in signer writer: %w", err)
@@ -44,6 +56,7 @@ func (w *signerWriter) Write(data []byte) (int, error) {
 }
 
 func (w *signerWriter) WriteHeader(statusCode int) {
+	fmt.Printf("WriteHeader called with statusCode: %d\n", statusCode) // Debugging line
 	w.Header().Set(
 		"HashSHA256",
 		hex.EncodeToString(sign.MakeSign(w.body.Bytes(), w.key)),

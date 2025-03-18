@@ -22,7 +22,7 @@ import (
 const (
 	// PSQLDefaultConnectionCheckTimeout specifies the duration to wait for a connection check before timing out.
 	defaultPSQLConnectionCheckTimeout = time.Second
-	defaultPSQLCreateTablesTimeout    = 3 * time.Second
+	// defaultPSQLCreateTablesTimeout    = 3 * time.Second
 )
 
 var (

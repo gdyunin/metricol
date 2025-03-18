@@ -3,6 +3,7 @@ module github.com/gdyunin/metricol.git
 go 1.22.10
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/go-resty/resty/v2 v2.16.3
 	github.com/golang-migrate/migrate/v4 v4.18.1
