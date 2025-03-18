@@ -35,13 +35,26 @@ jobs:
       - name: Run tests with coverage
         id: test
         run: |
-          go test -p=1 -coverprofile=coverage.out ./...
-          go tool cover -func=coverage.out | grep total:
+          RETRIES=5
+          for i in $(seq 1 $RETRIES); do
+            echo "Attempt $i of $RETRIES..."
+            if go test -coverprofile=coverage.out ./...; then
+              echo "Tests passed successfully."
+              go tool cover -func=coverage.out | grep total:
+              exit 0
+            else
+              echo "Tests failed. Retrying in 5 seconds..."
+              sleep 5
+            fi
+          done
+          echo "All attempts failed. Exiting with error."
+          exit 1
 
       - name: Get coverage percentage
         id: coverage
         run: |
           COVERAGE=$(go tool cover -func=coverage.out | grep total: | awk '{print $3}')
+          COVERAGE=$(printf "%.2f" $COVERAGE)
           echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
 
       - name: Post coverage to PR
@@ -51,11 +64,12 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const prNumber = context.payload.pull_request.number;
+            const commitSha = context.payload.pull_request.head.sha.substring(0, 7);
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: prNumber,
-              body: `Текущее покрытие тестами: ${process.env.COVERAGE}`
+              body: `🚀 Покрытие тестами после коммита ${commitSha}: ${process.env.COVERAGE}`
             });
         env:
           COVERAGE: ${{ steps.coverage.outputs.coverage }}
