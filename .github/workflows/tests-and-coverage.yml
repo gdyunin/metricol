@@ -54,9 +54,3 @@ jobs:
             });
         env:
           COVERAGE: ${{ steps.coverage.outputs.coverage }}
-
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v3
-        with:
-          name: coverage.out
-          path: coverage.out
