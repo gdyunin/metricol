@@ -22,16 +22,6 @@ jobs:
         with:
           go-version: '1.22'
 
-      - name: Cache Go modules
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
       - name: Run tests with coverage
         id: test
         run: |
@@ -69,7 +59,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: prNumber,
-              body: `🚀 Покрытие тестами после коммита ${commitSha}: ${process.env.COVERAGE}`
+              body: `🚀 Покрытие тестами после коммита ${commitSha}: 🔧**${process.env.COVERAGE}**`
             });
         env:
           COVERAGE: ${{ steps.coverage.outputs.coverage }}
