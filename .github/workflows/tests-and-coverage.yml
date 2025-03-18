@@ -59,7 +59,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: prNumber,
-              body: `🚀 Покрытие тестами после коммита ${commitSha}: 🔧**${process.env.COVERAGE}**`
+              body: `🚀 Покрытие тестами после коммита ${commitSha}: 📊**${process.env.COVERAGE}**`
             });
         env:
           COVERAGE: ${{ steps.coverage.outputs.coverage }}
