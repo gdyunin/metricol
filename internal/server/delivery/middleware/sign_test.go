@@ -36,7 +36,7 @@ func TestSignMiddleware(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup
 			e := echo.New()
-			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)
 

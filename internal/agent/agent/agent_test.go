@@ -36,7 +36,14 @@ func TestAgent_Start(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			logger := zap.NewNop().Sugar()
-			agentInstance := NewAgent(tc.pollInterval, tc.reportInterval, logger, tc.maxSendRate, "http://localhost:8080", "dummyKey")
+			agentInstance := NewAgent(
+				tc.pollInterval,
+				tc.reportInterval,
+				logger,
+				tc.maxSendRate,
+				"http://localhost:8080",
+				"dummyKey",
+			)
 
 			// Start a goroutine to continuously drain the sendQueue.
 			drainDone := make(chan struct{})

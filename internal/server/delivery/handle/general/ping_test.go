@@ -12,13 +12,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// MockConnectChecker implements the ConnectChecker interface for testing
+// MockConnectChecker implements the ConnectChecker interface for testing.
 type MockConnectChecker struct {
 	ShouldError bool
 	Delay       time.Duration
 }
 
-// CheckConnection implements the ConnectChecker interface
+// CheckConnection implements the ConnectChecker interface.
 func (m *MockConnectChecker) CheckConnection(ctx context.Context) error {
 	if m.Delay > 0 {
 		select {
@@ -36,10 +36,10 @@ func (m *MockConnectChecker) CheckConnection(ctx context.Context) error {
 
 func TestPing(t *testing.T) {
 	tests := []struct {
-		name           string
 		checker        ConnectChecker
-		expectedStatus int
+		name           string
 		expectedBody   string
+		expectedStatus int
 	}{
 		{
 			name:           "Success",
@@ -69,17 +69,14 @@ func TestPing(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Setup
 			e := echo.New()
-			req := httptest.NewRequest(http.MethodGet, "/ping", nil)
+			req := httptest.NewRequest(http.MethodGet, "/ping", http.NoBody)
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)
 
-			// Execute the handler
 			handler := Ping(tt.checker)
 			_ = handler(c)
 
-			// Assert
 			assert.Equal(t, tt.expectedStatus, rec.Code)
 			assert.Equal(t, tt.expectedBody, rec.Body.String())
 		})

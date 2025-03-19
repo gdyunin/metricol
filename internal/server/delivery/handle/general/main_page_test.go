@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// MockTemplate is a minimal implementation of echo.Renderer for testing
+// MockTemplate is a minimal implementation of echo.Renderer for testing.
 type MockTemplate struct {
 	RenderFunc func(w io.Writer, name string, data interface{}, c echo.Context) error
 }
@@ -27,14 +27,14 @@ func (t *MockTemplate) Render(w io.Writer, name string, data interface{}, c echo
 	return nil
 }
 
-// MockPullerAll implements the PullerAll interface for testing
+// MockPullerAll implements the PullerAll interface for testing.
 type MockPullerAll struct {
 	Metrics    *entity.Metrics
 	ShouldFail bool
 	Delay      time.Duration
 }
 
-// PullAll implements the PullerAll interface
+// PullAll implements the PullerAll interface.
 func (m *MockPullerAll) PullAll(ctx context.Context) (*entity.Metrics, error) {
 	if m.Delay > 0 {
 		select {
@@ -52,11 +52,11 @@ func (m *MockPullerAll) PullAll(ctx context.Context) (*entity.Metrics, error) {
 
 func TestMainPage(t *testing.T) {
 	tests := []struct {
-		name           string
 		puller         PullerAll
+		name           string
 		expectedStatus int
-		checkTemplate  bool
 		expectedRows   int
+		checkTemplate  bool
 	}{
 		{
 			name: "Success with multiple metrics",
@@ -107,7 +107,7 @@ func TestMainPage(t *testing.T) {
 		{
 			name: "Timeout pulling metrics",
 			puller: &MockPullerAll{
-				Delay: 6 * time.Second, // Longer than pullAllTimeout (5s)
+				Delay: 6 * time.Second, // Longer than pullAllTimeout (5s).
 			},
 			expectedStatus: http.StatusInternalServerError,
 			checkTemplate:  false,
@@ -122,7 +122,7 @@ func TestMainPage(t *testing.T) {
 			var templateData interface{}
 			var templateCalled bool
 
-			// Set up mock renderer
+			// Set up mock renderer.
 			e.Renderer = &MockTemplate{
 				RenderFunc: func(_ io.Writer, name string, data interface{}, _ echo.Context) error {
 					templateCalled = true
@@ -132,19 +132,19 @@ func TestMainPage(t *testing.T) {
 				},
 			}
 
-			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)
 
-			// Execute handler
+			// Execute handler.
 			handler := MainPage(tt.puller)
 			err := handler(c)
 
-			// Verify response status
+			// Verify response status.
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expectedStatus, rec.Code)
 
-			// Check template rendering
+			// Check template rendering.
 			if tt.checkTemplate {
 				assert.True(t, templateCalled, "Template should have been rendered")
 				if templateData != nil {
@@ -152,7 +152,7 @@ func TestMainPage(t *testing.T) {
 					require.True(t, ok, "Template data should be []*tr")
 					assert.Len(t, tableRows, tt.expectedRows)
 
-					// If we have metrics to check, verify they were passed correctly
+					// If we have metrics to check, verify they were passed correctly.
 					if tt.puller != nil && tt.puller.(*MockPullerAll).Metrics != nil {
 						metrics := tt.puller.(*MockPullerAll).Metrics
 						for i, metric := range *metrics {

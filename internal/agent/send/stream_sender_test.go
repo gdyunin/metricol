@@ -17,11 +17,11 @@ import (
 func TestStreamSender_SendBatch(t *testing.T) {
 	// Table-driven tests.
 	tests := []struct {
-		name          string
 		metrics       *entity.Metrics
+		name          string
+		expectErrPart string
 		serverStatus  int
 		expectErr     bool
-		expectErrPart string
 	}{
 		{
 			name:         "successful send with nil metrics",

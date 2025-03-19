@@ -129,7 +129,7 @@ linters-settings:
       # - flagDeref
       # - flagName
       - hexLiteral
-      - httpNoBody
+      # - httpNoBody
       - hugeParam
       # - ifElseChain
       - importShadow
@@ -557,6 +557,11 @@ issues:
     - path: "_test\\.go"
       linters:
         - dupl
+        - errcheck
+        - errorlint
+        - wrapcheck
+        - forcetypeassert
+        - perfsprint
     - path: "_test\\.go"
       text: "fieldalignment: struct with \\d+ pointer bytes could be \\d+"
 

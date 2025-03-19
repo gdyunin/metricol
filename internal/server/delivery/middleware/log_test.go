@@ -14,8 +14,8 @@ import (
 
 func TestLogMiddleware(t *testing.T) {
 	tests := []struct {
-		name        string
 		nextHandler echo.HandlerFunc
+		name        string
 		expectError bool
 	}{
 		{
@@ -42,7 +42,7 @@ func TestLogMiddleware(t *testing.T) {
 			core, obs := observer.New(zap.InfoLevel)
 			logger := zap.New(core).Sugar()
 			e := echo.New()
-			req := httptest.NewRequest(http.MethodGet, "/test", nil)
+			req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)
 			c.Response().Header().Set(echo.HeaderXRequestID, "test-req-id")

@@ -18,14 +18,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// MockMetricsUpdater implements the MetricsUpdater interface for testing
+// MockMetricsUpdater implements the MetricsUpdater interface for testing.
 type MockMetricsUpdater struct {
-	ShouldFail     bool
-	Delay          time.Duration
 	ReturnedMetric *entity.Metric
+	Delay          time.Duration
+	ShouldFail     bool
 }
 
-// PushMetric implements the MetricsUpdater interface
+// PushMetric implements the MetricsUpdater interface.
 func (m *MockMetricsUpdater) PushMetric(ctx context.Context, metric *entity.Metric) (*entity.Metric, error) {
 	if m.Delay > 0 {
 		select {
@@ -47,11 +47,11 @@ func (m *MockMetricsUpdater) PushMetric(ctx context.Context, metric *entity.Metr
 
 func TestFromJSON(t *testing.T) {
 	tests := []struct {
-		name           string
 		updater        MetricsUpdater
+		name           string
 		requestBody    string
-		expectedStatus int
 		expectedBody   string
+		expectedStatus int
 		checkJSON      bool
 	}{
 		{
@@ -99,7 +99,7 @@ func TestFromJSON(t *testing.T) {
 		{
 			name: "Timeout",
 			updater: &MockMetricsUpdater{
-				Delay: 6 * time.Second, // Longer than metricUpdateTimeout (5s)
+				Delay: 6 * time.Second, // Longer than metricUpdateTimeout (5s).
 			},
 			requestBody:    `{"id":"test_timeout","type":"counter","delta":42}`,
 			expectedStatus: http.StatusInternalServerError,
@@ -109,18 +109,15 @@ func TestFromJSON(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Setup
 			e := echo.New()
 			req := httptest.NewRequest(http.MethodPost, "/update", strings.NewReader(tt.requestBody))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)
 
-			// Execute handler
 			handler := FromJSON(tt.updater)
 			err := handler(c)
 
-			// Assert
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expectedStatus, rec.Code)
 
@@ -152,11 +149,11 @@ func TestFromJSON(t *testing.T) {
 
 func TestFromURI(t *testing.T) {
 	tests := []struct {
-		name           string
 		updater        MetricsUpdater
 		setupContext   func(c echo.Context)
-		expectedStatus int
+		name           string
 		expectedBody   string
+		expectedStatus int
 	}{
 		{
 			name:    "Valid counter metric",
@@ -233,7 +230,7 @@ func TestFromURI(t *testing.T) {
 		{
 			name: "Timeout",
 			updater: &MockMetricsUpdater{
-				Delay: 6 * time.Second, // Longer than metricUpdateTimeout (5s)
+				Delay: 6 * time.Second, // Longer than metricUpdateTimeout (5s).
 			},
 			setupContext: func(c echo.Context) {
 				c.SetParamNames("type", "id", "value")
@@ -246,7 +243,6 @@ func TestFromURI(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Setup
 			e := echo.New()
 			req := httptest.NewRequest(http.MethodPost, "/update/", nil)
 			rec := httptest.NewRecorder()
@@ -256,32 +252,25 @@ func TestFromURI(t *testing.T) {
 				tt.setupContext(c)
 			}
 
-			// Execute handler
 			handler := FromURI(tt.updater)
 			err := handler(c)
 
-			// Assert
 			assert.NoError(t, err)
 			assert.Equal(t, tt.expectedStatus, rec.Code)
 
-			// Extract the error message from the HTTP error
 			if tt.expectedStatus >= 400 && tt.expectedStatus < 600 {
-				// For JSON responses, attempt to parse the error object
 				if strings.HasPrefix(rec.Header().Get(echo.HeaderContentType), echo.MIMEApplicationJSON) {
 					var errorResponse map[string]string
 					err := json.Unmarshal(rec.Body.Bytes(), &errorResponse)
 					if err == nil && errorResponse["message"] != "" {
 						assert.Equal(t, tt.expectedBody, errorResponse["message"])
 					} else {
-						// If we can't parse it as JSON, check if it contains the expected message
 						responseBody := strings.TrimSpace(rec.Body.String())
 						assert.Contains(t, responseBody, tt.expectedBody)
 					}
 				} else {
-					// For non-JSON responses, extract the message from the error format
 					responseBody := strings.TrimSpace(rec.Body.String())
 					if strings.HasPrefix(responseBody, "code=") {
-						// Extract the message part from "code=400, message=Error message"
 						msgParts := strings.Split(responseBody, "message=")
 						if len(msgParts) > 1 {
 							assert.Equal(t, tt.expectedBody, msgParts[1])
@@ -293,7 +282,6 @@ func TestFromURI(t *testing.T) {
 					}
 				}
 			} else {
-				// For successful responses, directly compare the body
 				assert.Equal(t, tt.expectedBody, strings.TrimSpace(rec.Body.String()))
 			}
 
@@ -306,12 +294,12 @@ func TestFromURI(t *testing.T) {
 
 func TestValidateMetricValue(t *testing.T) {
 	tests := []struct {
-		name       string
 		metric     *model.Metric
+		name       string
 		valueStr   string
-		shouldPass bool
-		errorCode  int
 		errorMsg   string
+		errorCode  int
+		shouldPass bool
 	}{
 		{
 			name: "Valid counter value",

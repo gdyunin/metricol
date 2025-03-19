@@ -27,11 +27,11 @@ func newTestPostgreSQL(db *sql.DB) *PostgreSQL {
 
 func TestPostgreSQL_Update(t *testing.T) {
 	tests := []struct {
-		name    string
 		metric  *entity.Metric
 		setup   func(mock sqlmock.Sqlmock)
-		wantErr bool
+		name    string
 		errMsg  string
+		wantErr bool
 	}{
 		{
 			name:    "nil metric",
@@ -123,11 +123,11 @@ func TestPostgreSQL_Update(t *testing.T) {
 
 func TestPostgreSQL_UpdateBatch(t *testing.T) {
 	tests := []struct {
-		name    string
 		metrics *entity.Metrics
 		setup   func(mock sqlmock.Sqlmock)
-		wantErr bool
+		name    string
 		errMsg  string
+		wantErr bool
 	}{
 		{
 			name:    "nil metrics",
@@ -270,13 +270,13 @@ func TestPostgreSQL_UpdateBatch(t *testing.T) {
 
 func TestPostgreSQL_Find(t *testing.T) {
 	tests := []struct {
+		setup      func(mock sqlmock.Sqlmock)
+		wantMetric *entity.Metric
 		name       string
 		metricType string
 		metricName string
-		setup      func(mock sqlmock.Sqlmock)
-		wantMetric *entity.Metric
-		wantErr    bool
 		errMsg     string
+		wantErr    bool
 	}{
 		{
 			name:       "not found",
@@ -397,11 +397,11 @@ func TestPostgreSQL_Find(t *testing.T) {
 
 func TestPostgreSQL_All(t *testing.T) {
 	tests := []struct {
-		name        string
 		setup       func(mock sqlmock.Sqlmock)
+		name        string
+		errMsg      string
 		wantMetrics entity.Metrics
 		wantErr     bool
-		errMsg      string
 	}{
 		{
 			name: "query error",
@@ -497,10 +497,10 @@ func TestPostgreSQL_All(t *testing.T) {
 
 func TestPostgreSQL_CheckConnection(t *testing.T) {
 	tests := []struct {
-		name    string
 		setup   func(mock sqlmock.Sqlmock)
-		wantErr bool
+		name    string
 		errMsg  string
+		wantErr bool
 	}{
 		{
 			name: "ping error",
@@ -547,12 +547,12 @@ func TestPostgreSQL_CheckConnection(t *testing.T) {
 
 func TestPostgreSQL_CheckConnectionWithRetry(t *testing.T) {
 	tests := []struct {
+		setup          func(mock sqlmock.Sqlmock)
 		name           string
+		errMsg         string
 		attempts       int
 		attemptTimeout time.Duration
-		setup          func(mock sqlmock.Sqlmock)
 		wantErr        bool
-		errMsg         string
 	}{
 		{
 			name:           "success on first attempt",

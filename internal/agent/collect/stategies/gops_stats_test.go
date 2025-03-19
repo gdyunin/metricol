@@ -1,6 +1,7 @@
 package stategies
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -35,8 +36,8 @@ func TestGopsStatsCollectStrategy_Collect_TableDriven(t *testing.T) {
 	}
 
 	tests := []struct {
-		name  string
 		check func(metrics *entity.Metrics) error
+		name  string
 	}{
 		{
 			name: "Memory metrics present",
@@ -49,7 +50,12 @@ func TestGopsStatsCollectStrategy_Collect_TableDriven(t *testing.T) {
 						return fmt.Errorf("expected metric %q not found", key)
 					}
 					if m.Type != entity.MetricTypeGauge {
-						return fmt.Errorf("expected metric %q to have type %q, got %q", key, entity.MetricTypeGauge, m.Type)
+						return fmt.Errorf(
+							"expected metric %q to have type %q, got %q",
+							key,
+							entity.MetricTypeGauge,
+							m.Type,
+						)
 					}
 				}
 				return nil
@@ -64,12 +70,17 @@ func TestGopsStatsCollectStrategy_Collect_TableDriven(t *testing.T) {
 					if strings.HasPrefix(m.Name, "CPUutilization") {
 						found = true
 						if m.Type != entity.MetricTypeGauge {
-							return fmt.Errorf("expected CPU metric %q to have type %q, got %q", m.Name, entity.MetricTypeGauge, m.Type)
+							return fmt.Errorf(
+								"expected CPU metric %q to have type %q, got %q",
+								m.Name,
+								entity.MetricTypeGauge,
+								m.Type,
+							)
 						}
 					}
 				}
 				if !found {
-					return fmt.Errorf("no CPU utilization metric found")
+					return errors.New("no CPU utilization metric found")
 				}
 				return nil
 			},
@@ -95,7 +106,7 @@ func TestGopsStatsCollectStrategy_Collect_TableDriven(t *testing.T) {
 					return fmt.Errorf("second call to Collect returned error: %v", err)
 				}
 				if m2 == nil || len(*m2) < 3 {
-					return fmt.Errorf("second call to Collect returned insufficient metrics")
+					return errors.New("second call to Collect returned insufficient metrics")
 				}
 				return nil
 			},

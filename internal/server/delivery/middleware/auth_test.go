@@ -39,11 +39,11 @@ func TestAuthMiddleware(t *testing.T) {
 		name               string
 		key                string
 		requestBody        string
-		simulateBodyError  bool
 		headerSign         string
-		nextHandlerStatus  int // status code returned by the next handler
-		expectedStatusCode int // final expected HTTP status code
 		expectedBody       string
+		nextHandlerStatus  int
+		expectedStatusCode int
+		simulateBodyError  bool
 	}{
 		{
 			name:               "Empty key, no signature validation",
@@ -103,8 +103,7 @@ func TestAuthMiddleware(t *testing.T) {
 			var req *http.Request
 
 			if tc.simulateBodyError {
-				// simulate an error while reading body
-				req = httptest.NewRequest(http.MethodPost, "/", nil)
+				req = httptest.NewRequest(http.MethodPost, "/", http.NoBody)
 				req.Body = errorReadCloser{}
 			} else {
 				req = httptest.NewRequest(http.MethodPost, "/", strings.NewReader(tc.requestBody))
@@ -148,9 +147,9 @@ func TestAuthMiddleware(t *testing.T) {
 func TestCheckSign(t *testing.T) {
 	cases := []struct {
 		name     string
-		body     []byte
 		key      string
 		sign     string
+		body     []byte
 		expected bool
 	}{
 		{
@@ -215,7 +214,7 @@ func TestGetRawBody(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, "/", nil)
+			req := httptest.NewRequest(http.MethodPost, "/", http.NoBody)
 			req.Body = tc.body
 
 			raw, err := getRawBody(req)

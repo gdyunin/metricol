@@ -77,7 +77,7 @@ func TestGzipMiddleware(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			e := echo.New()
-			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			req := httptest.NewRequest(http.MethodGet, "/", http.NoBody)
 			req.Header.Set(echo.HeaderAcceptEncoding, tc.acceptEncoding)
 			rec := httptest.NewRecorder()
 			c := e.NewContext(req, rec)

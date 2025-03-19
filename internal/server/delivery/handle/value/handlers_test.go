@@ -15,13 +15,17 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// MockMetricsPuller is a mock implementation of the MetricsPuller interface
+// MockMetricsPuller is a mock implementation of the MetricsPuller interface.
 type MockMetricsPuller struct {
 	mock.Mock
 }
 
-// Pull implements the MetricsPuller interface
-func (m *MockMetricsPuller) Pull(ctx context.Context, metricType string, name string) (*entity.Metric, error) {
+// Pull implements the MetricsPuller interface.
+func (m *MockMetricsPuller) Pull(
+	ctx context.Context,
+	metricType string,
+	name string,
+) (*entity.Metric, error) {
 	args := m.Called(ctx, metricType, name)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -41,18 +45,19 @@ func normalizeErrorResponse(body string) string {
 
 func TestFromJSON(t *testing.T) {
 	tests := []struct {
+		mockSetup      func(*MockMetricsPuller)
 		name           string
 		requestBody    string
-		mockSetup      func(*MockMetricsPuller)
-		expectedStatus int
 		expectedBody   string
+		expectedStatus int
 		validateJSON   bool
 	}{
 		{
 			name:        "Metric not found",
 			requestBody: `{"id":"non_existent","type":"counter"}`,
 			mockSetup: func(m *MockMetricsPuller) {
-				m.On("Pull", mock.Anything, "counter", "non_existent").Return(nil, controller.ErrNotFoundInRepository)
+				m.On("Pull", mock.Anything, "counter", "non_existent").
+					Return(nil, controller.ErrNotFoundInRepository)
 			},
 			expectedStatus: http.StatusNotFound,
 			expectedBody:   "Metric not found in the repository.",
@@ -62,7 +67,8 @@ func TestFromJSON(t *testing.T) {
 			name:        "Repository error",
 			requestBody: `{"id":"error_metric","type":"counter"}`,
 			mockSetup: func(m *MockMetricsPuller) {
-				m.On("Pull", mock.Anything, "counter", "error_metric").Return(nil, errors.New("database error"))
+				m.On("Pull", mock.Anything, "counter", "error_metric").
+					Return(nil, errors.New("database error"))
 			},
 			expectedStatus: http.StatusInternalServerError,
 			expectedBody:   http.StatusText(http.StatusInternalServerError),
@@ -97,11 +103,11 @@ func TestFromJSON(t *testing.T) {
 
 func TestFromURI(t *testing.T) {
 	tests := []struct {
-		name           string
 		paramSetup     func(*echo.Echo, *http.Request) echo.Context
 		mockSetup      func(*MockMetricsPuller)
-		expectedStatus int
+		name           string
 		expectedBody   string
+		expectedStatus int
 	}{
 		{
 			name: "Metric not found",
@@ -112,7 +118,8 @@ func TestFromURI(t *testing.T) {
 				return c
 			},
 			mockSetup: func(m *MockMetricsPuller) {
-				m.On("Pull", mock.Anything, "counter", "non_existent").Return(nil, controller.ErrNotFoundInRepository)
+				m.On("Pull", mock.Anything, "counter", "non_existent").
+					Return(nil, controller.ErrNotFoundInRepository)
 			},
 			expectedStatus: http.StatusNotFound,
 			expectedBody:   "Metric not found in the repository.",
@@ -126,7 +133,8 @@ func TestFromURI(t *testing.T) {
 				return c
 			},
 			mockSetup: func(m *MockMetricsPuller) {
-				m.On("Pull", mock.Anything, "counter", "error_metric").Return(nil, errors.New("database error"))
+				m.On("Pull", mock.Anything, "counter", "error_metric").
+					Return(nil, errors.New("database error"))
 			},
 			expectedStatus: http.StatusInternalServerError,
 			expectedBody:   http.StatusText(http.StatusInternalServerError),

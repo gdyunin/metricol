@@ -16,13 +16,16 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// MockMetricsUpdater is a mock implementation of the MetricsUpdater interface
+// MockMetricsUpdater is a mock implementation of the MetricsUpdater interface.
 type MockMetricsUpdater struct {
 	mock.Mock
 }
 
-// PushMetrics implements the MetricsUpdater interface
-func (m *MockMetricsUpdater) PushMetrics(ctx context.Context, metrics *entity.Metrics) (*entity.Metrics, error) {
+// PushMetrics implements the MetricsUpdater interface.
+func (m *MockMetricsUpdater) PushMetrics(
+	ctx context.Context,
+	metrics *entity.Metrics,
+) (*entity.Metrics, error) {
 	args := m.Called(ctx, metrics)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -32,11 +35,11 @@ func (m *MockMetricsUpdater) PushMetrics(ctx context.Context, metrics *entity.Me
 
 func TestFromJSON(t *testing.T) {
 	tests := []struct {
+		mockSetup      func(*MockMetricsUpdater)
 		name           string
 		requestBody    string
-		mockSetup      func(*MockMetricsUpdater)
-		expectedStatus int
 		expectedBody   string
+		expectedStatus int
 		validateJSON   bool
 	}{
 		{
@@ -55,7 +58,8 @@ func TestFromJSON(t *testing.T) {
 						return false
 					}
 					metric := (*metrics)[0]
-					return metric.Name == "test_counter" && metric.Type == "counter" && metric.Value == int64(5)
+					return metric.Name == "test_counter" && metric.Type == "counter" &&
+						metric.Value == int64(5)
 				})).Return(expectedMetrics, nil)
 			},
 			expectedStatus: http.StatusOK,
@@ -153,34 +157,25 @@ func TestFromJSON(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create a new Echo instance
 			e := echo.New()
 
-			// Create a mock MetricsUpdater
 			mockUpdater := new(MockMetricsUpdater)
 			tt.mockSetup(mockUpdater)
 
-			// Create a request with the test body
 			req := httptest.NewRequest(http.MethodPost, "/metrics", strings.NewReader(tt.requestBody))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 
-			// Create a response recorder
 			rec := httptest.NewRecorder()
 
-			// Create an Echo context
 			c := e.NewContext(req, rec)
 
-			// Call the handler
 			handler := FromJSON(mockUpdater)
 			err := handler(c)
 
-			// Assert that there was no error
 			assert.NoError(t, err)
 
-			// Assert the response status code
 			assert.Equal(t, tt.expectedStatus, rec.Code)
 
-			// If we're validating JSON, we need to compare the parsed objects
 			if tt.validateJSON {
 				var expectedMetrics model.Metrics
 				var actualMetrics model.Metrics
@@ -209,11 +204,9 @@ func TestFromJSON(t *testing.T) {
 					}
 				}
 			} else {
-				// For non-JSON responses, just compare the body string
 				assert.Equal(t, tt.expectedBody, strings.TrimSpace(rec.Body.String()))
 			}
 
-			// Verify that all expected calls were made
 			mockUpdater.AssertExpectations(t)
 		})
 	}
@@ -221,8 +214,8 @@ func TestFromJSON(t *testing.T) {
 
 func TestIsValidMetric(t *testing.T) {
 	tests := []struct {
-		name     string
 		metric   *model.Metric
+		name     string
 		expected bool
 	}{
 		{

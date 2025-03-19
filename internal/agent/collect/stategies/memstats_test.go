@@ -91,7 +91,7 @@ func TestMemStatsCollectStrategy_Concurrent(t *testing.T) {
 	var wg sync.WaitGroup
 	results := make(chan *entity.Metrics, goroutines)
 
-	for i := 0; i < goroutines; i++ {
+	for range goroutines {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -122,7 +122,11 @@ func TestMemStatsCollectStrategy_Concurrent(t *testing.T) {
 			t.Error("metadata metric 'PollCount' not found in concurrent call")
 		} else {
 			if v, ok := pollCountMetric.Value.(int64); !ok || v != 1 {
-				t.Errorf("expected 'PollCount' to be 1 in concurrent call, got %v (type %T)", pollCountMetric.Value, pollCountMetric.Value)
+				t.Errorf(
+					"expected 'PollCount' to be 1 in concurrent call, got %v (type %T)",
+					pollCountMetric.Value,
+					pollCountMetric.Value,
+				)
 			}
 		}
 	}
