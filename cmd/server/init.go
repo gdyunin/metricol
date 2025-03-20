@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -185,4 +187,29 @@ func setupGracefulShutdown(
 		logger.Warn("Timeout reached. Forcing application to exit.")
 		os.Exit(0) // Exit the application.
 	}()
+}
+
+func startProf(ctx context.Context, addr string) error {
+	srv := &http.Server{Addr: addr, Handler: nil}
+	errCh := make(chan error)
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			errCh <- fmt.Errorf("error profiling server run: %w", err)
+			close(errCh)
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		if err := srv.Shutdown(shutdownCtx); err != nil {
+			return fmt.Errorf("shutdown profiling server error: %w", err)
+		}
+	case listenErr := <-errCh:
+		return fmt.Errorf("running profiling server error: %w", listenErr)
+	}
+
+	return nil
 }

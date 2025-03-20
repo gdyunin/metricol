@@ -1,6 +1,10 @@
 package main
 
-import "github.com/labstack/gommon/log"
+import (
+	"sync"
+
+	"github.com/labstack/gommon/log"
+)
 
 func main() {
 	mainCtx, mainCtxCancel := mainContext()
@@ -22,5 +26,23 @@ func main() {
 
 	metricsAgent := initAgent(appCfg, logger)
 
-	metricsAgent.Start(mainCtx)
+	var wg sync.WaitGroup
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		metricsAgent.Start(mainCtx)
+	}()
+
+	if appCfg.PprofFlag {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err = startProf(mainCtx, ":34658"); err != nil {
+				logger.Fatalf("Profiling server error: %v", err)
+			}
+		}()
+	}
+
+	wg.Wait()
 }
