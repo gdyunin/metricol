@@ -131,3 +131,16 @@ func TestMemStatsCollectStrategy_Concurrent(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkMemStatsCollectStrategy_Collect(b *testing.B) {
+	logger := zap.NewNop().Sugar()
+	strategy := NewMemStatsCollectStrategy(logger)
+	b.ResetTimer()
+
+	for i := range b.N {
+		_, err := strategy.Collect()
+		if err != nil {
+			b.Fatalf("benchmark on iteration %d failed with error %v", i, err)
+		}
+	}
+}

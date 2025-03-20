@@ -75,3 +75,17 @@ func TestCompressor_Compress(t *testing.T) {
 		})
 	}
 }
+
+func BenchmarkCompressor_Compress(b *testing.B) {
+	compressor := NewCompressor()
+	inputBytes := bytes.Repeat([]byte("a"), 10000)
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for i := range b.N {
+		_, err := compressor.Compress(inputBytes)
+		if err != nil {
+			b.Fatalf("benchmark on iteration %d failed with error %v", i, err)
+		}
+	}
+}
