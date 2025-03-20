@@ -14,6 +14,7 @@ const (
 	defaultReportInterval = 10
 	defaultSigningKey     = ""
 	defaultRateLimit      = 3
+	defaultPprofFlag      = false
 )
 
 type Config struct {
@@ -22,6 +23,7 @@ type Config struct {
 	PollInterval   int    `env:"POLL_INTERVAL"`   // Interval for polling metrics.
 	ReportInterval int    `env:"REPORT_INTERVAL"` // Interval for reporting metrics.
 	RateLimit      int    `env:"RATE_LIMIT"`      // Max rate for http-request send one time.
+	PprofFlag      bool   `env:"PPROF_FLAG"`      // On/off profiling with pprof.
 }
 
 // ParseConfig initializes the Config with default values,
@@ -36,6 +38,7 @@ func ParseConfig() (*Config, error) {
 		ReportInterval: defaultReportInterval,
 		SigningKey:     defaultSigningKey,
 		RateLimit:      defaultRateLimit,
+		PprofFlag:      defaultPprofFlag,
 	}
 
 	// Parse command-line arguments or set default settings if no args are provided.
@@ -57,5 +60,6 @@ func parseFlagsOrSetDefault(cfg *Config) {
 	flag.StringVar(&cfg.ServerAddress, "a", cfg.ServerAddress, "Address of the server to connect to")
 	flag.StringVar(&cfg.SigningKey, "k", cfg.SigningKey, "Signing key used for creating request signatures")
 	flag.IntVar(&cfg.RateLimit, "l", cfg.RateLimit, "Max rate for http-request send one time")
+	flag.BoolVar(&cfg.PprofFlag, "pf", cfg.PprofFlag, "On/off profiling with pprof")
 	flag.Parse()
 }

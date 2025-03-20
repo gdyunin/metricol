@@ -15,6 +15,7 @@ const (
 	defaultRestoreFlag     = true
 	defaultDatabaseDSN     = ""
 	defaultSigningKey      = ""
+	defaultPprofFlag       = false
 )
 
 // Config holds the configuration for the server, including the server address.
@@ -25,6 +26,7 @@ type Config struct {
 	SigningKey      string `env:"KEY"`
 	StoreInterval   int    `env:"STORE_INTERVAL"`
 	Restore         bool   `env:"RESTORE"`
+	PprofFlag       bool   `env:"PPROF_SERVER_FLAG"`
 }
 
 // ParseConfig initializes the Config with default values,
@@ -39,6 +41,7 @@ func ParseConfig() (*Config, error) {
 		Restore:         defaultRestoreFlag,
 		DatabaseDSN:     defaultDatabaseDSN,
 		SigningKey:      defaultSigningKey,
+		PprofFlag:       defaultPprofFlag,
 	}
 
 	// Parse command-line arguments or set default settings if no args are provided.
@@ -66,5 +69,6 @@ func parseFlagsOrSetDefault(cfg *Config) {
 	flag.BoolVar(&cfg.Restore, "r", cfg.Restore, "is restore need")
 	flag.StringVar(&cfg.DatabaseDSN, "d", cfg.DatabaseDSN, "database dsn")
 	flag.StringVar(&cfg.SigningKey, "k", cfg.SigningKey, "Signing key used for checking request signatures.")
+	flag.BoolVar(&cfg.PprofFlag, "pf", cfg.PprofFlag, "On/off profiling with pprof")
 	flag.Parse()
 }
