@@ -22,12 +22,12 @@ func findGOPSMetric(metrics *entity.Metrics, name string) *entity.Metric {
 	return nil
 }
 
-func TestGopsStatsCollectStrategy_Collect_TableDriven(t *testing.T) {
+func TestGopsStatsCollectStrategy_Collect(t *testing.T) {
 	logger := zap.NewNop().Sugar()
-	strat := GopsMemStatsCollectStrategy(logger)
+	strategy := GopsMemStatsCollectStrategy(logger)
 
 	// Call Collect to obtain the metrics.
-	metricsPtr, err := strat.Collect()
+	metricsPtr, err := strategy.Collect()
 	if err != nil {
 		t.Fatalf("Collect returned error: %v", err)
 	}
@@ -101,7 +101,7 @@ func TestGopsStatsCollectStrategy_Collect_TableDriven(t *testing.T) {
 				// Calling Collect a second time should also return valid metrics.
 				// (Allow a brief delay if needed, as CPU metrics collection uses a 1-second interval.)
 				time.Sleep(1100 * time.Millisecond)
-				m2, err := strat.Collect()
+				m2, err := strategy.Collect()
 				if err != nil {
 					return fmt.Errorf("second call to Collect returned error: %v", err)
 				}
