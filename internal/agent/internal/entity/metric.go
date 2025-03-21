@@ -1,3 +1,6 @@
+// Package entity provides definitions for metrics and related utility functions.
+// It defines types for representing individual metrics as well as collections of metrics,
+// and includes helper methods for working with these collections.
 package entity
 
 import (
@@ -16,13 +19,13 @@ const (
 // Metric represents a single metric with its name, type, value, and a flag
 // indicating whether it is metadata.
 type Metric struct {
-	Value      any
-	Name       string
-	Type       string
-	IsMetadata bool
+	Value      any    // Value holds the metric value.
+	Name       string // Name is the identifier of the metric.
+	Type       string // Type specifies the metric type, e.g., counter or gauge.
+	IsMetadata bool   // IsMetadata indicates if the metric is metadata.
 }
 
-// Metrics is a collection of Metric pointers.
+// Metrics is a collection of pointers to Metric.
 type Metrics []*Metric
 
 // Length returns the number of metrics in the collection.

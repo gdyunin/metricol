@@ -20,33 +20,39 @@ import (
 type contextKey string
 
 const (
-	// UpdateBatchEndpoint defines the API endpoint for updating a batch of metrics.
+	// Const updateBatchEndpoint defines the API endpoint for updating a batch of metrics.
 	updateBatchEndpoint = "/updates"
-	// AttemptsDefaultCount defines default count of attempts for retry calls.
-	attemptsDefaultCount            = 4
-	retryCalcContextKey  contextKey = "retryCalculator"
+	// Const attemptsDefaultCount defines the default number of attempts for retry calls.
+	attemptsDefaultCount = 4
+	// Const retryCalcContextKey is the key used to store the retry calculator in the request context.
+	retryCalcContextKey contextKey = "retryCalculator"
 )
 
-// StreamSender provides functionality for sending metrics to a remote server.
-// It handles requests with retry logic and gzip compression.
+// StreamSender provides functionality for sending batches of metrics to a remote server.
+// It retrieves metrics from a channel, converts them to the model format, compresses the payload,
+// and sends the HTTP request with built-in retry logic.
 type StreamSender struct {
-	httpClient     *resty.Client
-	requestBuilder *RequestBuilder
+	httpClient     *resty.Client   // httpClient is the client used to send HTTP requests.
+	requestBuilder *RequestBuilder // requestBuilder constructs HTTP requests with optional gzip compression.
 	logger         *zap.SugaredLogger
-	streamFrom     chan *entity.Metrics
-	signingKey     string
-	interval       time.Duration
-	maxPoolSize    int
+	streamFrom     chan *entity.Metrics // streamFrom is the channel from which metrics batches are received.
+	signingKey     string               // signingKey is used for signing the request payload.
+	interval       time.Duration        // interval defines the period between send attempts.
+	maxPoolSize    int                  // maxPoolSize limits the number of concurrent sending goroutines.
 }
 
 // NewStreamSender creates and initializes a new StreamSender instance.
 //
 // Parameters:
+//   - streamFrom: A channel from which metric batches (entity.Metrics) are received.
+//   - interval: The interval for sending metrics batches.
+//   - maxPoolSize: The maximum number of concurrent sending operations.
 //   - serverAddress: The base URL of the server to which metrics will be sent.
-//   - logger: A logger for logging messages and errors.
+//   - signingKey: A key used for signing requests.
+//   - logger: A logger for recording messages and errors.
 //
 // Returns:
-//   - *StreamSender: A new instance of StreamSender with pre-configured settings.
+//   - *StreamSender: A pointer to the initialized StreamSender.
 func NewStreamSender(
 	streamFrom chan *entity.Metrics,
 	interval time.Duration,
@@ -55,7 +61,7 @@ func NewStreamSender(
 	signingKey string,
 	logger *zap.SugaredLogger,
 ) *StreamSender {
-	// [ДЛЯ РЕВЬЮ]: Это должно быть в отдельной функции и гораздо сложнее. Но для текущих нужд пока так сойдет)).
+	// Ensure the server address has the proper HTTP scheme.
 	if !strings.HasPrefix(serverAddress, "http://") && !strings.HasPrefix(serverAddress, "https://") {
 		serverAddress = "http://" + strings.TrimPrefix(serverAddress, "/")
 	}
@@ -65,7 +71,7 @@ func NewStreamSender(
 		SetHeader("Accept-Encoding", "gzip").
 		SetBaseURL(serverAddress).
 		AddRetryCondition(func(r *resty.Response, err error) bool {
-			return err != nil || r.StatusCode() >= 500 && r.StatusCode() <= 599
+			return err != nil || (r.StatusCode() >= 500 && r.StatusCode() <= 599)
 		}).
 		SetRetryCount(attemptsDefaultCount).
 		SetRetryAfter(func(client *resty.Client, response *resty.Response) (time.Duration, error) {
@@ -102,6 +108,11 @@ func NewStreamSender(
 	}
 }
 
+// StartStreaming begins the process of periodically sending metrics batches to the server.
+// It uses a ticker to trigger send operations and stops when the provided context is canceled.
+//
+// Parameters:
+//   - ctx: The context to control cancellation of the streaming operation.
 func (s *StreamSender) StartStreaming(ctx context.Context) {
 	ticker := time.NewTicker(s.interval)
 	defer ticker.Stop()
@@ -117,6 +128,8 @@ func (s *StreamSender) StartStreaming(ctx context.Context) {
 	}
 }
 
+// sendWithPool retrieves metric batches from the streamFrom channel and sends them concurrently.
+// It launches up to maxPoolSize goroutines to handle sending in parallel.
 func (s *StreamSender) sendWithPool(ctx context.Context) {
 	var wg sync.WaitGroup
 
@@ -151,14 +164,15 @@ func (s *StreamSender) sendWithPool(ctx context.Context) {
 	wg.Wait()
 }
 
-// SendBatch sends a batch of metrics to the server using gzip compression.
+// SendBatch sends a batch of metrics to the server using gzip compression and retry logic.
+// It first converts the metrics from the entity format to the model format, then prepares and sends the request.
 //
 // Parameters:
 //   - ctx: The context for the HTTP request.
-//   - metrics: A pointer to the Metrics entity containing multiple metrics to be sent.
+//   - metrics: A pointer to an entity.Metrics batch containing the metrics to be sent.
 //
 // Returns:
-//   - error: An error if the operation fails, or nil if successful.
+//   - error: An error if the sending process fails; otherwise, nil.
 func (s *StreamSender) SendBatch(ctx context.Context, metrics *entity.Metrics) error {
 	modelsMetric, err := model.NewFromEntityMetrics(metrics)
 	if err != nil {
@@ -172,15 +186,16 @@ func (s *StreamSender) SendBatch(ctx context.Context, metrics *entity.Metrics) e
 	return nil
 }
 
-// prepareAndSend prepares the HTTP request and sends it to the specified endpoint.
+// prepareAndSend prepares the HTTP request with the provided payload and sends it to the specified endpoint.
+// It serializes the payload to JSON, compresses it, and then executes the request.
 //
 // Parameters:
 //   - ctx: The context for the HTTP request.
-//   - v: The payload to be sent, serialized as JSON.
+//   - v: The payload to be sent, typically a converted metrics model.
 //   - endpoint: The API endpoint for the request.
 //
 // Returns:
-//   - error: An error if the operation fails, or nil if successful.
+//   - error: An error if the preparation or execution of the request fails; otherwise, nil.
 func (s *StreamSender) prepareAndSend(ctx context.Context, v any, endpoint string) error {
 	req, err := s.prepareRequest(v, endpoint)
 	if err != nil {
@@ -195,15 +210,17 @@ func (s *StreamSender) prepareAndSend(ctx context.Context, v any, endpoint strin
 	return nil
 }
 
-// prepareRequest builds an HTTP request with gzip compression.
+// prepareRequest builds an HTTP request with gzip compression from the provided payload.
+// It serializes the payload to JSON, compresses the data, and constructs the request using the RequestBuilder.
+// A retry calculator is added to the request context for managing retry intervals.
 //
 // Parameters:
-//   - v: The payload to be sent, serialized as JSON.
+//   - v: The payload to be sent, which is serialized to JSON.
 //   - endpoint: The API endpoint for the request.
 //
 // Returns:
 //   - *resty.Request: The prepared HTTP request.
-//   - error: An error if the request could not be prepared.
+//   - error: An error if serialization or request construction fails.
 func (s *StreamSender) prepareRequest(v any, endpoint string) (*resty.Request, error) {
 	data, err := json.Marshal(v)
 	if err != nil {
@@ -221,14 +238,15 @@ func (s *StreamSender) prepareRequest(v any, endpoint string) (*resty.Request, e
 	return req, nil
 }
 
-// doRequest executes the given HTTP request and checks for successful response status codes.
+// doRequest executes the given HTTP request and verifies that the response indicates success.
+// It returns the HTTP response or an error if the request fails or if the response status code is not successful.
 //
 // Parameters:
 //   - r: A pointer to the resty.Request to be executed.
 //
 // Returns:
 //   - *resty.Response: The HTTP response from the server.
-//   - error: An error if the request fails or the response status code is not successful.
+//   - error: An error if the request fails or if the server returns an unsuccessful status code.
 func (s *StreamSender) doRequest(r *resty.Request) (resp *resty.Response, err error) {
 	resp, err = r.Send()
 

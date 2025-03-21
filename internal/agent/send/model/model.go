@@ -1,3 +1,6 @@
+// Package model provides types and conversion functions for metrics.
+// It defines the Metric type used for representing a single metric and provides functions
+// to convert metrics from the internal entity representation to the model representation.
 package model
 
 import (
@@ -7,15 +10,18 @@ import (
 	"github.com/gdyunin/metricol.git/internal/agent/internal/entity"
 )
 
-// Metric represents a single metric, including its type, ID, and value.
+// Metric represents a single metric including its type, unique identifier, and value.
+// For counter metrics, Delta is used; for gauge metrics, Value is used.
 type Metric struct {
-	Delta *int64   `json:"delta,omitempty"`            // Delta value for counter metrics.
-	Value *float64 `json:"value,omitempty"`            // Value for gauge metrics.
-	ID    string   `json:"id"              uri:"id"`   // Unique identifier of the metric.
-	MType string   `json:"type"            uri:"type"` // Type of the metric (e.g., counter or gauge).
+	Delta *int64   `json:"delta,omitempty"`            // Delta holds the counter value for counter metrics.
+	Value *float64 `json:"value,omitempty"`            // Value holds the gauge value for gauge metrics.
+	ID    string   `json:"id"              uri:"id"`   // ID is the unique identifier of the metric.
+	MType string   `json:"type"            uri:"type"` // MType indicates the type of the metric.
 }
 
 // NewFromEntityMetric converts an entity.Metric to a model.Metric.
+// It performs type assertions on the underlying metric value based on the metric type.
+// An error is returned if the input is nil or if the value type does not match the expected type.
 //
 // Parameters:
 //   - entityMetric: The source entity.Metric to convert.
@@ -33,8 +39,6 @@ func NewFromEntityMetric(entityMetric *entity.Metric) (*Metric, error) {
 		MType: entityMetric.Type,
 	}
 
-	// [ДЛЯ РЕВЬЮ]: Чёт с этими type assertion и преобразованиями сложновато выходит...
-	// [ДЛЯ РЕВЬЮ]: Но в целом не стал выносить, потому что нужно только тут. Хз, правильный подход или нет.
 	switch entityMetric.Type {
 	case entity.MetricTypeCounter:
 		if v, ok := entityMetric.Value.(int64); ok {
@@ -67,13 +71,15 @@ func NewFromEntityMetric(entityMetric *entity.Metric) (*Metric, error) {
 	return metric, nil
 }
 
-// Metrics is a collection of Metric pointers.
+// Metrics represents a collection of Metric pointers.
 type Metrics []*Metric
 
 // NewFromEntityMetrics converts a collection of entity.Metrics to model.Metrics.
+// It iterates over each entity.Metric and converts it using NewFromEntityMetric.
+// If any conversion fails, an error is returned.
 //
 // Parameters:
-//   - entityMetrics: The source entity.Metrics to convert.
+//   - entityMetrics: The source entity.Metrics collection to convert.
 //
 // Returns:
 //   - *Metrics: A pointer to the converted Metrics collection.

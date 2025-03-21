@@ -1,3 +1,6 @@
+// Package metadata provides functionality for maintaining and updating metadata related to polling operations.
+// It tracks the number of polls conducted and the random seed generated during the last poll. Thread-safety is ensured
+// through the use of mutexes.
 package metadata
 
 import (
@@ -5,8 +8,8 @@ import (
 	"sync"
 )
 
-// Metadata maintains metrics about polling operations, including the number
-// of polls conducted and a random seed for the last poll.
+// Metadata maintains metrics about polling operations,
+// including the number of polls conducted and a random seed for the last poll.
 type Metadata struct {
 	mu           *sync.RWMutex
 	pollsCount   int64
@@ -26,9 +29,8 @@ func NewMetadata() *Metadata {
 }
 
 // Update increments the poll count and generates a new random seed.
+// This method ensures thread-safe updates using a mutex.
 func (m *Metadata) Update() {
-	// [ДЛЯ РЕВЬЮ]: Здесь и дальше через мютекс, а не атомик, потому что в будущем может что-то еще добавиться в мету.
-	// [ДЛЯ РЕВЬЮ]: В геттерах ниже тоже через мьютексы скорее для общей консистентности кода.
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -37,6 +39,7 @@ func (m *Metadata) Update() {
 }
 
 // Reset clears the poll count and resets the random seed to zero.
+// This method is thread-safe and ensures that the metadata values are reset consistently.
 func (m *Metadata) Reset() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -45,7 +48,7 @@ func (m *Metadata) Reset() {
 	m.lastPollSeed = 0
 }
 
-// PollsCount retrieves the total number of polls conducted.
+// PollsCount retrieves the total number of polls conducted in a thread-safe manner.
 //
 // Returns:
 //   - int64: The current poll count.
@@ -55,7 +58,7 @@ func (m *Metadata) PollsCount() int64 {
 	return m.pollsCount
 }
 
-// LastPollSeed retrieves the random seed value from the last poll.
+// LastPollSeed retrieves the random seed value from the last poll in a thread-safe manner.
 //
 // Returns:
 //   - float64: The last poll seed value.

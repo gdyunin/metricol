@@ -1,3 +1,5 @@
+// Package compress provides functionality for compressing data using the gzip algorithm.
+// It encapsulates a gzip.Writer along with a buffer and mutex to safely compress data concurrently.
 package compress
 
 import (
@@ -8,10 +10,12 @@ import (
 )
 
 // Compressor provides methods for compressing data using gzip.
+// It maintains an internal buffer and a gzip.Writer to perform compression.
+// A mutex is used to ensure thread-safe operations.
 type Compressor struct {
-	mu     *sync.Mutex
-	buf    *bytes.Buffer // Buffer to hold compressed data.
-	writer *gzip.Writer  // Gzip writer for compression.
+	mu     *sync.Mutex   // mu protects the buffer and writer during compression.
+	buf    *bytes.Buffer // buf holds the compressed data.
+	writer *gzip.Writer  // writer is used to compress data using gzip.
 }
 
 // NewCompressor initializes and returns a new Compressor instance.
@@ -29,14 +33,15 @@ func NewCompressor() *Compressor {
 	}
 }
 
-// Compress compresses the given data using gzip and returns the compressed bytes.
+// Compress compresses the provided data using gzip and returns the compressed bytes.
+// It resets the internal buffer and writer after the compression is complete.
 //
 // Parameters:
-//   - data: The data to be compressed.
+//   - data: The byte slice containing the data to be compressed.
 //
 // Returns:
 //   - []byte: The compressed data.
-//   - error: An error if compression fails.
+//   - error: An error if compression fails; otherwise, nil.
 func (c *Compressor) Compress(data []byte) ([]byte, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()

@@ -10,6 +10,8 @@ import (
 	"go.uber.org/zap"
 )
 
+// GopsStatsCollectStrategy is a collection strategy that gathers system memory and CPU metrics
+// using the gopsutil library. It logs its operations via the provided zap.SugaredLogger.
 type GopsStatsCollectStrategy struct {
 	logger *zap.SugaredLogger
 }
@@ -20,7 +22,7 @@ type GopsStatsCollectStrategy struct {
 //   - logger: Logger instance for recording events.
 //
 // Returns:
-//   - *GopsStatsCollectStrategy: A pointer to the newly created Collector instance.
+//   - *GopsStatsCollectStrategy: A pointer to the newly created GopsStatsCollectStrategy instance.
 func GopsMemStatsCollectStrategy(logger *zap.SugaredLogger) *GopsStatsCollectStrategy {
 	logger.Info("Initializing GopsStatsCollectStrategy")
 	return &GopsStatsCollectStrategy{
@@ -28,6 +30,12 @@ func GopsMemStatsCollectStrategy(logger *zap.SugaredLogger) *GopsStatsCollectStr
 	}
 }
 
+// Collect gathers memory and CPU metrics and returns them as a pointer to entity.Metrics.
+// If any error occurs during the collection of metrics, it returns an error.
+//
+// Returns:
+//   - *entity.Metrics: A pointer to the collected metrics.
+//   - error: An error if the collection process fails; otherwise, nil.
 func (m *GopsStatsCollectStrategy) Collect() (*entity.Metrics, error) {
 	var metrics entity.Metrics
 
@@ -46,6 +54,12 @@ func (m *GopsStatsCollectStrategy) Collect() (*entity.Metrics, error) {
 	return &metrics, nil
 }
 
+// collectMemMetrics collects memory metrics using gopsutil's mem.VirtualMemory function.
+// It returns the memory metrics as an entity.Metrics slice or an error if the collection fails.
+//
+// Returns:
+//   - entity.Metrics: A slice of memory metrics.
+//   - error: An error if the collection process fails; otherwise, nil.
 func (m *GopsStatsCollectStrategy) collectMemMetrics() (entity.Metrics, error) {
 	v, err := mem.VirtualMemory()
 	if err != nil {
@@ -68,6 +82,13 @@ func (m *GopsStatsCollectStrategy) collectMemMetrics() (entity.Metrics, error) {
 	}, nil
 }
 
+// collectCPUMetrics collects CPU utilization metrics using gopsutil's cpu.Percent function
+// over a one second interval. It returns the CPU metrics as an entity.Metrics slice or an error
+// if the collection fails.
+//
+// Returns:
+//   - entity.Metrics: A slice of CPU utilization metrics.
+//   - error: An error if the collection process fails; otherwise, nil.
 func (m *GopsStatsCollectStrategy) collectCPUMetrics() (entity.Metrics, error) {
 	cpuPercentages, err := cpu.Percent(time.Second, true)
 	if err != nil {

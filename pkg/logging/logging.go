@@ -1,3 +1,7 @@
+// Package logging provides functionality for creating and retrieving logger instances
+// configured at different log levels using Uber's zap logging library. It manages a set
+// of logger instances in a thread-safe manner and offers a fallback logger if logger
+// creation fails.
 package logging
 
 import (
@@ -26,12 +30,16 @@ const (
 )
 
 var (
-	loggers       = make(map[string]*zap.SugaredLogger)
+	// Var loggers stores created logger instances keyed by their log level.
+	loggers = make(map[string]*zap.SugaredLogger)
+	// Var defaultLogger is used as a fallback if logger creation fails.
 	defaultLogger *zap.SugaredLogger
-	mu            sync.Mutex
+	// Var mu protects access to the loggers map.
+	mu sync.Mutex
 )
 
 // init initializes the default logger used as a fallback.
+// It attempts to create a production logger; if that fails, it falls back to an example logger.
 func init() {
 	var zl *zap.Logger
 	var err error
@@ -40,7 +48,7 @@ func init() {
 	if err != nil {
 		zl = zap.NewExample()
 		zl.Error(
-			"Error initializing default logger. Falling back default logger to example logger.",
+			"Error initializing default logger. Falling back to example logger.",
 			zap.Error(err),
 		)
 	}
@@ -49,6 +57,9 @@ func init() {
 }
 
 // Logger retrieves or creates a logger for the specified log level.
+// The log level string is converted to uppercase. If a logger for that level
+// already exists, it is returned; otherwise, a new logger is created using createLogger.
+// If creation fails, a warning is logged and the default logger is returned.
 //
 // Parameters:
 //   - level: The desired log level (e.g., "INFO", "DEBUG").
@@ -56,7 +67,6 @@ func init() {
 // Returns:
 //   - *zap.SugaredLogger: A logger instance configured for the specified level.
 func Logger(level string) *zap.SugaredLogger {
-	// [ДЛЯ РЕВЬЮ]: Самый простой способ избежать дубли, кажется сложнее в этом проекте не надо.
 	level = strings.ToUpper(level)
 
 	mu.Lock()
@@ -81,6 +91,8 @@ func Logger(level string) *zap.SugaredLogger {
 }
 
 // createLogger creates a new logger configured for the specified log level.
+// It parses the provided level into an atomic level and applies the production configuration.
+// If building the logger fails, an error is returned.
 //
 // Parameters:
 //   - level: The desired log level (e.g., "INFO", "DEBUG").
