@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -383,11 +384,79 @@ func TestValidateMetricValue(t *testing.T) {
 				}
 			} else {
 				require.Error(t, err)
-				httpErr, ok := err.(*echo.HTTPError)
+				var httpErr *echo.HTTPError
+				ok := errors.As(err, &httpErr)
 				require.True(t, ok, "Expected *echo.HTTPError, got %T", err)
 				assert.Equal(t, tt.errorCode, httpErr.Code)
 				assert.Equal(t, tt.errorMsg, httpErr.Message)
 			}
 		})
 	}
+}
+
+// dummyUpdater is a simple implementation of MetricsUpdater that returns the metric unchanged.
+type dummyUpdater struct{}
+
+// PushMetric returns the input metric without modification.
+func (d *dummyUpdater) PushMetric(_ context.Context, m *entity.Metric) (*entity.Metric, error) {
+	return m, nil
+}
+
+func ExampleFromJSON() {
+	updater := &dummyUpdater{}
+
+	// Create a new Echo instance.
+	e := echo.New()
+
+	// Prepare a POST request with a JSON payload representing a counter metric.
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/update",
+		strings.NewReader(`{"id":"test_counter","type":"counter","delta":42}`),
+	)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	// Invoke the FromJSON handler.
+	handler := FromJSON(updater)
+	if err := handler(c); err != nil {
+		panic(err)
+	}
+
+	// Print the response body.
+	// Expected output: {"delta":42,"id":"test_counter","type":"counter"}
+	// Note: JSON key order may vary.
+	fmt.Print(rec.Body.String())
+
+	// Output:
+	// {"delta":42,"id":"test_counter","type":"counter"}
+}
+
+func ExampleFromURI() {
+	updater := &dummyUpdater{}
+
+	// Create a new Echo instance.
+	e := echo.New()
+
+	// Prepare a POST request for URI-based metric update.
+	req := httptest.NewRequest(http.MethodPost, "/update/counter/test_counter/42", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	// Set URI parameters: type, id, and value.
+	c.SetParamNames("type", "id", "value")
+	c.SetParamValues("counter", "test_counter", "42")
+
+	// Invoke the FromURI handler.
+	handler := FromURI(updater)
+	if err := handler(c); err != nil {
+		panic(err)
+	}
+
+	// Print the response body.
+	// Expected output: Metric update successful.
+	fmt.Print(rec.Body.String())
+
+	// Output:
+	// Metric update successful.
 }
