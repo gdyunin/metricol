@@ -1,3 +1,6 @@
+// Package retry provides utilities for executing functions with retry logic,
+// including a linear backoff mechanism. It defines an iterator to calculate delay
+// durations for successive retry attempts based on a linear function.
 package retry
 
 import (
@@ -45,15 +48,11 @@ func NewLinearRetryIterator(k int, b int) *LinearRetryIterator {
 }
 
 // Next calculates the delay duration for the current retry attempt
-// and increments the attempt counter.
-//
-// The delay is computed using the linear equation `y = kx + b`, where:
-//   - `y` is the delay duration in seconds.
-//   - `x` is the current retry attempt number.
+// using the linear function y = k*x + b, then increments the attempt counter.
 //
 // Returns:
-//   - time.Duration: The calculated delay duration for the current attempt.
-//     If this is the first call (attempt == 0), the delay is 0 seconds.
+//   - time.Duration: The calculated delay duration. For the first call (attempt == 0),
+//     the delay is 0 seconds.
 func (i *LinearRetryIterator) Next() time.Duration {
 	if i.attempt > 0 {
 		interval := time.Duration(i.k*i.attempt+i.b) * time.Second
@@ -72,9 +71,13 @@ func (i *LinearRetryIterator) SetCurrentAttempt(currentAttempt int) {
 	i.attempt = currentAttempt
 }
 
-// WithRetry executes a function with a specified number of retry attempts and linear backoff.
+// WithRetry executes a function with a specified number of retry attempts,
+// using a linear backoff delay between attempts.
 //
 // Parameters:
+//   - ctx: The context for managing the retry process.
+//   - logger: A logger instance for logging each retry attempt.
+//   - actMsg: A descriptive message for the action being retried.
 //   - attempts: The total number of retry attempts.
 //   - fn: The function to be executed, which should return an error if it fails.
 //
@@ -93,13 +96,13 @@ func WithRetry(
 
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("the retring process was interrupted at attempt %d: the context has expired", i)
+			return fmt.Errorf("the retry process was interrupted at attempt %d: the context has expired", i)
 		default:
 			if err = fn(); err == nil {
 				return nil
 			}
 			logger.Infof(
-				"Attempt %d for action <%s> ended in error, move on to the next attempt...",
+				"Attempt %d for action <%s> ended in error, moving on to the next attempt...",
 				i,
 				actMsg,
 			)

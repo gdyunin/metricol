@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -270,4 +271,44 @@ func TestIsValidMetric(t *testing.T) {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+// dummyUpdater is a simple implementation of MetricsUpdater that returns the provided metrics unchanged.
+type dummyUpdater struct{}
+
+// PushMetrics returns the input metrics without modification.
+func (d *dummyUpdater) PushMetrics(_ context.Context, metrics *entity.Metrics) (*entity.Metrics, error) {
+	return metrics, nil
+}
+
+func ExampleFromJSON() {
+	updater := &dummyUpdater{}
+
+	// Create a new Echo instance.
+	e := echo.New()
+
+	// Prepare an HTTP POST request with a JSON payload for a counter metric.
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/updates",
+		strings.NewReader(`[{"id":"test_counter","type":"counter","delta":5}]`),
+	)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
+	// Create a response recorder and a new Echo context.
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	// Call the FromJSON handler with the dummy updater.
+	handler := FromJSON(updater)
+	if err := handler(c); err != nil {
+		panic(err)
+	}
+
+	// Print the response body.
+	// The expected output is a JSON array containing the updated metric.
+	fmt.Print(rec.Body.String())
+
+	// Output:
+	// [{"delta":5,"id":"test_counter","type":"counter"}]
 }

@@ -3,6 +3,7 @@ package general
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -81,4 +82,35 @@ func TestPing(t *testing.T) {
 			assert.Equal(t, tt.expectedBody, rec.Body.String())
 		})
 	}
+}
+
+// Define a dummy ConnectChecker that always succeeds.
+type dummyChecker struct{}
+
+// CheckConnection always returns nil.
+func (d *dummyChecker) CheckConnection(_ context.Context) error {
+	return nil
+}
+
+func ExamplePing() {
+	// Instantiate the dummy checker.
+	checker := &dummyChecker{}
+
+	// Create a new Echo instance.
+	e := echo.New()
+
+	// Create a new HTTP GET request and recorder.
+	req := httptest.NewRequest(http.MethodGet, "/ping", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	// Call the Ping handler with the dummy checker.
+	handler := Ping(checker)
+	_ = handler(c)
+
+	// Print the response body.
+	fmt.Print(rec.Body.String())
+
+	// Output:
+	// pong
 }

@@ -3,6 +3,7 @@ package value
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -163,4 +164,79 @@ func TestFromURI(t *testing.T) {
 			mockPuller.AssertExpectations(t)
 		})
 	}
+}
+
+// dummyPuller implements the MetricsPuller interface.
+type dummyPuller struct {
+	Metric *entity.Metric
+}
+
+// Pull returns a dummy counter metric with a value of 100.
+func (d *dummyPuller) Pull(_ context.Context, _, _ string) (*entity.Metric, error) {
+	return d.Metric, nil
+}
+
+func ExampleFromJSON() {
+	puller := &dummyPuller{
+		Metric: &entity.Metric{
+			Name:  "test_counter",
+			Type:  entity.MetricTypeCounter,
+			Value: int64(100),
+		},
+	}
+
+	e := echo.New()
+	// Create a POST request with a JSON payload representing a counter metric.
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/value",
+		strings.NewReader(`{"id":"test_counter","type":"counter"}`),
+	)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	// Invoke the FromJSON handler.
+	handler := FromJSON(puller)
+	if err := handler(c); err != nil {
+		panic(err)
+	}
+
+	// Print the JSON response.
+	// Expected output: {"delta":100,"id":"test_counter","type":"counter"}
+	fmt.Print(rec.Body.String())
+
+	// Output:
+	// {"delta":100,"id":"test_counter","type":"counter"}
+}
+
+func ExampleFromURI() {
+	puller := &dummyPuller{
+		Metric: &entity.Metric{
+			Name:  "test_counter",
+			Type:  entity.MetricTypeCounter,
+			Value: int64(200),
+		},
+	}
+
+	e := echo.New()
+	// Create a GET request; the body is not needed.
+	req := httptest.NewRequest(http.MethodGet, "/value/counter/test_counter", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	// Set the URI parameters: metric type and id.
+	c.SetParamNames("type", "id")
+	c.SetParamValues("counter", "test_counter")
+
+	// Invoke the FromURI handler.
+	handler := FromURI(puller)
+	if err := handler(c); err != nil {
+		panic(err)
+	}
+
+	// Print the plain text response, which should be "200".
+	fmt.Print(rec.Body.String())
+
+	// Output:
+	// 200
 }

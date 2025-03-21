@@ -9,6 +9,9 @@ import (
 	"go.uber.org/zap"
 )
 
+// MemStatsCollectStrategy is a collection strategy that gathers memory statistics from the Go runtime
+// using runtime.ReadMemStats. It also collects metadata information to supplement the metrics.
+// The strategy is safe for concurrent use.
 type MemStatsCollectStrategy struct {
 	metadata *metadata.Metadata
 	ms       *runtime.MemStats
@@ -22,7 +25,7 @@ type MemStatsCollectStrategy struct {
 //   - logger: Logger instance for recording events.
 //
 // Returns:
-//   - *MemStatsCollectStrategy: A pointer to the newly created Collector instance.
+//   - *MemStatsCollectStrategy: A pointer to the newly created MemStatsCollectStrategy instance.
 func NewMemStatsCollectStrategy(logger *zap.SugaredLogger) *MemStatsCollectStrategy {
 	logger.Info("Initializing MemStatsCollectStrategy")
 	return &MemStatsCollectStrategy{
@@ -33,6 +36,13 @@ func NewMemStatsCollectStrategy(logger *zap.SugaredLogger) *MemStatsCollectStrat
 	}
 }
 
+// Collect gathers memory statistics from the runtime and metadata information,
+// converts them into metrics, and returns the metrics as a pointer to entity.Metrics.
+// It returns an error if the collection process fails.
+//
+// Returns:
+//   - *entity.Metrics: A pointer to the collected metrics.
+//   - error: An error if the collection process fails; otherwise, nil.
 func (m *MemStatsCollectStrategy) Collect() (*entity.Metrics, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -45,7 +55,8 @@ func (m *MemStatsCollectStrategy) Collect() (*entity.Metrics, error) {
 	return &metrics, nil
 }
 
-// exportMemoryMetrics converts runtime memory statistics into metrics.
+// exportMemoryMetrics converts runtime memory statistics into a slice of metrics.
+// This function is used internally to generate memory-related metrics.
 //
 // Returns:
 //   - entity.Metrics: A collection of memory-related metrics.
@@ -84,7 +95,8 @@ func (m *MemStatsCollectStrategy) exportMemoryMetrics() entity.Metrics {
 	return metrics
 }
 
-// exportMetadataMetrics converts metadata information into metrics.
+// exportMetadataMetrics converts metadata information into a slice of metrics.
+// This function is used internally to generate metadata-related metrics.
 //
 // Returns:
 //   - entity.Metrics: A collection of metadata-related metrics.

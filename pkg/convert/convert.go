@@ -1,3 +1,7 @@
+// Package convert provides utility functions for numeric conversions.
+// It includes functions to convert integer values representing seconds into time.Duration
+// and to convert values of various numeric types to int64. The functions are designed to be simple,
+// ensuring that the project has a straightforward mechanism for numeric conversions.
 package convert
 
 import (
@@ -8,6 +12,7 @@ import (
 )
 
 // IntegerToSeconds converts an integer representing seconds into a time.Duration.
+// It multiplies the provided integer by time.Second.
 //
 // Parameters:
 //   - seconds: An integer value representing seconds.
@@ -19,15 +24,16 @@ func IntegerToSeconds[T constraints.Integer](seconds T) time.Duration {
 }
 
 // AnyToInt64 converts various numeric types to int64.
+// It supports int64, float64, int, and uint types. If the conversion is unsupported,
+// it returns an error indicating the input value's type.
 //
 // Parameters:
 //   - number: A value of any type to be converted to int64.
 //
 // Returns:
 //   - int64: The converted value if successful.
-//   - error: An error if the conversion is not possible, including the type of the input value.
+//   - error: An error if the conversion is not possible.
 func AnyToInt64[T any](number T) (int64, error) {
-	// [ДЛЯ РЕВЬЮ]: В идеале тут должно быть посложнее, но в текущем проекте этого более чем достаточно.
 	switch v := any(number).(type) {
 	case int64:
 		return v, nil

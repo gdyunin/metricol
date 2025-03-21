@@ -3,6 +3,7 @@ package general
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -168,4 +169,61 @@ func TestMainPage(t *testing.T) {
 			}
 		})
 	}
+}
+
+// ExampleMainPage demonstrates how to use the MainPage handler.
+// It sets up a dummy puller that returns two metrics, creates an Echo instance with a mock renderer,
+// invokes the MainPage handler, and prints the rendered output.
+func ExampleMainPage() {
+	// Create a dummy puller that returns two metrics.
+	puller := &MockPullerAll{
+		Metrics: &entity.Metrics{
+			&entity.Metric{
+				Name:  "metric1",
+				Type:  entity.MetricTypeCounter,
+				Value: int64(10),
+			},
+			&entity.Metric{
+				Name:  "metric2",
+				Type:  entity.MetricTypeGauge,
+				Value: 20.5,
+			},
+		},
+	}
+
+	// Create a new Echo instance.
+	e := echo.New()
+
+	// Set up a mock renderer that writes to a buffer.
+	e.Renderer = &MockTemplate{
+		RenderFunc: func(w io.Writer, tmplName string, data interface{}, _ echo.Context) error {
+			// Write the template name.
+			_, _ = fmt.Fprintf(w, "Template: %s\n", tmplName)
+			// Assert that data is a slice of table rows.
+			rows, ok := data.([]*tr)
+			if ok {
+				for _, row := range rows {
+					_, _ = fmt.Fprintf(w, "%s: %s\n", row.Name, row.Value)
+				}
+			}
+			return nil
+		},
+	}
+
+	// Create an HTTP request and recorder.
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	// Invoke the MainPage handler.
+	handler := MainPage(puller)
+	_ = handler(c)
+
+	// Print the rendered output.
+	fmt.Print(rec.Body.String())
+
+	// Output:
+	// Template: main_page.html
+	// metric1: 10
+	// metric2: 20.5
 }

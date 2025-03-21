@@ -1,3 +1,7 @@
+// Package entity defines the data structures and helper functions for representing and
+// manipulating metrics. Metrics are identified by a name, type, and value. This package
+// provides custom JSON unmarshalling for metrics, along with utility methods to work with
+// collections of metrics.
 package entity
 
 import (
@@ -16,15 +20,25 @@ const (
 )
 
 // Metric represents a single metric with a name, type, and value.
+// It is used to encapsulate the measurement data.
 type Metric struct {
-	Value any    `json:"value"` // The value of the metric.
-	Name  string `json:"name"`  // The name of the metric.
-	Type  string `json:"type"`  // The type of the metric, e.g., "counter" or "gauge".
+	Value any    `json:"value"` // Value holds the metric's value.
+	Name  string `json:"name"`  // Name is the identifier of the metric.
+	Type  string `json:"type"`  // Type specifies the metric's category, e.g., "counter" or "gauge".
 }
 
 // UnmarshalJSON implements custom JSON unmarshalling for the Metric type.
+// It parses the JSON data into a Metric and performs type conversion for counter metrics.
+// If the metric is of type "counter", it converts the value to int64.
+//
+// Parameters:
+//   - data: A byte slice containing the JSON representation of a Metric.
+//
+// Returns:
+//   - error: An error if the JSON data cannot be parsed or if the type conversion fails.
 func (m *Metric) UnmarshalJSON(data []byte) error {
-	type MetricAlias Metric // Alias to avoid recursion during unmarshalling.
+	// Define an alias to avoid recursive call to UnmarshalJSON.
+	type MetricAlias Metric
 	aux := &struct {
 		*MetricAlias
 	}{
@@ -35,6 +49,7 @@ func (m *Metric) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("unable to parse metric JSON: %w", err)
 	}
 
+	// For counter metrics, ensure the value is converted to int64.
 	if m.Type == MetricTypeCounter {
 		v, err := convert.AnyToInt64(m.Value)
 		if err != nil {
@@ -50,10 +65,13 @@ func (m *Metric) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// Metrics represents a collection of metrics.
+// Metrics represents a collection of Metric pointers.
 type Metrics []*Metric
 
 // Length returns the number of metrics in the collection.
+//
+// Returns:
+//   - int: The count of metrics in the collection.
 func (m *Metrics) Length() int {
 	if m == nil {
 		return 0
@@ -61,7 +79,11 @@ func (m *Metrics) Length() int {
 	return len(*m)
 }
 
-// First returns the first metric in the collection or nil if the collection is empty or nil.
+// First returns the first metric in the collection.
+// If the collection is empty or nil, it returns nil.
+//
+// Returns:
+//   - *Metric: A pointer to the first Metric in the collection or nil if empty.
 func (m *Metrics) First() *Metric {
 	if m == nil || len(*m) == 0 {
 		return nil
@@ -70,6 +92,10 @@ func (m *Metrics) First() *Metric {
 }
 
 // String returns a string representation of the metrics collection.
+// Each metric is formatted as "<Name=... Type=... Value=...>" and concatenated with commas.
+//
+// Returns:
+//   - string: The string representation of the metrics collection.
 func (m *Metrics) String() string {
 	if m == nil {
 		return ""
@@ -92,7 +118,13 @@ func (m *Metrics) String() string {
 	return strings.Join(strData, ", ")
 }
 
-// MergeDuplicates merges duplicate metrics in the collection by name and type, aggregating their values.
+// MergeDuplicates merges duplicate metrics in the collection.
+// Two metrics are considered duplicates if they share the same name and type.
+// For counter metrics, their values are summed; for gauge metrics, the latest value replaces the previous one.
+// The merged collection replaces the original one.
+//
+// Returns:
+//   - This function does not return a value; it modifies the receiver in place.
 func (m *Metrics) MergeDuplicates() {
 	if m == nil || len(*m) == 0 {
 		return
@@ -112,7 +144,8 @@ func (m *Metrics) MergeDuplicates() {
 				repeatVal, _ := convert.AnyToInt64(metric.Value)
 				existing.Value = existingVal + repeatVal
 			} else {
-				existing.Value = metric.Value // For gauge, simply replace the value.
+				// For gauge metrics, replace with the latest value.
+				existing.Value = metric.Value
 			}
 		} else {
 			merged[key] = metric
