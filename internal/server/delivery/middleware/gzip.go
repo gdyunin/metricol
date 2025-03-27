@@ -17,7 +17,15 @@ var contentTypesForGzip = []string{
 	"text/html",
 }
 
-// Gzip provides a middleware for Echo that compresses responses using gzip if the client supports it.
+// Gzip provides an Echo middleware that compresses HTTP responses using gzip if the client supports it.
+// The middleware checks for gzip support in the "Accept-Encoding" header and wraps the response writer
+// with a gzip writer when applicable.
+//
+// Parameters:
+//   - logger: A sugared logger instance for logging potential gzip writer errors.
+//
+// Returns:
+//   - echo.MiddlewareFunc: The configured middleware function.
 func Gzip(logger *zap.SugaredLogger) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
@@ -58,14 +66,22 @@ func Gzip(logger *zap.SugaredLogger) echo.MiddlewareFunc {
 	}
 }
 
-// gzipWriter is a wrapper around http.ResponseWriter that supports gzip compression.
+// gzipWriter is a custom response writer that compresses output using gzip.
 type gzipWriter struct {
 	http.ResponseWriter
 	gzipWriter *gzip.Writer
 	withGzip   bool
 }
 
-// Write writes data to the response, compressing it if gzip is enabled.
+// Write writes the data to the gzip writer if compression is enabled;
+// otherwise, it writes directly to the underlying ResponseWriter.
+//
+// Parameters:
+//   - data: The response data to write.
+//
+// Returns:
+//   - int: The number of bytes written.
+//   - error: An error if the write fails.
 func (w *gzipWriter) Write(data []byte) (int, error) {
 	if w.withGzip {
 		n, err := w.gzipWriter.Write(data)

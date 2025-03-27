@@ -12,19 +12,20 @@ import (
 )
 
 // InMemoryRepository implements a thread-safe in-memory storage for metrics.
+// Metrics are stored in a nested map organized by metric type and name.
 type InMemoryRepository struct {
-	storage map[string]map[string]any // Storage for metrics organized by type and name.
-	mu      *sync.RWMutex             // Mutex to synchronize access to the storage.
-	logger  *zap.SugaredLogger        // Logger for logging repository operations.
+	storage map[string]map[string]any // storage maps metric type to a map of metric name to value.
+	mu      *sync.RWMutex             // mu synchronizes access to the storage.
+	logger  *zap.SugaredLogger        // logger is used for logging repository operations.
 }
 
 // NewInMemoryRepository creates a new instance of InMemoryRepository.
 //
 // Parameters:
-//   - logger: A logger instance for recording operations.
+//   - logger: A logger instance for recording repository operations.
 //
 // Returns:
-//   - A pointer to a new InMemoryRepository instance.
+//   - *InMemoryRepository: A pointer to the newly created InMemoryRepository.
 func NewInMemoryRepository(logger *zap.SugaredLogger) *InMemoryRepository {
 	return &InMemoryRepository{
 		storage: make(map[string]map[string]any),
@@ -33,13 +34,15 @@ func NewInMemoryRepository(logger *zap.SugaredLogger) *InMemoryRepository {
 	}
 }
 
-// Update updates or adds a metric in the repository.
+// Update adds or updates a metric in the repository.
+// It stores the metric value under its type and name.
 //
 // Parameters:
+//   - ctx: The context for the operation.
 //   - metric: A pointer to the Metric entity to update or add.
 //
 // Returns:
-//   - An error if the operation fails.
+//   - error: An error if the metric is nil or the update fails.
 func (r *InMemoryRepository) Update(_ context.Context, metric *entity.Metric) error {
 	if metric == nil {
 		return errors.New("metric should be non-nil, but got nil")
@@ -56,6 +59,15 @@ func (r *InMemoryRepository) Update(_ context.Context, metric *entity.Metric) er
 	return nil
 }
 
+// UpdateBatch adds or updates a batch of metrics in the repository.
+// It iterates through the metrics collection and calls Update for each metric.
+//
+// Parameters:
+//   - ctx: The context for the operation.
+//   - metrics: A pointer to the collection of Metrics to update.
+//
+// Returns:
+//   - error: An error if any individual metric update fails.
 func (r *InMemoryRepository) UpdateBatch(ctx context.Context, metrics *entity.Metrics) error {
 	if metrics == nil {
 		return errors.New("metrics should be non-nil, but got nil")
@@ -70,15 +82,17 @@ func (r *InMemoryRepository) UpdateBatch(ctx context.Context, metrics *entity.Me
 	return nil
 }
 
-// Find retrieves a metric from the repository by type and name.
+// Find retrieves a metric from the repository by its type and name.
+// It returns the metric if it exists or an error if it is not found.
 //
 // Parameters:
+//   - ctx: The context for the operation.
 //   - metricType: The type of the metric.
 //   - name: The name of the metric.
 //
 // Returns:
-//   - A pointer to the Metric entity if found.
-//   - An error if the metric does not exist or another issue occurs.
+//   - *entity.Metric: A pointer to the retrieved Metric.
+//   - error: An error if the metric does not exist.
 func (r *InMemoryRepository) Find(_ context.Context, metricType string, name string) (*entity.Metric, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -95,11 +109,15 @@ func (r *InMemoryRepository) Find(_ context.Context, metricType string, name str
 	}, nil
 }
 
-// All retrieves all metrics from the repository.
+// All retrieves all metrics stored in the repository.
+// It compiles the metrics from the internal storage map into a Metrics slice.
+//
+// Parameters:
+//   - ctx: The context for the operation.
 //
 // Returns:
-//   - A pointer to a Metrics slice containing all metrics.
-//   - An error if the operation fails.
+//   - *entity.Metrics: A pointer to the collection of all metrics.
+//   - error: An error if retrieval fails.
 func (r *InMemoryRepository) All(_ context.Context) (*entity.Metrics, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -119,12 +137,13 @@ func (r *InMemoryRepository) All(_ context.Context) (*entity.Metrics, error) {
 }
 
 // CheckConnection checks the connection status of the repository.
+// Since the repository is in-memory, it always returns nil.
 //
 // Parameters:
-//   - ctx: A context to allow cancellation or timeout control.
+//   - ctx: The context for the operation.
 //
 // Returns:
-//   - An error if the connection check fails; otherwise, nil.
+//   - error: Always nil.
 func (r *InMemoryRepository) CheckConnection(_ context.Context) error {
 	return nil
 }

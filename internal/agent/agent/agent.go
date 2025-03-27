@@ -1,3 +1,8 @@
+// Package agent provides functionalities for collecting and sending metrics.
+// It defines interfaces and implementations to collect system or application metrics
+// and send them to a remote server at specified intervals. The package supports concurrent
+// operations and structured logging. All time intervals are specified as time.Duration.
+// This package is intended for use in monitoring and metric collection applications.
 package agent
 
 import (
@@ -13,23 +18,41 @@ import (
 	"go.uber.org/zap"
 )
 
+// sendQueueSizeCoefficient is used to calculate the size of the send queue based on the maximum send rate.
 const sendQueueSizeCoefficient = 5
 
 // Collector defines an interface for collecting and exporting metrics.
+// Implementations of Collector should gather metrics from the system or application and provide
+// a mechanism to export the collected metrics along with a reset channel.
 type Collector interface {
 	// Collect gathers metrics from the system or application.
+	// This function does not take any input parameters and does not return any value.
 	Collect()
 	// Export returns the collected metrics along with a reset channel.
+	//
+	// Returns:
+	//   - *entity.Metrics: Pointer to the collected metrics data.
+	//   - chan bool: A channel used to signal a reset of the metrics data.
 	Export() (*entity.Metrics, chan bool)
 }
 
 // Sender defines an interface for sending metrics to a remote server.
+// Implementations of Sender should send a batch of metrics and handle any errors that occur.
 type Sender interface {
 	// SendBatch sends a batch of metrics to the server.
+	//
+	// Parameters:
+	//   - ctx: Context for managing cancellation and deadlines (context.Context).
+	//   - metrics: Pointer to the metrics data to be sent (*entity.Metrics).
+	//
+	// Returns:
+	//   - error: An error value if sending fails; otherwise, nil.
 	SendBatch(context.Context, *entity.Metrics) error
 }
 
 // Agent manages the collection and sending of metrics at specified intervals.
+// It utilizes a Collector to gather metrics and a Sender to transmit the collected metrics
+// to a remote server.
 type Agent struct {
 	logger         *zap.SugaredLogger
 	sendQueue      chan *entity.Metrics
@@ -43,11 +66,12 @@ type Agent struct {
 // NewAgent creates and initializes a new Agent.
 //
 // Parameters:
-//   - collector: Implementation of the Collector interface.
-//   - sender: Implementation of the Sender interface.
-//   - pollInterval: Interval for collecting metrics.
-//   - reportInterval: Interval for sending metrics to the server.
-//   - logger: Logger instance for logging events.
+//   - pollInterval: Interval for collecting metrics (time.Duration).
+//   - reportInterval: Interval for sending metrics to the server (time.Duration).
+//   - logger: Logger instance for logging events (*zap.SugaredLogger).
+//   - maxSendRate: Maximum number of metric batches that can be sent per report interval (int).
+//   - serverAddress: Address of the remote server to which metrics are sent (string).
+//   - signKey: Signing key used for authentication when sending metrics (string).
 //
 // Returns:
 //   - *Agent: A pointer to the initialized Agent.
@@ -76,13 +100,15 @@ func NewAgent(
 }
 
 // Start begins the operation of the Agent.
-//
-// This method runs indefinitely, managing the collection and sending
-// of metrics based on the configured intervals. It can be stopped by
-// canceling the provided context.
+// This method runs indefinitely, managing the collection and sending of metrics based on the configured intervals.
+// It launches separate goroutines for collecting and sending metrics,
+// and can be stopped by canceling the provided context.
 //
 // Parameters:
-//   - ctx: Context for managing the lifecycle of the Agent.
+//   - ctx: Context for managing the lifecycle of the Agent (context.Context).
+//
+// Returns:
+//   - This function does not return any value.
 func (a *Agent) Start(ctx context.Context) {
 	a.logger.Infof(
 		"Agent started: pollInterval=%ds, reportInterval=%ds",
@@ -90,10 +116,13 @@ func (a *Agent) Start(ctx context.Context) {
 		a.reportInterval/time.Second,
 	)
 
+	// Initialize collection strategies for gathering metrics.
 	collectStrategies := []collect.Strategy{
 		stategies.NewMemStatsCollectStrategy(a.logger.Named("mem_strategy")),
 		stategies.GopsMemStatsCollectStrategy(a.logger.Named("gops_strategy")),
 	}
+
+	// Create a new stream collector that gathers metrics and sends them to the sendQueue.
 	streamCollector := collect.NewStreamCollector(
 		a.sendQueue,
 		a.pollInterval,
@@ -101,6 +130,7 @@ func (a *Agent) Start(ctx context.Context) {
 		a.logger.Named("collector"),
 	)
 
+	// Create a new stream sender that sends metrics from the sendQueue to the remote server.
 	streamSenderLogger := a.logger.Named("stream_sender")
 	streamSender := send.NewStreamSender(
 		a.sendQueue,
@@ -111,12 +141,14 @@ func (a *Agent) Start(ctx context.Context) {
 		streamSenderLogger,
 	)
 
+	// Define workers for collection and sending.
 	workers := []func(context.Context){
 		streamCollector.StartStreaming,
 		streamSender.StartStreaming,
 	}
 
 	var wg sync.WaitGroup
+	// Start each worker in its own goroutine.
 	for _, worker := range workers {
 		wg.Add(1)
 		go func(w func(context.Context)) {
@@ -125,5 +157,6 @@ func (a *Agent) Start(ctx context.Context) {
 		}(worker)
 	}
 
+	// Wait for all workers to finish.
 	wg.Wait()
 }

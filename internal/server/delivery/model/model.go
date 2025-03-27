@@ -1,3 +1,7 @@
+// Package model defines the data structures and conversion functions used to map
+// between the internal entity representation of a metric and the model representation
+// used for JSON serialization and deserialization. This package supports both counter
+// and gauge metric types.
 package model
 
 import (
@@ -5,24 +9,27 @@ import (
 	"github.com/gdyunin/metricol.git/pkg/convert"
 )
 
-// Metric represents the structure used for JSON serialization and deserialization.
-// It contains fields for Counter and Gauge metric types and their respective values.
+// Metric represents the structure used for JSON serialization and deserialization of metrics.
+// It includes optional fields for Counter and Gauge metrics. For counter metrics, the Delta field
+// is used, whereas for gauge metrics, the Value field is used.
+// The ID field corresponds to the unique identifier of the metric, and MType indicates the metric type.
 type Metric struct {
-	// Delta integer value for Counter metrics. Optional and used only when MType is "counter".
+	// Delta holds the integer value for counter metrics.
+	// It is optional and is only used when MType is "counter".
 	Delta *int64 `json:"delta,omitempty"`
-	// Value floating-point value for Gauge metrics. Optional and used only when MType is "gauge".
+	// Value holds the floating-point value for gauge metrics.
+	// It is optional and is only used when MType is "gauge".
 	Value *float64 `json:"value,omitempty"`
-	// ID unique identifier for the metric.
-	ID string `param:"id" json:"id"`
-	// MType type of the metric, such as "counter" or "gauge".
-	MType string `param:"type" json:"type"`
+	// ID is the unique identifier for the metric.
+	ID string `json:"id"              param:"id"`
+	// MType represents the type of the metric, such as "counter" or "gauge".
+	MType string `json:"type"            param:"type"`
 }
 
 // ToEntityMetric converts a Metric model to an entity.Metric.
-//
-// This method maps the ID and MType fields directly and assigns the appropriate value
-// based on the MType. If MType is "counter", Delta is used. If MType is "gauge",
-// Value is used. If neither field is set or MType is invalid, the resulting Value is nil.
+// It maps the ID and MType fields directly and assigns the appropriate value based on the metric type.
+// If MType is "counter" and Delta is non-nil, Delta is used; if MType is "gauge" and Value is non-nil,
+// Value is used; otherwise, the Value field of the resulting entity.Metric is set to nil.
 //
 // Returns:
 //   - A pointer to an entity.Metric with values mapped from the Metric model.
@@ -45,18 +52,16 @@ func (m *Metric) ToEntityMetric() *entity.Metric {
 }
 
 // FromEntityMetric converts an entity.Metric to a Metric model.
-//
-// This function translates an entity.Metric into a Metric model, mapping the Name and
-// Type fields to ID and MType, respectively. It also converts the Value field based on
-// the MType: for "counter", the Value is assigned to Delta; for "gauge", the Value is
-// assigned to Value. If the input metric is nil, the function returns nil.
+// It maps the Name and Type fields to ID and MType respectively, and converts the Value field
+// based on the metric type: for "counter", it converts the value to an integer (Delta),
+// and for "gauge", it assigns the value to Value.
+// If the input entity.Metric is nil, the function returns nil.
 //
 // Parameters:
 //   - em: A pointer to an entity.Metric to convert. Can be nil.
 //
 // Returns:
-//   - A pointer to a Metric model with values mapped from the entity.Metric.
-//   - Nil if the input metric is nil.
+//   - A pointer to a Metric model with values mapped from the entity.Metric, or nil if the input is nil.
 func FromEntityMetric(em *entity.Metric) *Metric {
 	if em == nil {
 		return nil
@@ -81,13 +86,12 @@ func FromEntityMetric(em *entity.Metric) *Metric {
 	return &metric
 }
 
-// Metrics represents a slice of Metric pointers.
+// Metrics represents a slice of pointers to Metric models.
 type Metrics []*Metric
 
 // ToEntityMetrics converts a slice of Metric models to a slice of entity.Metric.
-//
-// This function iterates over each Metric in the slice, converts it to an entity.Metric
-// using ToEntityMetric, and appends it to the resulting entity.Metrics slice.
+// It iterates over each Metric in the slice, converts it to an entity.Metric using ToEntityMetric,
+// and appends the result to an entity.Metrics collection.
 //
 // Returns:
 //   - A pointer to an entity.Metrics slice with converted metrics.
@@ -108,9 +112,8 @@ func (m *Metrics) ToEntityMetrics() *entity.Metrics {
 }
 
 // FromEntityMetrics converts a slice of entity.Metric to a slice of Metric models.
-//
-// This function iterates over each entity.Metric in the slice, converts it to a Metric model
-// using FromEntityMetric, and appends it to the resulting Metrics slice.
+// It iterates over each entity.Metric in the input collection, converts it to a Metric model
+// using FromEntityMetric, and appends the result to a Metrics slice.
 //
 // Parameters:
 //   - em: A pointer to an entity.Metrics slice to convert. Can be nil.

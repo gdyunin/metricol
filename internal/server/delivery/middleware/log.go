@@ -7,13 +7,14 @@ import (
 	"go.uber.org/zap"
 )
 
-// Log creates a middleware that logs HTTP requests and responses.
+// Log creates an Echo middleware that logs HTTP requests and responses.
+// It logs the request method, URI, headers, and the processing time of each request.
 //
 // Parameters:
 //   - logger: A sugared logger instance from zap for structured logging.
 //
 // Returns:
-//   - An echo.MiddlewareFunc that logs the method, URI, headers, and execution time of HTTP requests.
+//   - echo.MiddlewareFunc: The middleware function that performs logging.
 func Log(logger *zap.SugaredLogger) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {

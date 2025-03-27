@@ -13,6 +13,16 @@ import (
 	"github.com/labstack/gommon/log"
 )
 
+// Auth creates an authentication middleware for Echo that verifies HMAC-SHA256 signatures.
+// If a key is provided, the middleware checks for the "HashSHA256" header and verifies the
+// signature against the raw request body using the secret key.
+// If the key is empty or no signature is provided, the request proceeds without verification.
+//
+// Parameters:
+//   - key: The secret key used to verify the HMAC signature.
+//
+// Returns:
+//   - echo.MiddlewareFunc: The configured middleware function.
 func Auth(key string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
@@ -27,7 +37,10 @@ func Auth(key string) echo.MiddlewareFunc {
 
 			rawBody, err := getRawBody(c.Request())
 			if err != nil {
-				return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+				return c.String(
+					http.StatusInternalServerError,
+					http.StatusText(http.StatusInternalServerError),
+				)
 			}
 
 			if !checkSign(rawBody, sign, key) {
@@ -39,14 +52,14 @@ func Auth(key string) echo.MiddlewareFunc {
 	}
 }
 
-// getRawBody retrieves the raw body of a http.Request.
+// getRawBody retrieves the raw body from an http.Request.
 //
 // Parameters:
-//   - req: The HTTP request whose body needs to be read.
+//   - req: The HTTP request from which to read the body.
 //
 // Returns:
-//   - []byte: The raw body of the request as a byte slice.
-//   - error: An error if the body retrieval or reading fails; otherwise, nil.
+//   - []byte: The raw request body.
+//   - error: An error if the body cannot be read.
 func getRawBody(req *http.Request) ([]byte, error) {
 	rawBody, err := io.ReadAll(req.Body)
 	if err != nil {
@@ -58,20 +71,21 @@ func getRawBody(req *http.Request) ([]byte, error) {
 		}
 	}()
 
+	// Restore the Body so it can be read later in the chain.
 	req.Body = io.NopCloser(bytes.NewBuffer(rawBody))
 
 	return rawBody, nil
 }
 
-// checkSign verifies the HMAC-SHA256 signature of a given message.
+// checkSign verifies the HMAC-SHA256 signature for the provided body using the secret key.
 //
 // Parameters:
-//   - body: The original message whose signature needs to be verified.
-//   - sign: The provided HMAC-SHA256 signature to verify.
-//   - key: The secret key used to generate the HMAC-SHA256 signature.
+//   - body: The original request body.
+//   - sign: The base64-encoded signature provided in the request header.
+//   - key: The secret key used to compute the signature.
 //
 // Returns:
-//   - bool: True if the provided signature matches the computed signature; otherwise, false.
+//   - bool: True if the computed signature matches the provided one; otherwise, false.
 func checkSign(body []byte, sign string, key string) bool {
 	h := hmac.New(sha256.New, []byte(key))
 	h.Write(body)

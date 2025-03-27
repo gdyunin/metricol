@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"
@@ -158,7 +160,11 @@ func initRepo(cfg *config.Config, logger *zap.SugaredLogger) (*repoWithShutdown,
 //   - ctxCancel: The cancel function to terminate the application context.
 //   - logger: The structured logger instance for shutdown events.
 //   - shutdownActions: A variadic list of functions to execute during shutdown.
-func setupGracefulShutdown(ctxCancel context.CancelFunc, logger *zap.SugaredLogger, shutdownActions ...func()) {
+func setupGracefulShutdown(
+	ctxCancel context.CancelFunc,
+	logger *zap.SugaredLogger,
+	shutdownActions ...func(),
+) {
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
 
@@ -181,4 +187,29 @@ func setupGracefulShutdown(ctxCancel context.CancelFunc, logger *zap.SugaredLogg
 		logger.Warn("Timeout reached. Forcing application to exit.")
 		os.Exit(0) // Exit the application.
 	}()
+}
+
+func startProf(ctx context.Context, addr string) error {
+	srv := &http.Server{Addr: addr, Handler: nil}
+	errCh := make(chan error)
+
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			errCh <- fmt.Errorf("error profiling server run: %w", err)
+			close(errCh)
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		if err := srv.Shutdown(shutdownCtx); err != nil {
+			return fmt.Errorf("shutdown profiling server error: %w", err)
+		}
+	case listenErr := <-errCh:
+		return fmt.Errorf("running profiling server error: %w", listenErr)
+	}
+
+	return nil
 }

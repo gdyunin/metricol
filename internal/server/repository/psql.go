@@ -20,40 +20,35 @@ import (
 )
 
 const (
-	// PSQLDefaultConnectionCheckTimeout specifies the duration to wait for a connection check before timing out.
+	// Const defaultPSQLConnectionCheckTimeout specifies the timeout for a PostgreSQL connection check.
 	defaultPSQLConnectionCheckTimeout = time.Second
-	defaultPSQLCreateTablesTimeout    = 3 * time.Second
 )
 
 var (
-	// ErrQueryExecuteFailed is a predefined error for handling failures during query execution.
-	// Use this error to provide consistent error messaging for query-related issues.
+	// ErrQueryExecuteFailed is returned when a SQL query execution fails.
 	ErrQueryExecuteFailed = errors.New("failed to execute query")
-
-	// QueryErrFmt is a format string used for wrapping errors related to query execution.
-	// It combines multiple errors into a single error message using the fmt.Errorf function
-	// and helps maintain consistency in error handling.
+	// QueryErrFmt is the format string for wrapping query execution errors.
 	QueryErrFmt = "%w: %w"
 )
 
-// PostgreSQL represents the PostgreSQL repository. It holds the database connection and provides methods
-// to interact with the metrics data stored in the PostgreSQL database.
+// PostgreSQL represents the PostgreSQL repository.
+// It holds the database connection and provides methods to interact with metrics stored in the database.
 type PostgreSQL struct {
-	db     *sql.DB
-	logger *zap.SugaredLogger
-	dsn    string
+	db     *sql.DB            // db is the database connection.
+	logger *zap.SugaredLogger // logger is used for logging repository operations.
+	dsn    string             // dsn is the Data Source Name for the PostgreSQL connection.
 }
 
-// NewPostgreSQL creates a new PostgreSQL repository instance by establishing a connection to the database
-// using the provided connection string. It also ensures that the necessary database structure is in place.
+// NewPostgreSQL creates a new PostgreSQL repository instance by establishing a database connection.
+// It also runs necessary migrations to ensure the database schema is up-to-date.
 //
 // Parameters:
-//   - connString: the connection string to establish the database connection.
-//   - logger: Logger for repository operations.
+//   - logger: A logger for repository operations.
+//   - connString: The connection string to establish the database connection.
 //
 // Returns:
-//   - *PostgreSQL: the initialized repository instance.
-//   - error: an error if the database connection fails.
+//   - *PostgreSQL: A pointer to the initialized PostgreSQL repository.
+//   - error: An error if the database connection fails.
 func NewPostgreSQL(logger *zap.SugaredLogger, connString string) (*PostgreSQL, error) {
 	db, err := sql.Open("pgx", connString)
 	if err != nil {
@@ -68,14 +63,15 @@ func NewPostgreSQL(logger *zap.SugaredLogger, connString string) (*PostgreSQL, e
 	return psql.mustBuild(), nil
 }
 
-// Update inserts a new metric into the database or updates the existing one if a metric with the same
-// type and name already exists. The metric value is serialized into JSON format before being stored.
+// Update inserts a new metric into the database or updates it if it already exists.
+// The metric value is serialized into JSON format before storage.
 //
 // Parameters:
-//   - metric: the metric object containing type, name, and value to be stored.
+//   - ctx: The context for the operation.
+//   - metric: A pointer to the Metric to be stored.
 //
 // Returns:
-//   - error: an error if the query execution or JSON marshaling fails.
+//   - error: An error if the operation fails.
 func (p *PostgreSQL) Update(ctx context.Context, metric *entity.Metric) error {
 	if metric == nil {
 		return errors.New("metric should be non-nil, but got nil")
@@ -100,6 +96,15 @@ func (p *PostgreSQL) Update(ctx context.Context, metric *entity.Metric) error {
 	return nil
 }
 
+// UpdateBatch inserts or updates a batch of metrics in the database using a transaction.
+// Each metric is serialized to JSON format prior to execution.
+//
+// Parameters:
+//   - ctx: The context for the operation.
+//   - metrics: A pointer to the collection of Metrics to store.
+//
+// Returns:
+//   - error: An error if the operation fails.
 func (p *PostgreSQL) UpdateBatch(ctx context.Context, metrics *entity.Metrics) error {
 	if metrics == nil {
 		return errors.New("metrics should be non-nil, but got nil")
@@ -145,14 +150,16 @@ func (p *PostgreSQL) UpdateBatch(ctx context.Context, metrics *entity.Metrics) e
 }
 
 // Find retrieves a metric from the database based on its type and name.
+// The stored JSON value is unmarshaled into the Metric's Value field.
 //
 // Parameters:
-//   - metricType: the type of the metric to retrieve (e.g., "counter", "gauge").
-//   - metricName: the name of the metric to retrieve.
+//   - ctx: The context for the operation.
+//   - metricType: The type of the metric (e.g., "counter", "gauge").
+//   - metricName: The name of the metric.
 //
 // Returns:
-//   - *entity.Metric: the retrieved metric object.
-//   - error: an error if the metric is not found or the query execution fails.
+//   - *entity.Metric: A pointer to the retrieved Metric.
+//   - error: An error if the metric is not found or retrieval fails.
 func (p *PostgreSQL) Find(ctx context.Context, metricType string, metricName string) (*entity.Metric, error) {
 	query := `
 		SELECT m_name, m_type, m_value 
@@ -172,7 +179,6 @@ func (p *PostgreSQL) Find(ctx context.Context, metricType string, metricName str
 		return nil, fmt.Errorf(QueryErrFmt, ErrQueryExecuteFailed, err)
 	}
 
-	// [ДЛЯ РЕВЬЮ]: Храним значение как JSONB. Подробнее в комментах к func (p *PostgreSQL) runMigrations() error.
 	err = json.Unmarshal(rawValue, &m.Value)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode JSON value: %w", err)
@@ -182,10 +188,14 @@ func (p *PostgreSQL) Find(ctx context.Context, metricType string, metricName str
 }
 
 // All retrieves all metrics from the database.
+// It scans each row, unmarshals the JSON value, and compiles the metrics into a collection.
+//
+// Parameters:
+//   - ctx: The context for the operation.
 //
 // Returns:
-//   - *entity.Metrics: a collection of all metrics stored in the database.
-//   - error: an error if the query execution or row processing fails.
+//   - *entity.Metrics: A pointer to the collection of all metrics.
+//   - error: An error if the retrieval fails.
 func (p *PostgreSQL) All(ctx context.Context) (*entity.Metrics, error) {
 	metrics := make(entity.Metrics, 0)
 	query := `SELECT m_name, m_type, m_value FROM metrics;`
@@ -209,7 +219,6 @@ func (p *PostgreSQL) All(ctx context.Context) (*entity.Metrics, error) {
 			return nil, fmt.Errorf("failed to process database response: %w", err)
 		}
 
-		// [ДЛЯ РЕВЬЮ]: Храним значение как JSONB. Подробнее в комментах к func (p *PostgreSQL) runMigrations() error.
 		err = json.Unmarshal(rawValue, &m.Value)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode JSON value: %w", err)
@@ -225,13 +234,13 @@ func (p *PostgreSQL) All(ctx context.Context) (*entity.Metrics, error) {
 	return &metrics, nil
 }
 
-// CheckConnection verifies if the database connection is alive by sending a ping request.
+// CheckConnection verifies if the database connection is alive by pinging the database.
 //
 // Parameters:
-//   - ctx: the context for managing the connection lifecycle.
+//   - ctx: The context for the connection check.
 //
 // Returns:
-//   - error: an error if the database cannot be reached.
+//   - error: An error if the database cannot be reached.
 func (p *PostgreSQL) CheckConnection(ctx context.Context) error {
 	if err := p.db.PingContext(ctx); err != nil {
 		return fmt.Errorf("failed to ping database: %w", err)
@@ -240,15 +249,20 @@ func (p *PostgreSQL) CheckConnection(ctx context.Context) error {
 }
 
 // CheckConnectionWithRetry verifies the database connection using retry logic.
+// It attempts to ping the database several times before failing.
 //
 // Parameters:
-//   - ctx: the context for managing the connection lifecycle.
-//   - attempts: the number of retry attempts.
-//   - attemptTimeout: the timeout for each connection attempt.
+//   - ctx: The context for the connection check.
+//   - attempts: The number of retry attempts.
+//   - attemptTimeout: The timeout for each connection attempt.
 //
 // Returns:
-//   - error: an error if the connection cannot be established within the retry limit.
-func (p *PostgreSQL) CheckConnectionWithRetry(ctx context.Context, attempts int, attemptTimeout time.Duration) error {
+//   - error: An error if the connection cannot be established within the retry limit.
+func (p *PostgreSQL) CheckConnectionWithRetry(
+	ctx context.Context,
+	attempts int,
+	attemptTimeout time.Duration,
+) error {
 	if err := retry.WithRetry(ctx, p.logger, "check connection to postgre db", attempts, func() error {
 		checkCtx, cancel := context.WithTimeout(ctx, attemptTimeout)
 		defer cancel()
@@ -274,17 +288,19 @@ func (p *PostgreSQL) close() {
 	}
 }
 
-// mustBuild initializes the repository and ensures the database is ready for operations.
+// mustBuild initializes the repository by checking the connection and running migrations.
+// It panics if the connection check or migrations fail.
 //
 // Returns:
-//   - *PostgreSQL: the fully initialized repository instance.
-//
-// Panics:
-//   - If the database connection cannot be established or tables cannot be created.
+//   - *PostgreSQL: A pointer to the fully initialized PostgreSQL repository.
 func (p *PostgreSQL) mustBuild() *PostgreSQL {
 	var err error
 
-	err = p.CheckConnectionWithRetry(context.Background(), defaultAttemptsDefaultCount, defaultPSQLConnectionCheckTimeout)
+	err = p.CheckConnectionWithRetry(
+		context.Background(),
+		defaultAttemptsDefaultCount,
+		defaultPSQLConnectionCheckTimeout,
+	)
 	if err != nil {
 		panic(fmt.Sprintf("failed to check connection to the repository: %v", err))
 	}
@@ -300,10 +316,11 @@ func (p *PostgreSQL) mustBuild() *PostgreSQL {
 //go:embed migrations/psql/*.sql
 var migrationsDir embed.FS
 
-// runMigrations ensures that the necessary database tables exist. If the tables are missing, it creates them.
+// runMigrations applies database migrations using the embedded SQL files.
+// It ensures that the necessary database tables exist.
 //
 // Returns:
-//   - error: an error if the table creation query fails.
+//   - error: An error if the migrations cannot be applied.
 func (p *PostgreSQL) runMigrations() error {
 	d, err := iofs.New(migrationsDir, "migrations/psql")
 	if err != nil {

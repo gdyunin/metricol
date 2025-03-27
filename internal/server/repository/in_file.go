@@ -14,40 +14,44 @@ import (
 	"github.com/gdyunin/metricol.git/internal/server/internal/entity"
 	"github.com/gdyunin/metricol.git/pkg/retry"
 	"github.com/labstack/gommon/log"
-
 	"go.uber.org/zap"
 )
 
 const (
-	fileDefaultPerm = 0o600           // Default file permissions.
-	dirDefaultPerm  = 0o750           // Default directory permissions.
-	makeDirTimeout  = 2 * time.Second // Timeout for make dir.
-	makeFileTimeout = 2 * time.Second // Timeout for make new file.
+	// Const fileDefaultPerm defines the default file permissions.
+	fileDefaultPerm = 0o600
+	// Const dirDefaultPerm defines the default directory permissions.
+	dirDefaultPerm = 0o750
+	// Const makeDirTimeout specifies the timeout for directory creation.
+	makeDirTimeout = 2 * time.Second
+	// Const makeFileTimeout specifies the timeout for file creation.
+	makeFileTimeout = 2 * time.Second
 )
 
 // InFileRepository represents a file-backed repository for metrics storage.
-// It extends InMemoryRepository with file synchronization capabilities.
+// It extends an in-memory repository by adding file synchronization capabilities.
 type InFileRepository struct {
-	*InMemoryRepository
-	logger            *zap.SugaredLogger
-	stopCh            chan struct{}
-	filepath          string
-	autoFlushInterval time.Duration
-	synchronized      bool
-	restoreOnBuild    bool
+	*InMemoryRepository                    // Embedded in-memory repository.
+	logger              *zap.SugaredLogger // Logger for repository operations.
+	stopCh              chan struct{}      // Channel to signal stopping the auto-flush process.
+	filepath            string             // Path of the storage file.
+	autoFlushInterval   time.Duration      // Interval for automatically flushing data to the file.
+	synchronized        bool               // Flag indicating whether the repository is in synchronized mode.
+	restoreOnBuild      bool               // Flag indicating whether to restore data from file upon initialization.
 }
 
 // NewInFileRepository creates a new instance of InFileRepository.
+// It initializes the underlying in-memory repository, sets up file path, and optionally restores data.
 //
 // Parameters:
 //   - logger: Logger for repository operations.
 //   - path: Directory path for the storage file.
 //   - filename: Name of the storage file.
-//   - interval: Auto-flush interval; 0 for synchronized mode.
+//   - interval: Auto-flush interval in seconds; if zero, the repository operates in synchronized mode.
 //   - restore: Indicates if data should be restored from file during initialization.
 //
 // Returns:
-//   - A pointer to the created InFileRepository instance.
+//   - *InFileRepository: A pointer to the created InFileRepository instance.
 func NewInFileRepository(
 	logger *zap.SugaredLogger,
 	path string,
@@ -68,12 +72,14 @@ func NewInFileRepository(
 }
 
 // Update adds or updates a metric in the repository.
+// It first updates the in-memory repository and then flushes to file if in synchronized mode.
 //
 // Parameters:
-//   - metric: Pointer to the Metric to update.
+//   - ctx: The context for the operation.
+//   - metric: A pointer to the Metric to update.
 //
 // Returns:
-//   - An error if the operation fails.
+//   - error: An error if the update fails.
 func (r *InFileRepository) Update(ctx context.Context, metric *entity.Metric) error {
 	if err := r.InMemoryRepository.Update(ctx, metric); err != nil {
 		return fmt.Errorf(
@@ -91,6 +97,14 @@ func (r *InFileRepository) Update(ctx context.Context, metric *entity.Metric) er
 	return nil
 }
 
+// UpdateBatch adds or updates a batch of metrics in the repository.
+//
+// Parameters:
+//   - ctx: The context for the operation.
+//   - metrics: A pointer to the collection of Metrics to update.
+//
+// Returns:
+//   - error: An error if any metric update fails.
 func (r *InFileRepository) UpdateBatch(ctx context.Context, metrics *entity.Metrics) error {
 	if metrics == nil {
 		return errors.New("metrics should be non-nil, but got nil")
@@ -111,6 +125,7 @@ func (r *InFileRepository) Shutdown() {
 }
 
 // flush writes all metrics to the storage file.
+// It retrieves all metrics, serializes them to JSON lines, and writes them to file.
 func (r *InFileRepository) flush(ctx context.Context) {
 	metrics, err := r.All(ctx)
 	if err != nil || metrics == nil {
@@ -157,10 +172,11 @@ func (r *InFileRepository) flush(ctx context.Context) {
 	}
 }
 
-// mustBuild initializes the repository, restoring data and starting auto-flush if necessary.
+// mustBuild initializes the repository by restoring data (if enabled),
+// ensuring necessary directories and files exist, and starting auto-flush if required.
 //
 // Returns:
-//   - A pointer to the initialized InFileRepository.
+//   - *InFileRepository: A pointer to the fully initialized InFileRepository.
 func (r *InFileRepository) mustBuild() *InFileRepository {
 	if r.restoreOnBuild {
 		if err := r.shouldRestore(); err != nil {
@@ -177,7 +193,10 @@ func (r *InFileRepository) mustBuild() *InFileRepository {
 	return r
 }
 
-// shouldRestore restores metrics from the storage file.
+// shouldRestore restores metrics from the storage file into memory.
+//
+// Returns:
+//   - error: An error if restoration fails.
 func (r *InFileRepository) shouldRestore() error {
 	if err := r.restore(); err != nil {
 		return fmt.Errorf("failed to restore metrics: path=%s, error=%w", r.filepath, err)
@@ -186,7 +205,7 @@ func (r *InFileRepository) shouldRestore() error {
 }
 
 // mustMakeDir ensures the directory for the storage file exists.
-// Panics if the directory cannot be created after retries.
+// It retries the directory creation and panics if it ultimately fails.
 func (r *InFileRepository) mustMakeDir() {
 	ctx, cancel := context.WithTimeout(context.Background(), makeDirTimeout)
 	defer cancel()
@@ -209,7 +228,7 @@ func (r *InFileRepository) mustMakeDir() {
 }
 
 // mustMakeFile ensures the storage file exists.
-// Panics if the file cannot be created after retries.
+// It retries the file creation and panics if it ultimately fails.
 func (r *InFileRepository) mustMakeFile() {
 	ctx, cancel := context.WithTimeout(context.Background(), makeFileTimeout)
 	defer cancel()
@@ -235,10 +254,10 @@ func (r *InFileRepository) mustMakeFile() {
 	}
 }
 
-// restore reads metrics from the storage file and loads them into memory.
+// restore reads metrics from the storage file and loads them into the in-memory repository.
 //
 // Returns:
-//   - An error if the restoration fails.
+//   - error: An error if restoration fails.
 func (r *InFileRepository) restore() error {
 	file, err := os.Open(r.filepath)
 	if err != nil {
@@ -275,7 +294,8 @@ func (r *InFileRepository) restore() error {
 	return nil
 }
 
-// startAutoFlush starts a background process to periodically flush metrics to the storage file.
+// startAutoFlush starts a background process that periodically flushes metrics to the storage file.
+// It continues until a stop signal is received via the stopCh channel.
 func (r *InFileRepository) startAutoFlush() {
 	ticker := time.NewTicker(r.autoFlushInterval)
 	defer ticker.Stop()
