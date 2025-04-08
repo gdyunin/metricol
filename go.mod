@@ -1,8 +1,6 @@
 module github.com/gdyunin/metricol.git
 
-go 1.23.0
-
-toolchain go1.23.3
+go 1.24.2
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
