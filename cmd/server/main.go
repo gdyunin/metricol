@@ -7,6 +7,8 @@ import (
 )
 
 func main() {
+	printAppInfo()
+
 	mainCtx, mainCtxCancel := mainContext()
 	defer mainCtxCancel()
 
