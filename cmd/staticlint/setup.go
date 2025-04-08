@@ -1,8 +1,6 @@
 package main
 
 import (
-	"strings"
-
 	gocritic "github.com/go-critic/go-critic/checkers/analyzer"
 	"github.com/kisielk/errcheck/errcheck"
 	"golang.org/x/tools/go/analysis"
@@ -33,6 +31,8 @@ import (
 	"golang.org/x/tools/go/analysis/passes/unreachable"
 	"golang.org/x/tools/go/analysis/passes/unsafeptr"
 	"golang.org/x/tools/go/analysis/passes/unusedresult"
+	"honnef.co/go/tools/quickfix"
+	"honnef.co/go/tools/simple"
 	"honnef.co/go/tools/staticcheck"
 )
 
@@ -48,17 +48,17 @@ func makeAlalyzersSlice() []*analysis.Analyzer {
 
 func staticChecks() []*analysis.Analyzer {
 	checks := make([]*analysis.Analyzer, 0)
-	includedStaticChecks := []string{
-		"SA", "S1012", "ST1005", "QF1011",
-	}
 
 	for _, v := range staticcheck.Analyzers {
-		for _, checkName := range includedStaticChecks {
-			if strings.HasPrefix(v.Analyzer.Name, checkName) {
-				checks = append(checks, v.Analyzer)
-				break
-			}
-		}
+		checks = append(checks, v.Analyzer)
+	}
+
+	for _, v := range quickfix.Analyzers {
+		checks = append(checks, v.Analyzer)
+	}
+
+	for _, v := range simple.Analyzers {
+		checks = append(checks, v.Analyzer)
 	}
 
 	return checks
