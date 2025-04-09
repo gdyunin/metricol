@@ -32,6 +32,20 @@ const (
 	defaultBackupFileName = "backup.txt"
 )
 
+var (
+	buildVersion = "N/A"
+	buildDate    = "N/A"
+	buildCommit  = "N/A"
+)
+
+func printAppInfo() {
+	fmt.Println("+------------------+----------------------+")
+	fmt.Printf("| %-16s | %-20s |\n", "Build version", buildVersion)
+	fmt.Printf("| %-16s | %-20s |\n", "Build date", buildDate)
+	fmt.Printf("| %-16s | %-20s |\n", "Build commit", buildCommit)
+	fmt.Println("+------------------+----------------------+")
+}
+
 // mainContext initializes the main application context with a cancel function.
 //
 // Returns:
