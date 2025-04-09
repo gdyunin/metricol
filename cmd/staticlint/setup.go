@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gdyunin/metricol.git/internal/staticlint/analyzers/exitcheck"
 	gocritic "github.com/go-critic/go-critic/checkers/analyzer"
 	"github.com/kisielk/errcheck/errcheck"
 	"golang.org/x/tools/go/analysis"
@@ -42,6 +43,7 @@ func makeAlalyzersSlice() []*analysis.Analyzer {
 	checks = append(checks, staticChecks()...)
 	checks = append(checks, otherChecks()...)
 	checks = append(checks, analysisChecks()...)
+	checks = append(checks, customChecks()...)
 
 	return checks
 }
@@ -100,5 +102,11 @@ func analysisChecks() []*analysis.Analyzer {
 		unreachable.Analyzer,
 		unsafeptr.Analyzer,
 		unusedresult.Analyzer,
+	}
+}
+
+func customChecks() []*analysis.Analyzer {
+	return []*analysis.Analyzer{
+		exitcheck.ExitInMainAnalyzer,
 	}
 }

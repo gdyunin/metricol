@@ -47,6 +47,17 @@ func Test_otherChecks(t *testing.T) {
 	assert.Equal(t, wantNames, gotNames)
 }
 
+func Test_customChecks(t *testing.T) {
+	got := customChecks()
+
+	gotNames := extractNames(got)
+	wantNames := []string{
+		"exitcheck",
+	}
+
+	assert.Equal(t, wantNames, gotNames)
+}
+
 func Test_analysisChecks(t *testing.T) {
 	got := analysisChecks()
 
@@ -91,6 +102,7 @@ func Test_makeAlalyzersSlice(t *testing.T) {
 	want = append(want, staticChecks()...)
 	want = append(want, otherChecks()...)
 	want = append(want, analysisChecks()...)
+	want = append(want, customChecks()...)
 
 	gotNames := extractNames(got)
 	wantNames := extractNames(want)
