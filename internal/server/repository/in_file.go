@@ -264,7 +264,7 @@ func (r *InFileRepository) restore() error {
 		return fmt.Errorf("failed to open file for restoration: path=%s, error=%w", r.filepath, err)
 	}
 	defer func() {
-		if err := file.Close(); err != nil {
+		if err = file.Close(); err != nil {
 			log.Errorf("File close error: %v", err)
 		}
 	}()

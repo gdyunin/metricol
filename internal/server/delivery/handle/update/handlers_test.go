@@ -373,11 +373,12 @@ func TestValidateMetricValue(t *testing.T) {
 			if tt.shouldPass {
 				assert.NoError(t, err)
 
-				if tt.metric.MType == entity.MetricTypeCounter {
+				switch tt.metric.MType {
+				case entity.MetricTypeCounter:
 					require.NotNil(t, tt.metric.Delta)
 					expectedDelta, _ := strconv.ParseInt(tt.valueStr, 10, 64)
 					assert.Equal(t, expectedDelta, *tt.metric.Delta)
-				} else if tt.metric.MType == entity.MetricTypeGauge {
+				case entity.MetricTypeGauge:
 					require.NotNil(t, tt.metric.Value)
 					expectedValue, _ := strconv.ParseFloat(tt.valueStr, 64)
 					assert.Equal(t, expectedValue, *tt.metric.Value)

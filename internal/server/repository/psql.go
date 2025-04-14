@@ -122,7 +122,7 @@ func (p *PostgreSQL) UpdateBatch(ctx context.Context, metrics *entity.Metrics) e
 		return fmt.Errorf("failed at begin transaction: %w", err)
 	}
 	defer func() {
-		if err := tx.Rollback(); err != nil {
+		if err = tx.Rollback(); err != nil {
 			p.logger.Errorf("SQL transaction rollback failed: %v", err)
 		}
 	}()
@@ -132,7 +132,8 @@ func (p *PostgreSQL) UpdateBatch(ctx context.Context, metrics *entity.Metrics) e
 			return errors.New("metric should be non-nil, but got nil")
 		}
 
-		mValue, err := json.Marshal(m.Value)
+		var mValue []byte
+		mValue, err = json.Marshal(m.Value)
 		if err != nil {
 			return fmt.Errorf("failed to marshal metric value: %w", err)
 		}
@@ -205,7 +206,7 @@ func (p *PostgreSQL) All(ctx context.Context) (*entity.Metrics, error) {
 		return nil, fmt.Errorf(QueryErrFmt, ErrQueryExecuteFailed, err)
 	}
 	defer func() {
-		if err := rows.Close(); err != nil {
+		if err = rows.Close(); err != nil {
 			log.Errorf("SQL rows result close error: %v", err)
 		}
 	}()
