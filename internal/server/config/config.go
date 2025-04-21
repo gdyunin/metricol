@@ -18,6 +18,7 @@ const (
 	defaultDatabaseDSN     = ""
 	defaultSigningKey      = ""
 	defaultPprofFlag       = false
+	defaultCryptoKey       = ""
 )
 
 // Config holds the configuration for the server, including its address,
@@ -32,6 +33,7 @@ type Config struct {
 	StoreInterval   int    `env:"STORE_INTERVAL"`    // StoreInterval is the interval (in seconds) for storing data.
 	Restore         bool   `env:"RESTORE"`           // Restore indicates whether to restore previous state on startup.
 	PprofFlag       bool   `env:"PPROF_SERVER_FLAG"` // PprofFlag toggles the use of pprof profiling.
+	CryptoKey       string `env:"CRYPTO_KEY"`        // Path to private key file.
 }
 
 // ParseConfig initializes the Config with default values, overrides them with command-line flags if provided,
@@ -51,6 +53,7 @@ func ParseConfig() (*Config, error) {
 		DatabaseDSN:     defaultDatabaseDSN,
 		SigningKey:      defaultSigningKey,
 		PprofFlag:       defaultPprofFlag,
+		CryptoKey:      defaultCryptoKey,
 	}
 
 	// Populate the configuration from command-line flags.
@@ -80,5 +83,6 @@ func parseFlagsOrSetDefault(cfg *Config) {
 	flag.StringVar(&cfg.DatabaseDSN, "d", cfg.DatabaseDSN, "Database DSN")
 	flag.StringVar(&cfg.SigningKey, "k", cfg.SigningKey, "Signing key for checking request signatures.")
 	flag.BoolVar(&cfg.PprofFlag, "pf", cfg.PprofFlag, "Enable or disable profiling with pprof")
+	flag.StringVar(&cfg.CryptoKey, "crypto-key", cfg.CryptoKey, "Path to private key file.")
 	flag.Parse()
 }
