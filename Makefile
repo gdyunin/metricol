@@ -1,4 +1,4 @@
-.PHONY: help lint deps
+.PHONY: help lint deps keys
 
 # ===========================
 # HELP: Список доступных команд
@@ -27,3 +27,9 @@ deps:  ## Очищает и обновляет зависимости проек
 	rm -f go.sum
 	go mod tidy -v
 	go mod verify
+
+# ===========================
+# KEYS: Генерация ключей
+# ===========================
+keys:  ## Генерирует приватный и публичный ключи
+	go run ./cmd/keycli/main.go -private private.pem -public public.pem -size 4096
