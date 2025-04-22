@@ -37,8 +37,9 @@ type StreamSender struct {
 	logger         *zap.SugaredLogger
 	streamFrom     chan *entity.Metrics // streamFrom is the channel from which metrics batches are received.
 	signingKey     string               // signingKey is used for signing the request payload.
-	interval       time.Duration        // interval defines the period between send attempts.
-	maxPoolSize    int                  // maxPoolSize limits the number of concurrent sending goroutines.
+	cryptoKey      string
+	interval       time.Duration // interval defines the period between send attempts.
+	maxPoolSize    int           // maxPoolSize limits the number of concurrent sending goroutines.
 }
 
 // NewStreamSender creates and initializes a new StreamSender instance.
@@ -59,6 +60,7 @@ func NewStreamSender(
 	maxPoolSize int,
 	serverAddress string,
 	signingKey string,
+	cryptoKey string,
 	logger *zap.SugaredLogger,
 ) *StreamSender {
 	// Ensure the server address has the proper HTTP scheme.
@@ -102,6 +104,7 @@ func NewStreamSender(
 		requestBuilder: requestBuilder,
 		logger:         logger,
 		signingKey:     signingKey,
+		cryptoKey:      cryptoKey,
 		streamFrom:     streamFrom,
 		interval:       interval,
 		maxPoolSize:    maxPoolSize,
@@ -227,9 +230,9 @@ func (s *StreamSender) prepareRequest(v any, endpoint string) (*resty.Request, e
 		return nil, fmt.Errorf("serialization of metrics to JSON failed: %w", err)
 	}
 
-	req, err := s.requestBuilder.BuildWithGzip(http.MethodPost, endpoint, data, s.signingKey)
+	req, err := s.requestBuilder.BuildWithParams(http.MethodPost, endpoint, data, s.signingKey, s.cryptoKey)
 	if err != nil {
-		return nil, fmt.Errorf("gzip-compressed request build failed: %w", err)
+		return nil, fmt.Errorf("request with params build failed: %w", err)
 	}
 
 	retryCalculator := retry.NewLinearRetryIterator(retry.DefaultLinearCoefficientScaling, -1)
