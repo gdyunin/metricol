@@ -74,7 +74,7 @@ func TestBuildWithGzip(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req, err := builder.BuildWithGzip(tt.method, tt.endpoint, tt.body, tt.signingKey)
+			req, err := builder.BuildWithParams(tt.method, tt.endpoint, tt.body, tt.signingKey, "")
 			if tt.expectErr {
 				assert.Error(t, err)
 			} else {

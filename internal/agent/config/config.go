@@ -19,18 +19,20 @@ const (
 	defaultSigningKey     = ""
 	defaultRateLimit      = 3
 	defaultPprofFlag      = false
+	defaultCryptoKey      = ""
 )
 
 // Config holds the configuration settings for the application.
 // It contains the server address, signing key, intervals for polling and reporting metrics,
 // a rate limit for HTTP requests, and a flag for enabling or disabling pprof profiling.
 type Config struct {
-	ServerAddress  string `env:"ADDRESS"`         // Address of the server to connect to.
-	SigningKey     string `env:"KEY"`             // Key used for signing requests to the server.
-	PollInterval   int    `env:"POLL_INTERVAL"`   // Interval for polling metrics.
-	ReportInterval int    `env:"REPORT_INTERVAL"` // Interval for reporting metrics.
-	RateLimit      int    `env:"RATE_LIMIT"`      // Maximum rate for sending HTTP requests per interval.
-	PprofFlag      bool   `env:"PPROF_FLAG"`      // Flag to enable or disable profiling with pprof.
+	ServerAddress  string `env:"ADDRESS"`
+	SigningKey     string `env:"KEY"`
+	CryptoKey      string `env:"CRYPTO_KEY"`
+	PollInterval   int    `env:"POLL_INTERVAL"`
+	ReportInterval int    `env:"REPORT_INTERVAL"`
+	RateLimit      int    `env:"RATE_LIMIT"`
+	PprofFlag      bool   `env:"PPROF_FLAG"`
 }
 
 // ParseConfig initializes a new Config instance with default values, then overrides these values
@@ -50,6 +52,7 @@ func ParseConfig() (*Config, error) {
 		SigningKey:     defaultSigningKey,
 		RateLimit:      defaultRateLimit,
 		PprofFlag:      defaultPprofFlag,
+		CryptoKey:      defaultCryptoKey,
 	}
 
 	// Parse command-line arguments or set default settings if no arguments are provided.
@@ -76,5 +79,6 @@ func parseFlagsOrSetDefault(cfg *Config) {
 	flag.StringVar(&cfg.SigningKey, "k", cfg.SigningKey, "Signing key used for creating request signatures.")
 	flag.IntVar(&cfg.RateLimit, "l", cfg.RateLimit, "Maximum rate for sending HTTP requests per interval.")
 	flag.BoolVar(&cfg.PprofFlag, "pf", cfg.PprofFlag, "Enable or disable profiling with pprof.")
+	flag.StringVar(&cfg.CryptoKey, "crypto-key", cfg.CryptoKey, "Path to public key file.")
 	flag.Parse()
 }
