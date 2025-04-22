@@ -42,6 +42,7 @@ type EchoServer struct {
 	addr        string                    // addr is the server address to listen on.
 	tmplPath    string                    // tmplPath is the directory path to the HTML templates.
 	signingKey  string                    // signingKey is used for request signing and authentication.
+	cryptoKey   string
 }
 
 // NewEchoServer creates and configures a new EchoServer instance.
@@ -59,6 +60,7 @@ type EchoServer struct {
 func NewEchoServer(
 	serverAddress string,
 	signingKey string,
+	cryptoKey string,
 	repo repository.Repository,
 	logger *zap.SugaredLogger,
 ) *EchoServer {
@@ -67,6 +69,7 @@ func NewEchoServer(
 		logger:      logger,
 		addr:        serverAddress,
 		signingKey:  signingKey,
+		cryptoKey:   cryptoKey,
 		tmplPath:    defaultTemplatesPath,
 		metricsCtrl: controller.NewMetricService(repo),
 	}
@@ -160,6 +163,7 @@ func (s *EchoServer) setupGeneralMiddlewares() {
 		echoMiddleware.Decompress(),
 		custMiddleware.Auth(s.signingKey),
 		custMiddleware.Sign(s.signingKey),
+		custMiddleware.Crypto(s.cryptoKey, requestLogger.Named("crypto")),
 		custMiddleware.Gzip(requestLogger.Named("gzip_writer")),
 	)
 }

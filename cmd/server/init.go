@@ -108,9 +108,19 @@ func initComponentsWithShutdownActs(
 	}
 	shutdownActions = append(shutdownActions, repoWithShutdownFunc.shutdown)
 
+	var crptKey string
+	if cfg.CryptoKey != "" {
+		keyData, err := os.ReadFile(cfg.CryptoKey)
+		if err != nil {
+			logger.Fatalf("failed to read crypto key from file: %v", err)
+		}
+		crptKey = string(keyData)
+	}
+
 	echoDelivery := delivery.NewEchoServer(
 		cfg.ServerAddress,
 		cfg.SigningKey,
+		crptKey,
 		repoWithShutdownFunc.repository,
 		logger.Named(loggerNameDelivery),
 	)
