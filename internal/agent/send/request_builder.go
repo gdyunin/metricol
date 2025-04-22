@@ -157,7 +157,7 @@ func encryptWithPublicKeyHybrid(
 
 	const aesKeySize = 32
 	aesKey := make([]byte, aesKeySize)
-	if _, err := rand.Read(aesKey); err != nil {
+	if _, err = rand.Read(aesKey); err != nil {
 		return nil, nil, fmt.Errorf("failed to generate AES key: %w", err)
 	}
 
@@ -172,7 +172,7 @@ func encryptWithPublicKeyHybrid(
 	}
 
 	nonce := make([]byte, aesGCM.NonceSize())
-	if _, err := io.ReadFull(rand.Reader, nonce); err != nil {
+	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
 		return nil, nil, fmt.Errorf("failed to generate nonce: %w", err)
 	}
 

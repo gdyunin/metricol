@@ -69,7 +69,7 @@ func savePrivateKey(key *rsa.PrivateKey, filepath string) error {
 
 	// Write the PEM block to the file
 	if err = pem.Encode(f, pemBlock); err != nil {
-		return fmt.Errorf("failed to encode private key to PEM format")
+		return fmt.Errorf("failed to encode private key to PEM format: %w", err)
 	}
 	return nil
 }
