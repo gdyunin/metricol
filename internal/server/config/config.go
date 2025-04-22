@@ -3,8 +3,10 @@
 package config
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/caarlos0/env/v6"
 )
@@ -19,6 +21,7 @@ const (
 	defaultSigningKey      = ""
 	defaultPprofFlag       = false
 	defaultCryptoKey       = ""
+	defaultConfigPath      = ""
 )
 
 // Config holds the configuration for the server, including its address,
@@ -26,14 +29,15 @@ const (
 // The configuration values can be provided via environment variables, command-line flags,
 // or default settings defined in the package.
 type Config struct {
-	ServerAddress   string `env:"ADDRESS"`
-	FileStoragePath string `env:"FILE_STORAGE_PATH"`
-	DatabaseDSN     string `env:"DATABASE_DSN"`
-	SigningKey      string `env:"KEY"`
-	CryptoKey       string `env:"CRYPTO_KEY"`
-	StoreInterval   int    `env:"STORE_INTERVAL"`
-	Restore         bool   `env:"RESTORE"`
-	PprofFlag       bool   `env:"PPROF_SERVER_FLAG"`
+	ServerAddress   string `env:"ADDRESS"           json:"server_address,omitempty"`
+	FileStoragePath string `env:"FILE_STORAGE_PATH" json:"file_storage_path,omitempty"`
+	DatabaseDSN     string `env:"DATABASE_DSN"      json:"database_dsn,omitempty"`
+	SigningKey      string `env:"KEY"               json:"signing_key,omitempty"`
+	CryptoKey       string `env:"CRYPTO_KEY"        json:"crypto_key,omitempty"`
+	ConfigPath      string `env:"CONFIG"            json:"config_path,omitempty"`
+	StoreInterval   int    `env:"STORE_INTERVAL"    json:"store_interval,omitempty"`
+	Restore         bool   `env:"RESTORE"           json:"restore,omitempty"`
+	PprofFlag       bool   `env:"PPROF_SERVER_FLAG" json:"pprof_flag,omitempty"`
 }
 
 // ParseConfig initializes the Config with default values, overrides them with command-line flags if provided,
@@ -54,6 +58,7 @@ func ParseConfig() (*Config, error) {
 		SigningKey:      defaultSigningKey,
 		PprofFlag:       defaultPprofFlag,
 		CryptoKey:       defaultCryptoKey,
+		ConfigPath:      defaultConfigPath,
 	}
 
 	// Populate the configuration from command-line flags.
@@ -64,7 +69,56 @@ func ParseConfig() (*Config, error) {
 		return nil, fmt.Errorf("error parse env variables %w", err)
 	}
 
+	if cfg.ConfigPath != defaultConfigPath {
+		if err := mergeConfigFile(&cfg); err != nil {
+			return nil, fmt.Errorf("failed to merge configuration file: %w", err)
+		}
+	}
+
 	return &cfg, nil
+}
+
+func mergeConfigFile(cfg *Config) error {
+	data, err := os.ReadFile(cfg.ConfigPath)
+	if err != nil {
+		return fmt.Errorf("failed to read config file: %w", err)
+	}
+
+	tempCfg := Config{}
+	if err := json.Unmarshal(data, &tempCfg); err != nil {
+		return fmt.Errorf("cannot parse JSON config %q: %w", cfg.ConfigPath, err)
+	}
+
+	// [ДЛЯ РЕВЬЮ] Если честно, то мне очень не нравится такая реализация и она точно будет работать неправильно,
+	// если пользователь самостоятельно укажет в переменных окружения или флагах параметры, совпадающие с дефолтными,
+	// Но я не смог придумать что-то лучше, чтобы при этом не нужно было полностью переписывать всю остальную логику.
+
+	if cfg.ServerAddress == defaultServerAddress && tempCfg.ServerAddress != defaultServerAddress {
+		cfg.ServerAddress = tempCfg.ServerAddress
+	}
+	if cfg.FileStoragePath == defaultFileStoragePath && tempCfg.FileStoragePath != defaultFileStoragePath {
+		cfg.FileStoragePath = tempCfg.FileStoragePath
+	}
+	if cfg.DatabaseDSN == defaultDatabaseDSN && tempCfg.DatabaseDSN != defaultDatabaseDSN {
+		cfg.DatabaseDSN = tempCfg.DatabaseDSN
+	}
+	if cfg.SigningKey == defaultSigningKey && tempCfg.SigningKey != defaultSigningKey {
+		cfg.SigningKey = tempCfg.SigningKey
+	}
+	if cfg.CryptoKey == defaultCryptoKey && tempCfg.CryptoKey != defaultCryptoKey {
+		cfg.CryptoKey = tempCfg.CryptoKey
+	}
+	if cfg.StoreInterval == defaultStoreInterval && tempCfg.StoreInterval != defaultStoreInterval {
+		cfg.StoreInterval = tempCfg.StoreInterval
+	}
+	if cfg.Restore && !tempCfg.Restore {
+		cfg.Restore = tempCfg.Restore
+	}
+	if !cfg.PprofFlag && tempCfg.PprofFlag {
+		cfg.PprofFlag = tempCfg.PprofFlag
+	}
+
+	return nil
 }
 
 // parseFlagsOrSetDefault populates the Config from command-line flags,
@@ -84,5 +138,6 @@ func parseFlagsOrSetDefault(cfg *Config) {
 	flag.StringVar(&cfg.SigningKey, "k", cfg.SigningKey, "Signing key for checking request signatures.")
 	flag.BoolVar(&cfg.PprofFlag, "pf", cfg.PprofFlag, "Enable or disable profiling with pprof")
 	flag.StringVar(&cfg.CryptoKey, "crypto-key", cfg.CryptoKey, "Path to private key file.")
+	flag.StringVar(&cfg.ConfigPath, "c", cfg.ConfigPath, "Path to config file.")
 	flag.Parse()
 }
