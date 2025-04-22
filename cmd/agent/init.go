@@ -43,7 +43,13 @@ func printAppInfo() {
 
 // mainContext initializes the main application context with a cancel function.
 func mainContext() (context.Context, context.CancelFunc) {
-	return signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	return signal.NotifyContext(
+		context.Background(),
+		os.Interrupt,
+		syscall.SIGTERM,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+	)
 }
 
 // baseLogger initializes and returns a SugaredLogger instance

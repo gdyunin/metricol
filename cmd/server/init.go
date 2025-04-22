@@ -190,7 +190,7 @@ func setupGracefulShutdown(
 	shutdownActions ...func(),
 ) {
 	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
 		<-signalChan
