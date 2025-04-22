@@ -26,13 +26,13 @@ const (
 // It contains the server address, signing key, intervals for polling and reporting metrics,
 // a rate limit for HTTP requests, and a flag for enabling or disabling pprof profiling.
 type Config struct {
-	ServerAddress  string `env:"ADDRESS"`         // Address of the server to connect to.
-	SigningKey     string `env:"KEY"`             // Key used for signing requests to the server.
-	PollInterval   int    `env:"POLL_INTERVAL"`   // Interval for polling metrics.
-	ReportInterval int    `env:"REPORT_INTERVAL"` // Interval for reporting metrics.
-	RateLimit      int    `env:"RATE_LIMIT"`      // Maximum rate for sending HTTP requests per interval.
-	PprofFlag      bool   `env:"PPROF_FLAG"`      // Flag to enable or disable profiling with pprof.
-	CryptoKey      string `env:"CRYPTO_KEY"`      // Path to public key file.
+	ServerAddress  string `env:"ADDRESS"`
+	SigningKey     string `env:"KEY"`
+	CryptoKey      string `env:"CRYPTO_KEY"`
+	PollInterval   int    `env:"POLL_INTERVAL"`
+	ReportInterval int    `env:"REPORT_INTERVAL"`
+	RateLimit      int    `env:"RATE_LIMIT"`
+	PprofFlag      bool   `env:"PPROF_FLAG"`
 }
 
 // ParseConfig initializes a new Config instance with default values, then overrides these values

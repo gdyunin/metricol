@@ -11,6 +11,8 @@ import (
 	"os"
 )
 
+const defaultKeySize = 2048
+
 func main() {
 	// Command-line flags
 	var (
@@ -21,7 +23,7 @@ func main() {
 
 	flag.StringVar(&privateKeyPath, "private", "private_key.pem", "Path to save the private key")
 	flag.StringVar(&publicKeyPath, "public", "public_key.pem", "Path to save the public key")
-	flag.IntVar(&keySize, "size", 2048, "Key size in bits (2048 or 4096 is recommended)")
+	flag.IntVar(&keySize, "size", defaultKeySize, "Key size in bits (2048 or 4096 is recommended)")
 	flag.Parse()
 
 	fmt.Println("Generating RSA key pair...")
@@ -54,7 +56,7 @@ func savePrivateKey(key *rsa.PrivateKey, filepath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create private key file: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	// Marshal the private key to PKCS#1 ASN.1 DER format
 	privateKeyBytes := x509.MarshalPKCS1PrivateKey(key)
@@ -66,7 +68,10 @@ func savePrivateKey(key *rsa.PrivateKey, filepath string) error {
 	}
 
 	// Write the PEM block to the file
-	return pem.Encode(f, pemBlock)
+	if err = pem.Encode(f, pemBlock); err != nil {
+		return fmt.Errorf("failed to encode private key to PEM format")
+	}
+	return nil
 }
 
 // savePublicKey saves the RSA public key to the specified file in PEM format.
@@ -76,7 +81,7 @@ func savePublicKey(key *rsa.PublicKey, filepath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to create public key file: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	// Marshal the public key to PKIX ASN.1 DER format
 	publicKeyBytes, err := x509.MarshalPKIXPublicKey(key)
@@ -91,5 +96,8 @@ func savePublicKey(key *rsa.PublicKey, filepath string) error {
 	}
 
 	// Write the PEM block to the file
-	return pem.Encode(f, pemBlock)
+	if err := pem.Encode(f, pemBlock); err != nil {
+		return fmt.Errorf("failed to encode public key to PEM format: %w", err)
+	}
+	return nil
 }

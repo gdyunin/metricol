@@ -9,6 +9,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -34,13 +35,19 @@ func Crypto(cryptoKey string, logger *zap.SugaredLogger) echo.MiddlewareFunc {
 			encryptedKey, err := base64.StdEncoding.DecodeString(encryptedKeyB64)
 			if err != nil {
 				logger.Errorf("failed to decode base64 encrypted key: %v", err)
-				return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+				return c.String(
+					http.StatusInternalServerError,
+					http.StatusText(http.StatusInternalServerError),
+				)
 			}
 
 			encryptedBody, err := io.ReadAll(c.Request().Body)
 			if err != nil {
 				logger.Errorf("failed to read request body: %v", err)
-				return c.String(http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
+				return c.String(
+					http.StatusInternalServerError,
+					http.StatusText(http.StatusInternalServerError),
+				)
 			}
 
 			decryptedBody, err := decryptWithPrivateKeyHybrid(encryptedBody, encryptedKey, cryptoKey)
@@ -55,10 +62,14 @@ func Crypto(cryptoKey string, logger *zap.SugaredLogger) echo.MiddlewareFunc {
 	}
 }
 
-func decryptWithPrivateKeyHybrid(encryptedData []byte, encryptedKey []byte, privateKeyPEM string) ([]byte, error) {
+func decryptWithPrivateKeyHybrid(
+	encryptedData []byte,
+	encryptedKey []byte,
+	privateKeyPEM string,
+) ([]byte, error) {
 	block, _ := pem.Decode([]byte(privateKeyPEM))
 	if block == nil || block.Type != "RSA PRIVATE KEY" {
-		return nil, fmt.Errorf("invalid private key PEM format")
+		return nil, errors.New("invalid private key PEM format")
 	}
 
 	privKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
@@ -82,7 +93,7 @@ func decryptWithPrivateKeyHybrid(encryptedData []byte, encryptedKey []byte, priv
 	}
 
 	if len(encryptedData) < aesGCM.NonceSize() {
-		return nil, fmt.Errorf("encrypted data too short")
+		return nil, errors.New("encrypted data too short")
 	}
 
 	nonce := encryptedData[:aesGCM.NonceSize()]

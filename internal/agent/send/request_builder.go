@@ -8,6 +8,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io"
 
@@ -67,7 +68,13 @@ func (b *RequestBuilder) Build(method string, endpoint string, body []byte) *res
 // Returns:
 //   - *resty.Request: The constructed HTTP request with a gzip-compressed body.
 //   - error: An error if the compression process fails.
-func (b *RequestBuilder) BuildWithParams(method string, endpoint string, body []byte, signingKey string, publicKeyPEM string) (
+func (b *RequestBuilder) BuildWithParams(
+	method string,
+	endpoint string,
+	body []byte,
+	signingKey string,
+	publicKeyPEM string,
+) (
 	*resty.Request,
 	error,
 ) {
@@ -129,10 +136,13 @@ func (b *RequestBuilder) BuildWithParams(method string, endpoint string, body []
 //
 // Errors are returned if the public key is invalid, the AES key generation fails,
 // or any encryption step encounters an issue.
-func encryptWithPublicKeyHybrid(data []byte, publicKeyPEM string) (encryptedData []byte, encryptedKey []byte, err error) {
+func encryptWithPublicKeyHybrid(
+	data []byte,
+	publicKeyPEM string,
+) (encryptedData []byte, encryptedKey []byte, err error) {
 	block, _ := pem.Decode([]byte(publicKeyPEM))
 	if block == nil || block.Type != "PUBLIC KEY" {
-		return nil, nil, fmt.Errorf("invalid public key PEM format")
+		return nil, nil, errors.New("invalid public key PEM format")
 	}
 
 	pubKeyInterface, err := x509.ParsePKIXPublicKey(block.Bytes)
@@ -142,10 +152,11 @@ func encryptWithPublicKeyHybrid(data []byte, publicKeyPEM string) (encryptedData
 
 	rsaPubKey, ok := pubKeyInterface.(*rsa.PublicKey)
 	if !ok {
-		return nil, nil, fmt.Errorf("provided key is not an RSA public key")
+		return nil, nil, errors.New("provided key is not an RSA public key")
 	}
 
-	aesKey := make([]byte, 32)
+	const aesKeySize = 32
+	aesKey := make([]byte, aesKeySize)
 	if _, err := rand.Read(aesKey); err != nil {
 		return nil, nil, fmt.Errorf("failed to generate AES key: %w", err)
 	}
