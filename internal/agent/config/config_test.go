@@ -28,6 +28,7 @@ func TestParseConfig(t *testing.T) {
 				SigningKey:     defaultSigningKey,
 				RateLimit:      defaultRateLimit,
 				PprofFlag:      defaultPprofFlag,
+				CryptoKey:      defaultCryptoKey,
 			},
 			expectError: false,
 		},
@@ -40,6 +41,7 @@ func TestParseConfig(t *testing.T) {
 				"KEY":             "testpass",
 				"RATE_LIMIT":      "8",
 				"PPROF_FLAG":      "true",
+				"CRYPTO_KEY":      "env_example/path",
 			},
 			args: []string{},
 			expected: Config{
@@ -49,6 +51,7 @@ func TestParseConfig(t *testing.T) {
 				SigningKey:     "testpass",
 				RateLimit:      8,
 				PprofFlag:      true,
+				CryptoKey:      "env_example/path",
 			},
 			expectError: false,
 		},
@@ -62,6 +65,7 @@ func TestParseConfig(t *testing.T) {
 				"-k", "testpass",
 				"-l", "8",
 				"-pf",
+				"-crypto-key", "cmd_example/path",
 			},
 			expected: Config{
 				ServerAddress:  "flagserver:8000",
@@ -70,6 +74,7 @@ func TestParseConfig(t *testing.T) {
 				SigningKey:     "testpass",
 				RateLimit:      8,
 				PprofFlag:      true,
+				CryptoKey:      "cmd_example/path",
 			},
 			expectError: false,
 		},
@@ -82,6 +87,7 @@ func TestParseConfig(t *testing.T) {
 				"KEY":             "testpass",
 				"RATE_LIMIT":      "8",
 				"PPROF_FLAG":      "true",
+				"CRYPTO_KEY":      "env_example/path",
 			},
 			args: []string{
 				"-a", "flagserver:8000",
@@ -89,6 +95,7 @@ func TestParseConfig(t *testing.T) {
 				"-r", "12",
 				"-k", "testpasscmd",
 				"-l", "8",
+				"-crypto-key", "cmd_example/path",
 			},
 			expected: Config{
 				ServerAddress:  "envserver:9000",
@@ -97,6 +104,7 @@ func TestParseConfig(t *testing.T) {
 				SigningKey:     "testpass",
 				RateLimit:      8,
 				PprofFlag:      true,
+				CryptoKey:      "env_example/path",
 			},
 			expectError: false,
 		},

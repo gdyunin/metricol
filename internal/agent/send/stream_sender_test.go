@@ -105,7 +105,7 @@ func TestStreamSender_SendBatch(t *testing.T) {
 			logger := zap.NewNop().Sugar()
 
 			// Initialize the StreamSender.
-			sender := NewStreamSender(dummyChan, time.Second, 1, ts.URL, "dummySigningKey", logger)
+			sender := NewStreamSender(dummyChan, time.Second, 1, ts.URL, "dummySigningKey", "", logger)
 			// Override the requestBuilder with our instance that uses the original compressor.
 			sender.requestBuilder = builder
 

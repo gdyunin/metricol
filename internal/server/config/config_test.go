@@ -29,6 +29,7 @@ func TestParseConfig(t *testing.T) {
 				StoreInterval:   defaultStoreInterval,
 				Restore:         defaultRestoreFlag,
 				PprofFlag:       defaultPprofFlag,
+				CryptoKey:       defaultCryptoKey,
 			},
 			expectError: false,
 		},
@@ -42,6 +43,7 @@ func TestParseConfig(t *testing.T) {
 				"STORE_INTERVAL":    "300",
 				"RESTORE":           "true",
 				"PPROF_SERVER_FLAG": "true",
+				"CRYPTO_KEY":        "env_example/path",
 			},
 			args: []string{},
 			expected: Config{
@@ -52,6 +54,7 @@ func TestParseConfig(t *testing.T) {
 				StoreInterval:   300,
 				Restore:         true,
 				PprofFlag:       true,
+				CryptoKey:       "env_example/path",
 			},
 			expectError: false,
 		},
@@ -65,6 +68,7 @@ func TestParseConfig(t *testing.T) {
 				"-k", "flagkey",
 				"-i", "500",
 				"-r", "-pf",
+				"-crypto-key", "cmd_example/path",
 			},
 			expected: Config{
 				ServerAddress:   "flagserver:8000",
@@ -74,6 +78,7 @@ func TestParseConfig(t *testing.T) {
 				StoreInterval:   500,
 				Restore:         true,
 				PprofFlag:       true,
+				CryptoKey:       "cmd_example/path",
 			},
 			expectError: false,
 		},
@@ -87,6 +92,7 @@ func TestParseConfig(t *testing.T) {
 				"STORE_INTERVAL":    "300",
 				"RESTORE":           "true",
 				"PPROF_SERVER_FLAG": "true",
+				"CRYPTO_KEY":        "env_example/path",
 			},
 			args: []string{
 				"-a", "flagserver:8000",
@@ -96,6 +102,7 @@ func TestParseConfig(t *testing.T) {
 				"-i", "500",
 				"-r", "true",
 				"-pf", "false",
+				"-crypto-key", "cmd_example/path",
 			},
 			expected: Config{
 				ServerAddress:   "envserver:9000",
@@ -105,6 +112,7 @@ func TestParseConfig(t *testing.T) {
 				StoreInterval:   300,
 				Restore:         true,
 				PprofFlag:       true,
+				CryptoKey:       "env_example/path",
 			},
 			expectError: false,
 		},

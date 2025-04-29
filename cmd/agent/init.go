@@ -43,7 +43,13 @@ func printAppInfo() {
 
 // mainContext initializes the main application context with a cancel function.
 func mainContext() (context.Context, context.CancelFunc) {
-	return signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	return signal.NotifyContext(
+		context.Background(),
+		os.Interrupt,
+		syscall.SIGTERM,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+	)
 }
 
 // baseLogger initializes and returns a SugaredLogger instance
@@ -68,6 +74,15 @@ func loadConfig() (*config.Config, error) {
 // initAgent initializes the agent, including the
 // metrics collectors, metrics senders.
 func initAgent(cfg *config.Config, logger *zap.SugaredLogger) *agent.Agent {
+	var crptKey string
+	if cfg.CryptoKey != "" {
+		keyData, err := os.ReadFile(cfg.CryptoKey)
+		if err != nil {
+			logger.Fatalf("failed to read crypto key from file: %v", err)
+		}
+		crptKey = string(keyData)
+	}
+
 	return agent.NewAgent(
 		convert.IntegerToSeconds(cfg.PollInterval),
 		convert.IntegerToSeconds(cfg.ReportInterval),
@@ -75,6 +90,7 @@ func initAgent(cfg *config.Config, logger *zap.SugaredLogger) *agent.Agent {
 		cfg.RateLimit,
 		cfg.ServerAddress,
 		cfg.SigningKey,
+		crptKey,
 	)
 }
 

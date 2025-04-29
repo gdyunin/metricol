@@ -43,6 +43,7 @@ func TestAgent_Start(t *testing.T) {
 				tc.maxSendRate,
 				"http://localhost:8080",
 				"dummyKey",
+				"",
 			)
 
 			// Start a goroutine to continuously drain the sendQueue.

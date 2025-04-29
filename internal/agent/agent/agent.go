@@ -58,6 +58,7 @@ type Agent struct {
 	sendQueue      chan *entity.Metrics
 	serverAddress  string
 	signKey        string
+	cryptoKey      string
 	pollInterval   time.Duration
 	reportInterval time.Duration
 	maxSendRate    int
@@ -82,6 +83,7 @@ func NewAgent(
 	maxSendRate int,
 	serverAddress string,
 	signKey string,
+	cryptoKey string,
 ) *Agent {
 	logger.Infof(
 		"Initializing Agent: pollInterval=%ds, reportInterval=%ds",
@@ -96,6 +98,7 @@ func NewAgent(
 		maxSendRate:    maxSendRate,
 		serverAddress:  serverAddress,
 		signKey:        signKey,
+		cryptoKey:      cryptoKey,
 	}
 }
 
@@ -138,6 +141,7 @@ func (a *Agent) Start(ctx context.Context) {
 		a.maxSendRate,
 		a.serverAddress,
 		a.signKey,
+		a.cryptoKey,
 		streamSenderLogger,
 	)
 
